@@ -4,116 +4,150 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Loader2, Plus, Trash2, Save } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle } from "lucide-react";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+
+// Interfaces
+interface CardData {
+  id: string;
+  name: string; // English name
+  pt_name?: string; // Portuguese name
+  type: string;
+  desc: string;
+  race: string;
+  attribute?: string;
+  atk?: number;
+  def?: number;
+  level?: number;
+  card_images: {
+    image_url: string;
+    image_url_small: string;
+  }[];
+}
 
 interface DeckBuilderProps {
   user: User | null;
   onLogout: () => void;
 }
 
-interface Card {
-  id: string;
-  name: string;
-  type: string;
-  card_images: { 
-    image_url: string;
-    image_url_small: string;
-  }[];
-}
-
 const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // State
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Card[]>([]);
+  const [searchResults, setSearchResults] = useState<CardData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [deckName, setDeckName] = useState("");
-  const [mainDeck, setMainDeck] = useState<Card[]>([]);
-  const [extraDeck, setExtraDeck] = useState<Card[]>([]);
-  const [sideDeck, setSideDeck] = useState<Card[]>([]);
+  const [mainDeck, setMainDeck] = useState<CardData[]>([]);
+  const [extraDeck, setExtraDeck] = useState<CardData[]>([]);
+  const [sideDeck, setSideDeck] = useState<CardData[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Core Functions
   const searchCards = async () => {
-    if (!searchQuery.trim()) return;
-    
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) return;
+
     setIsSearching(true);
     try {
-      const response = await fetch(
-        `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(searchQuery)}&language=pt`
-      );
-      const data = await response.json();
-      setSearchResults(data.data || []);
+      const englishUrl = `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(trimmedQuery)}`;
+      const portugueseUrl = `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(trimmedQuery)}&language=pt`;
+
+      const [englishResult, portugueseResult] = await Promise.allSettled([
+        fetch(englishUrl).then(res => res.json()),
+        fetch(portugueseUrl).then(res => res.json()),
+      ]);
+
+      let englishCards: CardData[] = [];
+      if (englishResult.status === 'fulfilled' && englishResult.value.data) {
+        englishCards = englishResult.value.data;
+      }
+
+      const portugueseNames = new Map<string, string>();
+      if (portugueseResult.status === 'fulfilled' && portugueseResult.value.data) {
+        portugueseResult.value.data.forEach((card: { id: string; name: string }) => {
+          portugueseNames.set(String(card.id), card.name);
+        });
+      }
+
+      const finalResults = englishCards.map(card => ({
+        ...card,
+        pt_name: portugueseNames.get(String(card.id)) || undefined,
+      }));
+      
+      finalResults.sort((a, b) => a.name.localeCompare(b.name));
+
+      setSearchResults(finalResults);
+
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao buscar cartas",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "Erro ao buscar cartas", variant: "destructive" });
     } finally {
       setIsSearching(false);
     }
   };
 
-  const addCardToDeck = (card: Card, section: "main" | "extra" | "side") => {
-    const limits = { main: 60, extra: 15, side: 15 };
-    const decks = { main: mainDeck, extra: extraDeck, side: sideDeck };
-    const setters = { main: setMainDeck, extra: setExtraDeck, side: setSideDeck };
-    
-    const currentDeck = decks[section];
-    if (currentDeck.length >= limits[section]) {
+  const addCardToDeck = (card: CardData) => {
+    const limit = 3;
+
+    const currentCopies = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.id === card.id).length;
+
+    if (currentCopies >= limit) {
       toast({
-        title: "Limite atingido",
-        description: `O ${section} deck não pode ter mais de ${limits[section]} cartas`,
+        title: "Limite de Cópias Atingido",
+        description: `Você já possui ${currentCopies} cópias de "${card.name}". O limite é ${limit}.`,
         variant: "destructive",
       });
       return;
     }
     
-    setters[section]([...currentDeck, card]);
+    const extraDeckTypes = ["Fusion Monster", "Synchro Monster", "XYZ Monster", "Link Monster"];
+    if (extraDeckTypes.includes(card.type)) {
+      if (extraDeck.length >= 15) {
+        toast({ title: "Limite atingido", description: "O Extra Deck não pode ter mais de 15 cartas.", variant: "destructive" });
+        return;
+      }
+      setExtraDeck([...extraDeck, card]);
+    } else {
+      if (mainDeck.length >= 60) {
+        toast({ title: "Limite atingido", description: "O Main Deck não pode ter mais de 60 cartas.", variant: "destructive" });
+        return;
+      }
+      setMainDeck([...mainDeck, card]);
+    }
   };
-
+  
   const removeCard = (index: number, section: "main" | "extra" | "side") => {
     const decks = { main: mainDeck, extra: extraDeck, side: sideDeck };
     const setters = { main: setMainDeck, extra: setExtraDeck, side: setSideDeck };
-    
     const newDeck = [...decks[section]];
     newDeck.splice(index, 1);
     setters[section](newDeck);
   };
 
+  const clearDeck = () => {
+    setMainDeck([]);
+    setExtraDeck([]);
+    setSideDeck([]);
+    setDeckName("");
+  }
+
   const saveDeck = async () => {
     if (!user) {
-      toast({
-        title: "Erro",
-        description: "Você precisa estar logado para salvar um deck",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "Você precisa estar logado para salvar um deck", variant: "destructive" });
       return;
     }
-
     if (!deckName.trim()) {
-      toast({
-        title: "Erro",
-        description: "Digite um nome para o deck",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "Digite um nome para o deck", variant: "destructive" });
       return;
     }
-
     if (mainDeck.length < 40) {
-      toast({
-        title: "Erro",
-        description: "O Main Deck precisa ter no mínimo 40 cartas",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "O Main Deck precisa ter no mínimo 40 cartas", variant: "destructive" });
       return;
     }
-
     setIsSaving(true);
     try {
       const { data: deck, error: deckError } = await supabase
@@ -121,240 +155,181 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
         .insert({ user_id: user.id, deck_name: deckName })
         .select()
         .single();
-
       if (deckError) throw deckError;
-
       const allCards = [
         ...mainDeck.map((card) => ({ deck_id: deck.id, card_api_id: card.id, deck_section: "main" })),
         ...extraDeck.map((card) => ({ deck_id: deck.id, card_api_id: card.id, deck_section: "extra" })),
         ...sideDeck.map((card) => ({ deck_id: deck.id, card_api_id: card.id, deck_section: "side" })),
       ];
-
-      const { error: cardsError } = await supabase
-        .from("deck_cards")
-        .insert(allCards);
-
+      const { error: cardsError } = await supabase.from("deck_cards").insert(allCards);
       if (cardsError) throw cardsError;
-
-      toast({
-        title: "Sucesso!",
-        description: "Deck salvo com sucesso",
-      });
-
+      toast({ title: "Sucesso!", description: "Deck salvo com sucesso" });
       navigate(`/profile/${user.id}`);
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao salvar deck",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: error.message || "Erro ao salvar deck", variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (!user) {
-    navigate("/auth");
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-white">
       <Navbar user={user} onLogout={onLogout} />
       
-      <main className="container mx-auto px-4 py-12">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
-            Deck Builder
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Crie seu deck perfeito com a API do YGOProDeck
-          </p>
+      <main className="container mx-auto px-4 py-8">
+        <div className="space-y-4 mb-6">
+          {!user && (
+            <div className="flex items-center gap-2 text-sm text-yellow-400 bg-yellow-900/30 p-2 rounded-md">
+              <AlertTriangle className="h-4 w-4" />
+              Você deve estar logado para salvar um deck.
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Button variant="outline"><FileUp className="h-4 w-4 mr-2" /> Importar</Button>
+            <Button variant="outline"><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
+            <Button variant="destructive" onClick={clearDeck}><Trash2 className="h-4 w-4 mr-2" /> Limpar Deck</Button>
+            <div className="flex-grow"></div>
+            <Button onClick={saveDeck} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700">
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Salvar Deck
+            </Button>
+          </div>
+          <div>
+            <Label htmlFor="deck-name" className="text-sm font-bold mb-2 block">Deck Name</Label>
+            <Input
+              id="deck-name"
+              placeholder="Dê um nome ao seu Deck"
+              className="text-lg"
+              value={deckName}
+              onChange={(e) => setDeckName(e.target.value)}
+            />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Search Section */}
-          <div className="lg:col-span-1">
-            <Card className="p-6 bg-gradient-card border-border sticky top-24">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="deck-name">Nome do Deck</Label>
-                  <Input
-                    id="deck-name"
-                    placeholder="Meu Deck Épico"
-                    value={deckName}
-                    onChange={(e) => setDeckName(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="search">Buscar Cartas</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="search"
-                      placeholder="Nome da carta..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && searchCards()}
-                    />
-                    <Button onClick={searchCards} disabled={isSearching}>
-                      {isSearching ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Search className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="max-h-[600px] overflow-y-auto">
-                  <div className="grid grid-cols-2 gap-2">
-                    {searchResults.map((card) => (
-                      <Card
-                        key={card.id}
-                        className="p-2 cursor-pointer hover:shadow-glow transition-all group"
-                      >
-                        <img
-                          src={card.card_images[0].image_url_small}
-                          alt={card.name}
-                          className="w-full rounded mb-1"
-                        />
-                        <p className="text-xs font-semibold truncate group-hover:text-primary">
-                          {card.name}
-                        </p>
-                        <div className="flex gap-1 mt-1">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="flex-1 text-xs h-7"
-                            onClick={() => addCardToDeck(card, "main")}
-                          >
-                            M
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="flex-1 text-xs h-7"
-                            onClick={() => addCardToDeck(card, "extra")}
-                          >
-                            E
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="flex-1 text-xs h-7"
-                            onClick={() => addCardToDeck(card, "side")}
-                          >
-                            S
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-
-                <Button
-                  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                  onClick={saveDeck}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Salvar Deck
-                    </>
-                  )}
-                </Button>
+        <div className="flex flex-col lg:flex-row gap-6">
+          
+          <div className="w-full lg:w-[65%] space-y-6">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold">Main Deck</h2>
+                <span className="text-muted-foreground">{mainDeck.length} Cartas</span>
               </div>
-            </Card>
+              <div className="bg-stone-900 p-4 rounded-lg min-h-[200px]">
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                  {mainDeck.map((card, index) => (
+                    <div key={index} className="relative group">
+                      <img src={card.card_images[0].image_url} alt={card.name} className="rounded-md w-full" />
+                      <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "main")}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold">Extra Deck</h2>
+                <span className="text-muted-foreground">{extraDeck.length} Cartas</span>
+              </div>
+              <div className="bg-indigo-950 p-4 rounded-lg min-h-[100px]">
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-15 gap-2">
+                  {extraDeck.map((card, index) => (
+                     <div key={index} className="relative group">
+                      <img src={card.card_images[0].image_url} alt={card.name} className="rounded-md w-full" />
+                      <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "extra")}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold">Side Deck</h2>
+                <span className="text-muted-foreground">{sideDeck.length} Cartas</span>
+              </div>
+              <div className="bg-emerald-950 p-4 rounded-lg min-h-[100px]">
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-15 gap-2">
+                  {sideDeck.map((card, index) => (
+                     <div key={index} className="relative group">
+                      <img src={card.card_images[0].image_url} alt={card.name} className="rounded-md w-full" />
+                      <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "side")}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Deck Sections */}
-          <div className="lg:col-span-2">
-            <Tabs defaultValue="main" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="main">
-                  Main Deck ({mainDeck.length}/60)
-                </TabsTrigger>
-                <TabsTrigger value="extra">
-                  Extra Deck ({extraDeck.length}/15)
-                </TabsTrigger>
-                <TabsTrigger value="side">
-                  Side Deck ({sideDeck.length}/15)
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="main" className="mt-6">
-                <DeckSection
-                  cards={mainDeck}
-                  onRemove={(index) => removeCard(index, "main")}
-                  emptyMessage="Adicione cartas ao Main Deck (mínimo 40)"
+          <div className="w-full lg:w-[35%]">
+            <div className="sticky top-24 space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  id="search"
+                  placeholder="Buscar pelo nome da carta..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && searchCards()}
                 />
-              </TabsContent>
-
-              <TabsContent value="extra" className="mt-6">
-                <DeckSection
-                  cards={extraDeck}
-                  onRemove={(index) => removeCard(index, "extra")}
-                  emptyMessage="Adicione cartas ao Extra Deck (máximo 15)"
-                />
-              </TabsContent>
-
-              <TabsContent value="side" className="mt-6">
-                <DeckSection
-                  cards={sideDeck}
-                  onRemove={(index) => removeCard(index, "side")}
-                  emptyMessage="Adicione cartas ao Side Deck (máximo 15)"
-                />
-              </TabsContent>
-            </Tabs>
+                <Button onClick={searchCards} disabled={isSearching}>
+                  {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <Button variant="outline" className="bg-blue-600 hover:bg-blue-700 border-0">Filtrar Cartas</Button>
+                <select className="bg-background border border-border rounded-md p-2">
+                  <option>Nome</option>
+                  <option>Nível</option>
+                  <option>ATK</option>
+                </select>
+                <span className="text-muted-foreground">Resultados: {searchResults.length}</span>
+              </div>
+              <div className="h-[60vh] overflow-y-auto bg-stone-900/50 p-2 rounded-lg">
+                {searchResults.map((card) => (
+                  <HoverCard key={card.id} openDelay={200}>
+                    <HoverCardTrigger asChild>
+                      <div onClick={() => addCardToDeck(card)} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-800 cursor-pointer">
+                        <img src={card.card_images[0].image_url_small} alt={card.name} className="w-12 rounded-sm" />
+                        <div className="text-sm flex-1 min-w-0">
+                          <p className="font-bold truncate">{card.name}</p>
+                          {card.pt_name && card.pt_name.toLowerCase() !== card.name.toLowerCase() && (
+                            <p className="text-gray-400 truncate">{card.pt_name}</p>
+                          )}
+                          <p className="text-muted-foreground text-xs truncate">{card.attribute} / {card.race}</p>
+                        </div>
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent side="left" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
+                      <div className="w-2/5">
+                        <img src={card.card_images[0].image_url} alt={card.name} className="rounded-md w-full" />
+                      </div>
+                      <div className="w-3/5 space-y-1">
+                        <h3 className="font-bold text-md">{card.name}</h3>
+                        {card.pt_name && card.pt_name.toLowerCase() !== card.name.toLowerCase() && (
+                          <h4 className="text-sm text-gray-300 -mt-1">{card.pt_name}</h4>
+                        )}
+                        <p className="text-xs font-bold text-yellow-400">[{card.race} / {card.type}]</p>
+                        <div className="flex justify-start gap-3 text-xs pt-1">
+                          {card.level && <span>Level: {card.level}</span>}
+                          {card.atk !== undefined && <span>ATK/{card.atk}</span>}
+                          {card.def !== undefined && <span>DEF/{card.def}</span>}
+                        </div>
+                        <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.desc}</p>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </main>
-    </div>
-  );
-};
-
-interface DeckSectionProps {
-  cards: Card[];
-  onRemove: (index: number) => void;
-  emptyMessage: string;
-}
-
-const DeckSection = ({ cards, onRemove, emptyMessage }: DeckSectionProps) => {
-  return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-      {cards.length > 0 ? (
-        cards.map((card, index) => (
-          <Card
-            key={index}
-            className="relative group overflow-hidden hover:shadow-glow transition-all"
-          >
-            <img
-              src={card.card_images[0].image_url}
-              alt={card.name}
-              className="w-full"
-            />
-            <Button
-              size="icon"
-              variant="destructive"
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => onRemove(index)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </Card>
-        ))
-      ) : (
-        <div className="col-span-full text-center py-12 border-2 border-dashed border-border rounded-lg">
-          <p className="text-muted-foreground">{emptyMessage}</p>
-        </div>
-      )}
     </div>
   );
 };
