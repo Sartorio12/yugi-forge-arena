@@ -20,7 +20,10 @@ interface Card {
   id: string;
   name: string;
   type: string;
-  card_images: { image_url: string }[];
+  card_images: { 
+    image_url: string;
+    image_url_small: string;
+  }[];
 }
 
 const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
@@ -41,7 +44,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
     setIsSearching(true);
     try {
       const response = await fetch(
-        `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(searchQuery)}`
+        `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(searchQuery)}&language=pt`
       );
       const data = await response.json();
       setSearchResults(data.data || []);
@@ -204,48 +207,50 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                   </div>
                 </div>
 
-                <div className="max-h-[600px] overflow-y-auto space-y-2">
-                  {searchResults.map((card) => (
-                    <Card
-                      key={card.id}
-                      className="p-2 cursor-pointer hover:shadow-glow transition-all group"
-                    >
-                      <img
-                        src={card.card_images[0].image_url}
-                        alt={card.name}
-                        className="w-full rounded mb-2"
-                      />
-                      <p className="text-sm font-semibold truncate group-hover:text-primary">
-                        {card.name}
-                      </p>
-                      <div className="flex gap-1 mt-2">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="flex-1"
-                          onClick={() => addCardToDeck(card, "main")}
-                        >
-                          Main
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="flex-1"
-                          onClick={() => addCardToDeck(card, "extra")}
-                        >
-                          Extra
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="flex-1"
-                          onClick={() => addCardToDeck(card, "side")}
-                        >
-                          Side
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
+                <div className="max-h-[600px] overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-2">
+                    {searchResults.map((card) => (
+                      <Card
+                        key={card.id}
+                        className="p-2 cursor-pointer hover:shadow-glow transition-all group"
+                      >
+                        <img
+                          src={card.card_images[0].image_url_small}
+                          alt={card.name}
+                          className="w-full rounded mb-1"
+                        />
+                        <p className="text-xs font-semibold truncate group-hover:text-primary">
+                          {card.name}
+                        </p>
+                        <div className="flex gap-1 mt-1">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="flex-1 text-xs h-7"
+                            onClick={() => addCardToDeck(card, "main")}
+                          >
+                            M
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="flex-1 text-xs h-7"
+                            onClick={() => addCardToDeck(card, "extra")}
+                          >
+                            E
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="flex-1 text-xs h-7"
+                            onClick={() => addCardToDeck(card, "side")}
+                          >
+                            S
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
 
                 <Button
