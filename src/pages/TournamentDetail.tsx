@@ -1,13 +1,16 @@
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
-import { Calendar, ExternalLink, Loader2, ArrowLeft } from "lucide-react";
+import { Calendar, ExternalLink, Loader2, ArrowLeft, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useState, useEffect } from "react";
+import { toast } from "@/components/ui/use-toast";
+import { ManageDecklist } from "@/components/ManageDecklist";
 
 interface TournamentDetailProps {
   user: User | null;
@@ -16,8 +19,11 @@ interface TournamentDetailProps {
 
 const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
   const { id } = useParams();
+  const queryClient = useQueryClient();
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [currentDeckId, setCurrentDeckId] = useState<number | null>(null);
 
-  const { data: tournament, isLoading } = useQuery({
+  const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -30,6 +36,79 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
       return data;
     },
   });
+
+  const { data: participants, isLoading: isLoadingParticipants } = useQuery({
+    queryKey: ["tournamentParticipants", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tournament_participants")
+        .select("user_id, deck_id")
+        .eq("tournament_id", Number(id));
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  useEffect(() => {
+    if (user && participants) {
+      const userParticipation = participants.find((p) => p.user_id === user.id);
+      if (userParticipation) {
+        setIsRegistered(true);
+        setCurrentDeckId(userParticipation.deck_id);
+      } else {
+        setIsRegistered(false);
+        setCurrentDeckId(null);
+      }
+    }
+  }, [user, participants]);
+
+  const registrationMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Usuário não autenticado.");
+      if (!id) throw new Error("ID do torneio não encontrado.");
+
+      const { error } = await supabase.from("tournament_participants").insert({
+        user_id: user.id,
+        tournament_id: Number(id),
+      });
+
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error("Você já está inscrito neste torneio.");
+        }
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Inscrição realizada com sucesso!",
+        description: "Você agora está inscrito no torneio.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["tournamentParticipants", id] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro na inscrição",
+        description: error.message || "Não foi possível se inscrever. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRegister = () => {
+    if (!user) {
+      toast({
+        title: "Ação necessária",
+        description: "Você precisa estar logado para se inscrever.",
+        variant: "destructive",
+      });
+      return;
+    }
+    registrationMutation.mutate();
+  };
+
+  const isLoading = isLoadingTournament || isLoadingParticipants;
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,18 +172,55 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                 </p>
               </div>
 
-              {tournament.status === "Aberto" && (
-                <a
-                  href={tournament.registration_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg py-6">
-                    Inscreva-se Agora
-                    <ExternalLink className="ml-2 h-5 w-5" />
-                  </Button>
-                </a>
+              {/* Decklist Management for registered users */}
+              {user && isRegistered && (
+                <ManageDecklist 
+                  user={user} 
+                  tournamentId={tournament.id} 
+                  currentDeckId={currentDeckId}
+                  tournamentStatus={tournament.status}
+                  tournamentEventDate={tournament.event_date}
+                />
               )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                {/* Show registration button ONLY if tournament is open and user is not registered */}
+                {user && !isRegistered && tournament.status === 'Aberto' && (
+                  <Button
+                    onClick={handleRegister}
+                    disabled={registrationMutation.isPending}
+                    className="w-full sm:w-auto flex-grow bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg py-6"
+                  >
+                    {registrationMutation.isPending ? (
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    ) : null}
+                    Inscrever-se no Torneio
+                  </Button>
+                )}
+
+                {/* Show "Registrations Closed" if tournament is not open and user is not registered */}
+                {user && !isRegistered && tournament.status !== 'Aberto' && (
+                  <Button variant="outline" disabled className="w-full sm:w-auto flex-grow text-lg py-6">
+                    Inscrições Encerradas
+                  </Button>
+                )}
+                
+                {/* Always show external link if it exists */}
+                {tournament.registration_link && (
+                    <a
+                    href={tournament.registration_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto"
+                  >
+                    <Button variant="outline" className="w-full text-lg py-6">
+                      Link do Discord / Organização
+                      <ExternalLink className="ml-2 h-5 w-5" />
+                    </Button>
+                  </a>
+                )}
+              </div>
             </Card>
           </div>
         ) : (

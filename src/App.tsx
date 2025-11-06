@@ -12,7 +12,16 @@ import Tournaments from "./pages/Tournaments";
 import TournamentDetail from "./pages/TournamentDetail";
 import Profile from "./pages/Profile";
 import DeckBuilder from "./pages/DeckBuilder";
+import DeckPage from "./pages/DeckPage";
+import RankingPage from "./pages/Ranking";
 import NotFound from "./pages/NotFound";
+import AdminRoute from "./components/AdminRoute";
+import TournamentDashboard from "./pages/admin/TournamentDashboard";
+import TournamentManagementPage from "./pages/admin/TournamentManagement";
+import NewsDashboard from "./pages/admin/NewsDashboard";
+import NewsPostPage from "./pages/NewsPostPage";
+import NewsListPage from "./pages/NewsListPage";
+import NewsEditorFormPage from "./pages/admin/NewsEditorFormPage";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +87,44 @@ const App = () => {
               path="/deck-builder"
               element={<DeckBuilder user={user} onLogout={handleLogout} />}
             />
+            <Route
+              path="/deck/:id"
+              element={<DeckPage user={user} onLogout={handleLogout} />}
+            />
+            <Route
+              path="/ranking"
+              element={<RankingPage user={user} onLogout={handleLogout} />}
+            />
+            <Route path="/news" element={<NewsListPage user={user} onLogout={handleLogout} />} />
+            <Route
+              path="/news/:id"
+              element={<NewsPostPage user={user} onLogout={handleLogout} />}
+            />
+
+            {/* Admin Routes */}
+            <Route element={<AdminRoute user={user} />}>
+              <Route
+                path="/dashboard/tournaments"
+                element={<TournamentDashboard user={user} onLogout={handleLogout} />}
+              />
+              <Route
+                path="/dashboard/tournaments/:id/manage"
+                element={<TournamentManagementPage user={user} onLogout={handleLogout} />}
+              />
+              <Route
+                path="/dashboard/news"
+                element={<NewsDashboard user={user} onLogout={handleLogout} />}
+              />
+              <Route
+                path="/dashboard/news/create"
+                element={<NewsEditorFormPage user={user} />}
+              />
+              <Route
+                path="/dashboard/news/:id/edit"
+                element={<NewsEditorFormPage user={user} />}
+              />
+            </Route>
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

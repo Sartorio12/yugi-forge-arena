@@ -2,7 +2,13 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { User } from "@supabase/supabase-js";
-import { Trophy, Users, Layers } from "lucide-react";
+
+// Import new components
+import { HeroSection } from "@/components/Hero";
+import { UpcomingTournaments } from "@/components/UpcomingTournaments";
+import { TopRankedPlayers } from "@/components/TopRankedPlayers";
+import { FeaturedDecks } from "@/components/FeaturedDecks";
+import { NewsSection } from "@/components/NewsSection";
 
 interface IndexProps {
   user: User | null;
@@ -14,74 +20,25 @@ const Index = ({ user, onLogout }: IndexProps) => {
     <div className="min-h-screen bg-background">
       <Navbar user={user} onLogout={onLogout} />
       
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
-          STAFF YUGIOH
-        </h1>
-        <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto">
-          Seu hub completo de Yu-Gi-Oh! com sistema de perfis, torneios e deck builder integrado
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/tournaments">
-            <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg px-8 py-6">
-              Ver Torneios
-            </Button>
-          </Link>
-          {user ? (
-            <Link to="/deck-builder">
-              <Button variant="secondary" className="text-lg px-8 py-6">
-                Criar Deck
-              </Button>
-            </Link>
-          ) : (
-            <Link to="/auth">
-              <Button variant="secondary" className="text-lg px-8 py-6">
-                Criar Conta
-              </Button>
-            </Link>
-          )}
+      {/* 1. SEÇÃO HERO (Permanece como está, no topo) */}
+      <HeroSection />
+
+      {/* 2. NOVO CONTAINER GRID */}
+      <div className="container mx-auto max-w-7xl px-4 py-8 mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {/* COLUNA DA ESQUERDA (PRINCIPAL) */}
+        <div className="lg:col-span-2 space-y-12">
+          <UpcomingTournaments />
+          <NewsSection />
+          <FeaturedDecks />
         </div>
-      </section>
 
-      {/* Features Section */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <FeatureCard
-            icon={<Trophy className="h-12 w-12 text-primary" />}
-            title="Torneios"
-            description="Acompanhe e participe dos próximos torneios de Yu-Gi-Oh! com inscrições simplificadas"
-          />
-          <FeatureCard
-            icon={<Layers className="h-12 w-12 text-primary" />}
-            title="Deck Builder"
-            description="Crie e salve seus decks com integração completa à API do YGOProDeck"
-          />
-          <FeatureCard
-            icon={<Users className="h-12 w-12 text-primary" />}
-            title="Perfis"
-            description="Personalize seu perfil e mostre seus melhores decks para a comunidade"
-          />
+        {/* COLUNA DA DIREITA (BARRA LATERAL) */}
+        <div className="lg:col-span-1">
+          <TopRankedPlayers />
         </div>
-      </section>
-    </div>
-  );
-};
-
-interface FeatureCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
-
-const FeatureCard = ({ icon, title, description }: FeatureCardProps) => {
-  return (
-    <div className="p-8 rounded-lg bg-gradient-card border border-border hover:shadow-glow transition-all duration-300 group">
-      <div className="mb-4 group-hover:scale-110 transition-transform">{icon}</div>
-      <h3 className="text-2xl font-bold mb-3 group-hover:text-primary transition-colors">
-        {title}
-      </h3>
-      <p className="text-muted-foreground">{description}</p>
+        
+      </div>
     </div>
   );
 };

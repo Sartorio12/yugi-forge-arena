@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -36,8 +37,12 @@ interface DeckBuilderProps {
 const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams] = useSearchParams();
 
   // State
+  const [editingDeckId, setEditingDeckId] = useState<number | null>(null);
+  const [isLoadingDeck, setIsLoadingDeck] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<CardData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -46,8 +51,76 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
   const [extraDeck, setExtraDeck] = useState<CardData[]>([]);
   const [sideDeck, setSideDeck] = useState<CardData[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
 
-  // Core Functions
+  const isExtraDeckCard = (type: string) => 
+    type.includes("Fusion") || type.includes("Synchro") || type.includes("XYZ") || type.includes("Link");
+
+  // Load deck for editing
+  useEffect(() => {
+    const deckId = searchParams.get('edit');
+    if (deckId && user) {
+      loadDeckForEditing(Number(deckId));
+    } else {
+      setIsLoadingDeck(false);
+    }
+  }, [searchParams, user]);
+
+  const loadDeckForEditing = async (deckId: number) => {
+    setIsLoadingDeck(true);
+    try {
+      const { data: deckData, error: deckError } = await supabase
+        .from('decks')
+        .select('deck_name, user_id, is_private')
+        .eq('id', deckId)
+        .single();
+
+      if (deckError || !deckData) throw new Error("Deck para edição não encontrado.");
+      if (deckData.user_id !== user?.id) throw new Error("Você não tem permissão para editar este deck.");
+
+      setDeckName(deckData.deck_name);
+      setIsPrivate(deckData.is_private);
+      setEditingDeckId(deckId);
+
+      const { data: deckCards, error: cardsError } = await supabase
+        .from('deck_cards')
+        .select('card_api_id, deck_section')
+        .eq('deck_id', deckId);
+
+      if (cardsError) throw cardsError;
+      if (!deckCards) {
+        setIsLoadingDeck(false);
+        return;
+      }
+
+      const allIds = [...new Set(deckCards.map(c => c.card_api_id))].filter(Boolean);
+      if (allIds.length === 0) {
+        setIsLoadingDeck(false);
+        return;
+      }
+
+      const response = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${allIds.join(',')}`);
+      const apiData = await response.json();
+      if (apiData.error) throw new Error("Erro ao buscar dados das cartas na API.");
+
+      const cardDataMap = new Map(apiData.data.map((c: CardData) => [String(c.id), c]));
+
+      const newMain: CardData[] = deckCards.filter(dc => dc.deck_section === 'main').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
+      const newExtra: CardData[] = deckCards.filter(dc => dc.deck_section === 'extra').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
+      const newSide: CardData[] = deckCards.filter(dc => dc.deck_section === 'side').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
+
+      setMainDeck(newMain);
+      setExtraDeck(newExtra);
+      setSideDeck(newSide);
+
+    } catch (error: any) {
+      toast({ title: "Erro ao Carregar Deck", description: error.message, variant: "destructive" });
+      navigate("/deck-builder");
+    } finally {
+      setIsLoadingDeck(false);
+    }
+  };
+
   const searchCards = async () => {
     const trimmedQuery = searchQuery.trim();
     if (!trimmedQuery) return;
@@ -62,26 +135,58 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
         fetch(portugueseUrl).then(res => res.json()),
       ]);
 
-      let englishCards: CardData[] = [];
-      if (englishResult.status === 'fulfilled' && englishResult.value.data) {
-        englishCards = englishResult.value.data;
-      }
+      const allCards: CardData[] = [];
+      const portugueseCards = new Map<string, CardData>();
 
-      const portugueseNames = new Map<string, string>();
       if (portugueseResult.status === 'fulfilled' && portugueseResult.value.data) {
-        portugueseResult.value.data.forEach((card: { id: string; name: string }) => {
-          portugueseNames.set(String(card.id), card.name);
+        portugueseResult.value.data.forEach((card: CardData) => {
+          portugueseCards.set(String(card.id), card);
         });
       }
 
-      const finalResults = englishCards.map(card => ({
-        ...card,
-        pt_name: portugueseNames.get(String(card.id)) || undefined,
-      }));
-      
-      finalResults.sort((a, b) => a.name.localeCompare(b.name));
+      if (englishResult.status === 'fulfilled' && englishResult.value.data) {
+        englishResult.value.data.forEach((card: CardData) => {
+          const ptCard = portugueseCards.get(String(card.id));
+          allCards.push({
+            ...card,
+            pt_name: ptCard ? ptCard.name : undefined,
+          });
+          portugueseCards.delete(String(card.id));
+        });
+      }
 
-      setSearchResults(finalResults);
+      portugueseCards.forEach(ptCard => {
+        allCards.push({
+          ...ptCard,
+          name: ptCard.name,
+          pt_name: undefined,
+        });
+      });
+      
+      const getSortRank = (type: string) => {
+        if (type.includes('Normal Monster')) return 0;
+        if (type.includes('Effect Monster') && !type.includes('Pendulum')) return 1;
+        if (type.includes('Pendulum')) return 2;
+        if (type.includes('Ritual')) return 3;
+        if (type.includes('Fusion')) return 4;
+        if (type.includes('Synchro')) return 5;
+        if (type.includes('XYZ')) return 6;
+        if (type.includes('Link')) return 7;
+        if (type.includes('Spell Card')) return 8;
+        if (type.includes('Trap Card')) return 9;
+        return 10;
+      };
+
+      allCards.sort((a, b) => {
+        const rankA = getSortRank(a.type);
+        const rankB = getSortRank(b.type);
+        if (rankA !== rankB) {
+          return rankA - rankB;
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+      setSearchResults(allCards);
 
     } catch (error) {
       toast({ title: "Erro", description: "Erro ao buscar cartas", variant: "destructive" });
@@ -90,34 +195,28 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
     }
   };
 
-  const addCardToDeck = (card: CardData) => {
+  const addCardToDeck = (card: CardData, section: 'main' | 'extra' | 'side') => {
     const limit = 3;
-
     const currentCopies = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.id === card.id).length;
 
     if (currentCopies >= limit) {
-      toast({
-        title: "Limite de Cópias Atingido",
-        description: `Você já possui ${currentCopies} cópias de "${card.name}". O limite é ${limit}.`,
-        variant: "destructive",
-      });
+      toast({ title: "Limite de Cópias Atingido", description: `Você já possui ${currentCopies} cópias de "${card.name}". O limite é ${limit}.`, variant: "destructive" });
       return;
     }
-    
-    const extraDeckTypes = ["Fusion Monster", "Synchro Monster", "XYZ Monster", "Link Monster"];
-    if (extraDeckTypes.includes(card.type)) {
-      if (extraDeck.length >= 15) {
-        toast({ title: "Limite atingido", description: "O Extra Deck não pode ter mais de 15 cartas.", variant: "destructive" });
-        return;
-      }
-      setExtraDeck([...extraDeck, card]);
-    } else {
-      if (mainDeck.length >= 60) {
-        toast({ title: "Limite atingido", description: "O Main Deck não pode ter mais de 60 cartas.", variant: "destructive" });
-        return;
-      }
-      setMainDeck([...mainDeck, card]);
+
+    const deckMap = {
+      main: { deck: mainDeck, setter: setMainDeck, limit: 60, name: "Main Deck" },
+      extra: { deck: extraDeck, setter: setExtraDeck, limit: 15, name: "Extra Deck" },
+      side: { deck: sideDeck, setter: setSideDeck, limit: 15, name: "Side Deck" },
+    };
+
+    const targetDeck = deckMap[section];
+    if (targetDeck.deck.length >= targetDeck.limit) {
+      toast({ title: "Limite atingido", description: `O ${targetDeck.name} não pode ter mais de ${targetDeck.limit} cartas.`, variant: "destructive" });
+      return;
     }
+
+    targetDeck.setter([...targetDeck.deck, card]);
   };
   
   const removeCard = (index: number, section: "main" | "extra" | "side") => {
@@ -133,7 +232,91 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
     setExtraDeck([]);
     setSideDeck([]);
     setDeckName("");
-  }
+    setEditingDeckId(null);
+    navigate("/deck-builder");
+  };
+
+  const exportDeck = () => {
+    if (mainDeck.length === 0 && extraDeck.length === 0 && sideDeck.length === 0) {
+      toast({ title: "Deck Vazio", description: "Não há nada para exportar.", variant: "destructive" });
+      return;
+    }
+
+    const main = '#main\n' + mainDeck.map(c => c.id).join('\n') + '\n';
+    const extra = '#extra\n' + extraDeck.map(c => c.id).join('\n') + '\n';
+    const side = '!side\n' + sideDeck.map(c => c.id).join('\n') + '\n';
+    const fileContent = main + extra + side;
+
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const sanitizedDeckName = deckName.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'deck';
+    link.download = `${sanitizedDeckName}.ydk`;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setDeckName(file.name.replace(/\.ydk$/i, ''));
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const content = e.target?.result as string;
+      const lines = content.split(/\r?\n/).map(l => l.trim());
+
+      let currentSection = '';
+      const mainIds: string[] = [];
+      const extraIds: string[] = [];
+      const sideIds: string[] = [];
+
+      for (const line of lines) {
+        if (line.startsWith('#main')) { currentSection = 'main'; continue; }
+        if (line.startsWith('#extra')) { currentSection = 'extra'; continue; }
+        if (line.startsWith('!side')) { currentSection = 'side'; continue; }
+        if (!line || line.startsWith('#') || line.startsWith('!')) continue;
+
+        if (currentSection === 'main') mainIds.push(line);
+        if (currentSection === 'extra') extraIds.push(line);
+        if (currentSection === 'side') sideIds.push(line);
+      }
+
+      const allIds = [...new Set([...mainIds, ...extraIds, ...sideIds])];
+      if (allIds.length === 0) return;
+
+      try {
+        const response = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${allIds.join(',')}`);
+        const data = await response.json();
+        if (data.error || !data.data) throw new Error("Nenhuma carta encontrada para os IDs importados.");
+
+        const cardDataMap = new Map(data.data.map((c: CardData) => [String(c.id), c]));
+
+        const newMain = mainIds.map(id => cardDataMap.get(id)).filter(Boolean) as CardData[];
+        const newExtra = extraIds.map(id => cardDataMap.get(id)).filter(Boolean) as CardData[];
+        const newSide = sideIds.map(id => cardDataMap.get(id)).filter(Boolean) as CardData[];
+
+        setMainDeck(newMain);
+        setExtraDeck(newExtra);
+        setSideDeck(newSide);
+
+        toast({ title: "Sucesso", description: "Deck importado com sucesso." });
+
+      } catch (error: any) {
+        toast({ title: "Erro de Importação", description: error.message, variant: "destructive" });
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
 
   const saveDeck = async () => {
     if (!user) {
@@ -148,34 +331,72 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
       toast({ title: "Erro", description: "O Main Deck precisa ter no mínimo 40 cartas", variant: "destructive" });
       return;
     }
+
     setIsSaving(true);
     try {
-      const { data: deck, error: deckError } = await supabase
-        .from("decks")
-        .insert({ user_id: user.id, deck_name: deckName })
-        .select()
-        .single();
-      if (deckError) throw deckError;
-      const allCards = [
-        ...mainDeck.map((card) => ({ deck_id: deck.id, card_api_id: card.id, deck_section: "main" })),
-        ...extraDeck.map((card) => ({ deck_id: deck.id, card_api_id: card.id, deck_section: "extra" })),
-        ...sideDeck.map((card) => ({ deck_id: deck.id, card_api_id: card.id, deck_section: "side" })),
+      const allCardsToInsert = [
+        ...mainDeck.map((card) => ({ card_api_id: String(card.id), deck_section: "main" })),
+        ...extraDeck.map((card) => ({ card_api_id: String(card.id), deck_section: "extra" })),
+        ...sideDeck.map((card) => ({ card_api_id: String(card.id), deck_section: "side" })),
       ];
-      const { error: cardsError } = await supabase.from("deck_cards").insert(allCards);
-      if (cardsError) throw cardsError;
-      toast({ title: "Sucesso!", description: "Deck salvo com sucesso" });
-      navigate(`/profile/${user.id}`);
+
+      if (editingDeckId) {
+        // UPDATE
+        const { error: updateError } = await supabase.from('decks').update({ deck_name: deckName.trim(), is_private: isPrivate }).eq('id', editingDeckId);
+        if (updateError) throw updateError;
+
+        const { error: deleteError } = await supabase.from('deck_cards').delete().eq('deck_id', editingDeckId);
+        if (deleteError) throw deleteError;
+
+        const cardsWithDeckId = allCardsToInsert.map(c => ({ ...c, deck_id: editingDeckId }));
+        const { error: insertError } = await supabase.from('deck_cards').insert(cardsWithDeckId);
+        if (insertError) throw insertError;
+
+        toast({ title: "Sucesso!", description: `Deck "${deckName.trim()}" atualizado!` });
+        navigate(`/profile/${user.id}`);
+
+      } else {
+        // CREATE
+        const { data: deck, error: deckError } = await supabase
+          .from("decks")
+          .insert({ user_id: user.id, deck_name: deckName.trim(), is_private: isPrivate })
+          .select()
+          .single();
+
+        if (deckError) throw deckError;
+        if (!deck) throw new Error("Falha ao criar o deck.");
+
+        const cardsWithDeckId = allCardsToInsert.map(c => ({ ...c, deck_id: deck.id }));
+        const { error: cardsError } = await supabase.from("deck_cards").insert(cardsWithDeckId);
+        if (cardsError) throw cardsError;
+
+        toast({ title: "Sucesso!", description: `Deck "${deckName.trim()}" salvo com sucesso!` });
+        navigate(`/profile/${user.id}`);
+      }
     } catch (error: any) {
-      toast({ title: "Erro", description: error.message || "Erro ao salvar deck", variant: "destructive" });
+      toast({
+        title: "Erro ao Salvar",
+        description: error.message || "Ocorreu um problema ao salvar o deck.",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
+  if (isLoadingDeck) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-4 text-lg">Carregando deck para edição...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-white">
       <Navbar user={user} onLogout={onLogout} />
-      
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".ydk" style={{ display: 'none' }} />
       <main className="container mx-auto px-4 py-8">
         <div className="space-y-4 mb-6">
           {!user && (
@@ -185,13 +406,13 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
             </div>
           )}
           <div className="flex items-center gap-2">
-            <Button variant="outline"><FileUp className="h-4 w-4 mr-2" /> Importar</Button>
-            <Button variant="outline"><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
+            <Button variant="outline" onClick={handleImportClick}><FileUp className="h-4 w-4 mr-2" /> Importar</Button>
+            <Button variant="outline" onClick={exportDeck}><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
             <Button variant="destructive" onClick={clearDeck}><Trash2 className="h-4 w-4 mr-2" /> Limpar Deck</Button>
             <div className="flex-grow"></div>
             <Button onClick={saveDeck} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700">
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-              Salvar Deck
+              {editingDeckId ? 'Atualizar Deck' : 'Salvar Deck'}
             </Button>
           </div>
           <div>
@@ -203,6 +424,10 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
               value={deckName}
               onChange={(e) => setDeckName(e.target.value)}
             />
+          </div>
+          <div className="flex items-center space-x-2 mt-2">
+            <Switch id="is-private" checked={isPrivate} onCheckedChange={setIsPrivate} />
+            <Label htmlFor="is-private">Tornar este deck privado?</Label>
           </div>
         </div>
 
@@ -217,12 +442,34 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
               <div className="bg-stone-900 p-4 rounded-lg min-h-[200px]">
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                   {mainDeck.map((card, index) => (
-                    <div key={index} className="relative group">
-                      <img src={card.card_images[0].image_url} alt={card.name} className="rounded-md w-full" />
-                      <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "main")}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <HoverCard key={`${card.id}-${index}`} openDelay={200}>
+                      <HoverCardTrigger>
+                        <div className="relative group">
+                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
+                          <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "main")}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </HoverCardTrigger>
+                      <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
+                        <div className="w-2/5">
+                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
+                        </div>
+                        <div className="w-3/5 space-y-1">
+                          <h3 className="font-bold text-md">{card.name}</h3>
+                          {card.pt_name && card.pt_name.toLowerCase() !== card.name.toLowerCase() && (
+                            <h4 className="text-sm text-gray-300 -mt-1">{card.pt_name}</h4>
+                          )}
+                          <p className="text-xs font-bold text-yellow-400">[{card.race} / {card.type}]</p>
+                          <div className="flex justify-start gap-3 text-xs pt-1">
+                            {card.level && <span>Level: {card.level}</span>}
+                            {card.atk !== undefined && <span>ATK/{card.atk}</span>}
+                            {card.def !== undefined && <span>DEF/{card.def}</span>}
+                          </div>
+                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.desc}</p>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
                   ))}
                 </div>
               </div>
@@ -236,12 +483,34 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
               <div className="bg-indigo-950 p-4 rounded-lg min-h-[100px]">
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-15 gap-2">
                   {extraDeck.map((card, index) => (
-                     <div key={index} className="relative group">
-                      <img src={card.card_images[0].image_url} alt={card.name} className="rounded-md w-full" />
-                      <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "extra")}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <HoverCard key={`${card.id}-${index}`} openDelay={200}>
+                      <HoverCardTrigger>
+                        <div className="relative group">
+                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
+                          <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "extra")}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </HoverCardTrigger>
+                      <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
+                        <div className="w-2/5">
+                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
+                        </div>
+                        <div className="w-3/5 space-y-1">
+                          <h3 className="font-bold text-md">{card.name}</h3>
+                          {card.pt_name && card.pt_name.toLowerCase() !== card.name.toLowerCase() && (
+                            <h4 className="text-sm text-gray-300 -mt-1">{card.pt_name}</h4>
+                          )}
+                          <p className="text-xs font-bold text-yellow-400">[{card.race} / {card.type}]</p>
+                          <div className="flex justify-start gap-3 text-xs pt-1">
+                            {card.level && <span>Level: {card.level}</span>}
+                            {card.atk !== undefined && <span>ATK/{card.atk}</span>}
+                            {card.def !== undefined && <span>DEF/{card.def}</span>}
+                          </div>
+                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.desc}</p>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
                   ))}
                 </div>
               </div>
@@ -255,12 +524,34 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
               <div className="bg-emerald-950 p-4 rounded-lg min-h-[100px]">
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-15 gap-2">
                   {sideDeck.map((card, index) => (
-                     <div key={index} className="relative group">
-                      <img src={card.card_images[0].image_url} alt={card.name} className="rounded-md w-full" />
-                      <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "side")}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <HoverCard key={`${card.id}-${index}`} openDelay={200}>
+                      <HoverCardTrigger>
+                        <div className="relative group">
+                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
+                          <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "side")}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </HoverCardTrigger>
+                      <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
+                        <div className="w-2/5">
+                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
+                        </div>
+                        <div className="w-3/5 space-y-1">
+                          <h3 className="font-bold text-md">{card.name}</h3>
+                          {card.pt_name && card.pt_name.toLowerCase() !== card.name.toLowerCase() && (
+                            <h4 className="text-sm text-gray-300 -mt-1">{card.pt_name}</h4>
+                          )}
+                          <p className="text-xs font-bold text-yellow-400">[{card.race} / {card.type}]</p>
+                          <div className="flex justify-start gap-3 text-xs pt-1">
+                            {card.level && <span>Level: {card.level}</span>}
+                            {card.atk !== undefined && <span>ATK/{card.atk}</span>}
+                            {card.def !== undefined && <span>DEF/{card.def}</span>}
+                          </div>
+                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.desc}</p>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
                   ))}
                 </div>
               </div>
@@ -294,20 +585,30 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                 {searchResults.map((card) => (
                   <HoverCard key={card.id} openDelay={200}>
                     <HoverCardTrigger asChild>
-                      <div onClick={() => addCardToDeck(card)} className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-800 cursor-pointer">
-                        <img src={card.card_images[0].image_url_small} alt={card.name} className="w-12 rounded-sm" />
+                      <div className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-800 cursor-pointer">
+                        <img src={card.card_images[0].image_url_small} alt={card.name} className="w-12" />
                         <div className="text-sm flex-1 min-w-0">
                           <p className="font-bold truncate">{card.name}</p>
                           {card.pt_name && card.pt_name.toLowerCase() !== card.name.toLowerCase() && (
-                            <p className="text-gray-400 truncate">{card.pt_name}</p>
+                            <p className="text-gray-400 truncate text-xs">{card.pt_name}</p>
                           )}
-                          <p className="text-muted-foreground text-xs truncate">{card.attribute} / {card.race}</p>
+                          <p className="text-muted-foreground text-xs truncate">
+                            {card.attribute ? `${card.attribute} / ` : ''}{card.race}{card.level ? ` / Level ${card.level}` : ''}
+                          </p>
+                          {card.type.includes('Monster') && (
+                            <p className="text-muted-foreground text-xs truncate">ATK/{card.atk ?? '?'} / DEF/{card.def ?? '?'}</p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1 ml-2">
+                          <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, 'main')}} disabled={isExtraDeckCard(card.type)}>M</Button>
+                          <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, 'extra')}} disabled={!isExtraDeckCard(card.type)}>E</Button>
+                          <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, 'side')}}>S</Button>
                         </div>
                       </div>
                     </HoverCardTrigger>
                     <HoverCardContent side="left" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
                       <div className="w-2/5">
-                        <img src={card.card_images[0].image_url} alt={card.name} className="rounded-md w-full" />
+                        <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
                       </div>
                       <div className="w-3/5 space-y-1">
                         <h3 className="font-bold text-md">{card.name}</h3>
@@ -335,3 +636,4 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
 };
 
 export default DeckBuilder;
+

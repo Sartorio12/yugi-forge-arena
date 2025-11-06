@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
 import { LogOut, User as UserIcon, Swords } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
 
 interface NavbarProps {
   user: User | null;
@@ -10,6 +11,7 @@ interface NavbarProps {
 
 const Navbar = ({ user, onLogout }: NavbarProps) => {
   const navigate = useNavigate();
+  const { profile, isLoading } = useProfile(user);
 
   return (
     <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -28,9 +30,28 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
                 Torneios
               </Button>
             </Link>
+            <Link to="/ranking">
+              <Button variant="ghost" className="hover:text-primary transition-colors">
+                Ranking
+              </Button>
+            </Link>
             
             {user ? (
               <>
+                {!isLoading && (profile?.role === "admin" || profile?.role === "organizer") && (
+                  <>
+                    <Link to="/dashboard/tournaments">
+                      <Button variant="ghost" className="hover:text-primary transition-colors">
+                        Gerenciar Torneios
+                      </Button>
+                    </Link>
+                    <Link to="/dashboard/news">
+                      <Button variant="ghost" className="hover:text-primary transition-colors">
+                        Gerenciar Notícias
+                      </Button>
+                    </Link>
+                  </>
+                )}
                 <Link to="/deck-builder">
                   <Button variant="ghost" className="hover:text-primary transition-colors">
                     Deck Builder
