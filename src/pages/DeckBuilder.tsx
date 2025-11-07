@@ -77,7 +77,7 @@ const BanlistIcon = ({ status }: { status: string | undefined }) => {
 };
 
 const fetchBanlist = async () => {
-  const response = await fetch("https://db.ygoprodeck.com/api/v7/banlist.php");
+  const response = await fetch("/api/banlist");
   if (!response.ok) {
     throw new Error("Failed to fetch banlist");
   }
@@ -220,7 +220,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
         return;
       }
 
-      const response = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${allIds.join(',')}&banlist=ocg`);
+      const response = await fetch(`/api/cardinfo?id=${allIds.join(',')}&banlist=ocg`);
       const apiData = await response.json();
       if (apiData.error) throw new Error("Erro ao buscar dados das cartas na API.");
 
@@ -248,12 +248,12 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
 
     setIsSearching(true);
     try {
-      const englishUrl = `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(trimmedQuery)}&banlist=ocg`;
+      const englishUrl = `/api/cardinfo?fname=${encodeURIComponent(trimmedQuery)}&banlist=ocg`;
       const englishResponse = await fetch(englishUrl);
       const englishData = await englishResponse.json();
 
       if (englishData.error) {
-        const portugueseUrl = `https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=${encodeURIComponent(trimmedQuery)}&language=pt&banlist=ocg`;
+        const portugueseUrl = `/api/cardinfo?fname=${encodeURIComponent(trimmedQuery)}&language=pt&banlist=ocg`;
         const portugueseResponse = await fetch(portugueseUrl);
         const portugueseData = await portugueseResponse.json();
 
@@ -268,7 +268,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
       const englishCards: CardData[] = englishData.data;
       const cardIds = englishCards.map(card => card.id).join(',');
 
-      const portugueseUrl = `https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${cardIds}&language=pt&banlist=ocg`;
+      const portugueseUrl = `/api/cardinfo?id=${cardIds}&language=pt&banlist=ocg`;
       const portugueseResponse = await fetch(portugueseUrl);
       const portugueseData = await portugueseResponse.json();
 
@@ -427,7 +427,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
       if (allIds.length === 0) return;
 
       try {
-        const response = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${allIds.join(',')}`);
+        const response = await fetch(`/api/cardinfo?id=${allIds.join(',')}`);
         const data = await response.json();
         if (data.error || !data.data) throw new Error("Nenhuma carta encontrada para os IDs importados.");
 
