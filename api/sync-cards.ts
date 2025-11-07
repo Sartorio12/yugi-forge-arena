@@ -57,7 +57,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
     }
 
     const cardsToUpsert = allCards.map((card: any) => {
-      const konamiId = String(card.konami_id);
+      const konamiId = String(card.id);
       const banStatus = getMasterDuelBanStatus(konamiId);
       
       // Log for a few sample cards to check ban status assignment
