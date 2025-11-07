@@ -102,18 +102,18 @@ const App = () => {
             />
 
             {/* Admin Routes */}
-            <Route element={<AdminRoute user={user} />}>
+            <Route element={<AdminRoute user={user} onLogout={handleLogout} />}>
               <Route
                 path="/dashboard/tournaments"
-                element={<TournamentDashboard user={user} onLogout={handleLogout} />}
+                element={<TournamentDashboard />}
               />
               <Route
                 path="/dashboard/tournaments/:id/manage"
-                element={<TournamentManagementPage user={user} onLogout={handleLogout} />}
+                element={<TournamentManagementPage />}
               />
               <Route
                 path="/dashboard/news"
-                element={<NewsDashboard user={user} onLogout={handleLogout} />}
+                element={<NewsDashboard />}
               />
               <Route
                 path="/dashboard/news/create"

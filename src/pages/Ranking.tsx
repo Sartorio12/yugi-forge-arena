@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
+import { Link } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
 import { Loader2, Trophy } from "lucide-react";
 import {
@@ -99,13 +100,13 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
                         #{index + 1}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-4">
+                        <Link to={`/profile/${player.user_id}`} className="flex items-center gap-4 group">
                           <Avatar>
                             <AvatarImage src={player.avatar_url} alt={player.username} />
                             <AvatarFallback>{player.username?.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{player.username}</span>
-                        </div>
+                          <span className="font-medium group-hover:underline">{player.username}</span>
+                        </Link>
                       </TableCell>
                       <TableCell className="text-right font-semibold text-primary">{player.total_points}</TableCell>
                     </TableRow>

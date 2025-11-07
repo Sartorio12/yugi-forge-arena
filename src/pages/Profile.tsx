@@ -1,11 +1,11 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import DeckCard from "@/components/DeckCard";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
-import { Loader2, User as UserIcon, Pencil } from "lucide-react";
+import { Loader2, User as UserIcon, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
       if (error) throw error;
       return data;
     },
+    enabled: !!id,
   });
 
   useEffect(() => {
@@ -109,6 +110,10 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
 
   const isLoading = profileLoading || decksLoading;
 
+  const publicDecks = decks?.filter((deck: any) => !deck.is_private) || [];
+  const privateDecks = decks?.filter((deck: any) => deck.is_private) || [];
+  const isOwner = user?.id === profile?.id;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={user} onLogout={onLogout} />
@@ -166,10 +171,24 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
               </div>
             </div>
             <div>
-              <h2 className="text-2xl font-bold mb-6">Meus Decks Salvos</h2>
-              {decks && decks.length > 0 ? (
+              {/* START: New Header (Meus Decks + Novo Deck Button) */}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-3xl font-bold tracking-tight">
+                  Meus Decks
+                </h2>
+                {isOwner && (
+                  <Button asChild>
+                    <Link to="/deck-builder">
+                      <Plus className="mr-2 h-4 w-4" /> Novo Deck
+                    </Link>
+                  </Button>
+                )}
+              </div>
+              {/* END: New Header */}
+              <h3 className="text-2xl font-bold mb-6">Decks Públicos</h3>
+              {publicDecks.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {decks.map((deck: any) => (
+                  {publicDecks.map((deck: any) => (
                     <DeckCard
                       key={deck.id}
                       id={deck.id}
@@ -181,7 +200,31 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 border-2 border-dashed border-border rounded-lg"><p className="text-muted-foreground">Nenhum deck salvo ainda.</p></div>
+                <div className="text-center py-12 border-2 border-dashed border-border rounded-lg"><p className="text-muted-foreground">
+                  {user?.id === profile.id ? "Você não tem decks públicos." : "Este usuário não tem decks públicos."}
+                </p></div>
+              )}
+
+              {user?.id === profile.id && (
+                <div className="mt-12">
+                  <h3 className="text-2xl font-bold mb-6">Decks Privados</h3>
+                  {privateDecks.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {privateDecks.map((deck: any) => (
+                        <DeckCard
+                          key={deck.id}
+                          id={deck.id}
+                          deckName={deck.deck_name}
+                          cardCount={deck.deck_cards?.[0]?.count || 0}
+                          isPrivate={deck.is_private}
+                          onDelete={handleDeleteDeck}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 border-2 border-dashed border-border rounded-lg"><p className="text-muted-foreground">Você não tem decks privados.</p></div>
+                  )}
+                </div>
               )}
             </div>
           </div>

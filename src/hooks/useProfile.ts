@@ -1,22 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
 import { Tables } from "@/integrations/supabase/types";
 
-export const useProfile = (user: User | null) => {
+export const useProfile = (userId: string | undefined) => {
   const {
     data: profile,
     isLoading,
     error,
   } = useQuery<Tables<"profiles"> | null>({
-    queryKey: ["profile", user?.id],
+    queryKey: ["profile", userId],
     queryFn: async () => {
-      if (!user) return null;
+      if (!userId) return null;
 
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", userId)
         .single();
 
       if (error) {
@@ -28,7 +27,7 @@ export const useProfile = (user: User | null) => {
       }
       return data;
     },
-    enabled: !!user, // Only run the query if the user object exists.
+    enabled: !!userId, // Only run the query if the userId is provided.
   });
 
   return { profile, isLoading, error };

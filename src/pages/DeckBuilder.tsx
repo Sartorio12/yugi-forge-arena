@@ -431,9 +431,9 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-6">
           
-          <div className="w-full lg:w-[65%] space-y-6">
+          <div className="w-full md:w-[65%] space-y-6">
             <div>
               <div className="flex justify-between items-center mb-2">
                 <h2 className="text-xl font-bold">Main Deck</h2>
@@ -558,7 +558,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
             </div>
           </div>
 
-          <div className="w-full lg:w-[35%]">
+          <div className="w-full md:w-[35%]">
             <div className="sticky top-24 space-y-4">
               <div className="flex gap-2">
                 <Input

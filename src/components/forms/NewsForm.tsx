@@ -9,12 +9,13 @@ import { TablesInsert } from "@/integrations/supabase/types";
 const newsFormSchema = z.object({
   title: z.string().min(5, { message: "O título deve ter pelo menos 5 caracteres." }),
   content: z.string().min(20, { message: "O conteúdo deve ter pelo menos 20 caracteres." }),
+  banner: z.any().optional(),
 });
 
 interface NewsFormProps {
   formId: string;
   initialData?: TablesInsert<"news_posts">;
-  onSubmit: (data: Omit<TablesInsert<"news_posts">, 'id' | 'created_at' | 'author_id'>) => void;
+  onSubmit: (data: z.infer<typeof newsFormSchema>) => void;
   isLoading?: boolean;
 }
 
@@ -41,6 +42,23 @@ export const NewsForm = ({ formId, initialData, onSubmit }: NewsFormProps) => {
             <FormItem>
               <FormLabel>Título da Postagem</FormLabel>
               <FormControl><Input placeholder="Ex: Novo formato, banlist, etc." {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="banner"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Banner da Postagem</FormLabel>
+              <FormControl>
+                <Input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

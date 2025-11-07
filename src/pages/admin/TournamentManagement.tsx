@@ -1,8 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import Navbar from "@/components/Navbar";
-import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,11 +21,6 @@ import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown } from "lucide-react
 import { toast } from "@/components/ui/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-interface TournamentManagementProps {
-  user: User | null;
-  onLogout: () => void;
-}
-
 interface Participant {
   id: number;
   total_wins_in_tournament: number;
@@ -41,7 +34,7 @@ interface Participant {
   } | null;
 }
 
-const TournamentManagementPage = ({ user, onLogout }: TournamentManagementProps) => {
+const TournamentManagementPage = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
 
@@ -101,8 +94,7 @@ const TournamentManagementPage = ({ user, onLogout }: TournamentManagementProps)
   const isLoading = isLoadingTournament || isLoadingParticipants;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar user={user} onLogout={onLogout} />
+    <>
       <main className="container mx-auto px-4 py-12">
         <Link to="/dashboard/tournaments">
           <Button variant="ghost" className="mb-8 hover:text-primary">
@@ -212,7 +204,7 @@ const TournamentManagementPage = ({ user, onLogout }: TournamentManagementProps)
           </CardContent>
         </Card>
       </main>
-    </div>
+    </>
   );
 };
 

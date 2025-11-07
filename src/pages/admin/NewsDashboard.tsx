@@ -41,30 +41,32 @@ const NewsDashboard = () => {
           {isLoading ? (
             <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
           ) : (
-            <Table>
-              <TableHeader><TableRow><TableHead>Título</TableHead><TableHead>Data de Criação</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
-              <TableBody>
-                {posts?.map(post => (
-                  <TableRow key={post.id}>
-                    <TableCell className="font-medium">{post.title}</TableCell>
-                    <TableCell>{format(new Date(post.created_at), 'dd/MM/yyyy')}</TableCell>
-                    <TableCell className="text-right">
-                      <Link to={`/dashboard/news/${post.id}/edit`}><Button variant="ghost" size="icon"><FilePenLine className="h-4 w-4" /></Button></Link>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-red-500"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader><AlertDialogTitle>Você tem certeza?</AlertDialogTitle><AlertDialogDescription>Essa ação não pode ser desfeita. Isso irá deletar permanentemente a postagem.</AlertDialogDescription></AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteMutation.mutate(post.id)} disabled={deleteMutation.isPending}>Deletar</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow><TableHead>Título</TableHead><TableHead>Data de Criação</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {posts?.map(post => (
+                    <TableRow key={post.id}>
+                      <TableCell className="font-medium">{post.title}</TableCell>
+                      <TableCell>{format(new Date(post.created_at), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell className="text-right">
+                        <Link to={`/dashboard/news/${post.id}/edit`}><Button variant="ghost" size="icon"><FilePenLine className="h-4 w-4" /></Button></Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-red-500"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>Você tem certeza?</AlertDialogTitle><AlertDialogDescription>Essa ação não pode ser desfeita. Isso irá deletar permanentemente a postagem.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(post.id)} disabled={deleteMutation.isPending}>Deletar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

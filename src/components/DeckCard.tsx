@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 interface DeckCardProps {
   id: number;
@@ -35,7 +36,11 @@ const DeckCard = ({ id, deckName, cardCount = 0, isPrivate = false, onDelete }: 
               <h3 className="font-bold text-lg group-hover:text-primary transition-colors">
                 {deckName}
               </h3>
-              {isPrivate && <Lock className="h-4 w-4 text-muted-foreground" />}
+              {isPrivate ? (
+                <Badge variant="destructive">Privado</Badge>
+              ) : (
+                <Badge variant="secondary">Público</Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">{cardCount} cartas</p>
           </div>

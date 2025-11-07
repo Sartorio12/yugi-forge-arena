@@ -12,6 +12,7 @@ interface NewsPost {
   title: string;
   content: string | null;
   created_at: string;
+  banner_url: string | null;
   profiles: {
     username: string;
     avatar_url: string;
@@ -29,6 +30,7 @@ export const NewsSection = () => {
           title,
           content,
           created_at,
+          banner_url,
           profiles ( username, avatar_url )
         `)
         .order('created_at', { ascending: false })
@@ -59,6 +61,11 @@ export const NewsSection = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post) => (
               <Card key={post.id} className="h-full flex flex-col bg-gradient-card border-border">
+                {post.banner_url && (
+                  <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                    <img src={post.banner_url} alt={post.title} className="w-full h-full object-cover" />
+                  </div>
+                )}
                 <CardHeader>
                   <CardTitle className="text-xl font-bold">{post.title}</CardTitle>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
@@ -73,10 +80,10 @@ export const NewsSection = () => {
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <p className="text-muted-foreground">
-                    {truncateText(post.content || "", 120)}
+                    {truncateText(post.content?.replace(/<[^>]+>/g, '') || "", 120)}
                   </p>
                 </CardContent>
-                <CardFooter className="flex justify-between">
+                <CardFooter className="flex justify-between mt-auto">
                   <Link to={`/news/${post.id}`} className="text-primary hover:underline">
                     Ler Mais
                   </Link>

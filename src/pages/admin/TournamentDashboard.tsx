@@ -38,19 +38,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import Navbar from "@/components/Navbar";
-import { User } from "@supabase/supabase-js";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TournamentForm } from "@/components/forms/TournamentForm";
 import { useToast } from "@/components/ui/use-toast";
 
-interface TournamentDashboardProps {
-  user: User | null;
-  onLogout: () => void;
-}
-
-const TournamentDashboard = ({ user, onLogout }: TournamentDashboardProps) => {
+const TournamentDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -182,8 +175,7 @@ const TournamentDashboard = ({ user, onLogout }: TournamentDashboardProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar user={user} onLogout={onLogout} />
+    <>
       <main className="container mx-auto px-4 py-12">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Gerenciar Torneios</h1>
@@ -198,7 +190,7 @@ const TournamentDashboard = ({ user, onLogout }: TournamentDashboardProps) => {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="border rounded-lg bg-gradient-card">
+          <div className="border rounded-lg bg-gradient-card overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -292,7 +284,7 @@ const TournamentDashboard = ({ user, onLogout }: TournamentDashboardProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };
 

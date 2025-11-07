@@ -33,10 +33,36 @@ const NewsEditorFormPage = ({ user }) => {
   const mutation = useMutation({
     mutationFn: async (postData) => {
       if (!profile) throw new Error('Perfil não encontrado.');
-      const dataToSave = { ...postData, author_id: profile.id };
+
+      let banner_url = initialData?.banner_url || null;
+
+      if (postData.banner) {
+        const file = postData.banner;
+        const filePath = `public/news-banners/${profile.id}/${Date.now()}`;
+        const { error: uploadError } = await supabase.storage
+          .from('news_content')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          throw new Error(`Falha no upload do banner: ${uploadError.message}`);
+        }
+
+        const { data: urlData } = supabase.storage.from('news_content').getPublicUrl(filePath);
+        banner_url = urlData.publicUrl;
+      }
+
+      const { banner, ...restOfPostData } = postData;
+
+      const dataToSave = {
+        ...restOfPostData,
+        author_id: profile.id,
+        banner_url: banner_url,
+      };
+
       const { error } = isEditMode
         ? await supabase.from('news_posts').update(dataToSave).eq('id', id)
         : await supabase.from('news_posts').insert(dataToSave);
+
       if (error) throw error;
     },
     onSuccess: () => {

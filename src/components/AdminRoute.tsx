@@ -2,13 +2,15 @@ import { Navigate, Outlet } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
 import { useProfile } from "@/hooks/useProfile";
 import { Loader2 } from "lucide-react";
+import Navbar from "@/components/Navbar";
 
 interface AdminRouteProps {
   user: User | null;
+  onLogout: () => void;
 }
 
-const AdminRoute = ({ user }: AdminRouteProps) => {
-  const { profile, isLoading } = useProfile(user);
+const AdminRoute = ({ user, onLogout }: AdminRouteProps) => {
+  const { profile, isLoading } = useProfile(user?.id);
 
   if (isLoading) {
     return (
@@ -29,7 +31,12 @@ const AdminRoute = ({ user }: AdminRouteProps) => {
     return <Navigate to="/" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Navbar user={user} onLogout={onLogout} />
+      <Outlet />
+    </>
+  );
 };
 
 export default AdminRoute;

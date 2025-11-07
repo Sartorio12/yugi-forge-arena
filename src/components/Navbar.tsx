@@ -3,6 +3,15 @@ import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
 import { LogOut, User as UserIcon, Swords } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface NavbarProps {
   user: User | null;
@@ -11,7 +20,7 @@ interface NavbarProps {
 
 const Navbar = ({ user, onLogout }: NavbarProps) => {
   const navigate = useNavigate();
-  const { profile, isLoading } = useProfile(user);
+  const { profile, isLoading } = useProfile(user?.id);
 
   return (
     <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -57,19 +66,39 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
                     Deck Builder
                   </Button>
                 </Link>
-                <Link to={`/profile/${user.id}`}>
-                  <Button variant="ghost" size="icon" className="hover:text-primary transition-colors">
-                    <UserIcon className="h-5 w-5" />
-                  </Button>
-                </Link>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={onLogout}
-                  className="hover:text-destructive transition-colors"
-                >
-                  <LogOut className="h-5 w-5" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.username || user?.email} />
+                        <AvatarFallback>
+                          <UserIcon />
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{profile?.username}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to={`/profile/${user.id}`}>
+                        <UserIcon className="mr-2 h-4 w-4" />
+                        <span>Meu Perfil</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sair</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <Link to="/auth">

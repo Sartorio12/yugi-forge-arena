@@ -23,6 +23,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,12 +51,12 @@ const Auth = () => {
 
       if (error) throw error;
 
+      setShowConfirmationMessage(true);
       toast({
-        title: "Conta criada!",
-        description: "Você foi registrado com sucesso.",
+        title: "Confirme seu email!",
+        description: "Enviamos um link de confirmação para o seu email. Por favor, verifique sua caixa de entrada para ativar sua conta.",
+        duration: 10000,
       });
-      
-      navigate("/");
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -150,48 +151,65 @@ const Auth = () => {
           </TabsContent>
 
           <TabsContent value="signup">
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signup-username">Nome de Usuário</Label>
-                <Input
-                  id="signup-username"
-                  type="text"
-                  placeholder="duelista123"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
+            {showConfirmationMessage ? (
+              <div className="text-center space-y-4 p-4 border border-dashed rounded-lg">
+                <h3 className="text-2xl font-bold text-primary">Quase lá!</h3>
+                <p className="text-muted-foreground">
+                  Enviamos um link de confirmação para <strong>{email}</strong>. Por favor, verifique sua caixa de entrada (e spam) para ativar sua conta.
+                </p>
+                <Button variant="outline" onClick={() => {
+                  setShowConfirmationMessage(false);
+                  setEmail('');
+                  setPassword('');
+                  setUsername('');
+                }}>
+                  Voltar
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-email">Email</Label>
-                <Input
-                  id="signup-email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-password">Senha</Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                disabled={loading}
-              >
-                {loading ? "Criando..." : "Criar Conta"}
-              </Button>
-            </form>
+            ) : (
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-username">Nome de Usuário</Label>
+                  <Input
+                    id="signup-username"
+                    type="text"
+                    placeholder="duelista123"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Senha</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                  disabled={loading}
+                >
+                  {loading ? "Criando..." : "Criar Conta"}
+                </Button>
+              </form>
+            )}
           </TabsContent>
         </Tabs>
       </Card>

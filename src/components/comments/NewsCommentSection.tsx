@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/useProfile';
@@ -74,11 +75,28 @@ export const NewsCommentSection = ({ postId, user }: NewsCommentSectionProps) =>
         <div className="space-y-6">
           {comments?.map(comment => (
             <div key={comment.id} className="flex gap-4">
-              <Avatar><AvatarImage src={comment.profiles?.avatar_url} /><AvatarFallback>{comment.profiles?.username?.substring(0, 2)}</AvatarFallback></Avatar>
+              {comment.profiles ? (
+                <Link to={`/profile/${comment.profiles.id}`}>
+                  <Avatar>
+                    <AvatarImage src={comment.profiles.avatar_url} />
+                    <AvatarFallback>{comment.profiles.username?.substring(0, 2)}</AvatarFallback>
+                  </Avatar>
+                </Link>
+              ) : (
+                <Avatar>
+                  <AvatarFallback>A</AvatarFallback>
+                </Avatar>
+              )}
               <div className="flex-1">
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="font-semibold">{comment.profiles?.username || 'Anônimo'}</span>
+                    {comment.profiles ? (
+                      <Link to={`/profile/${comment.profiles.id}`}>
+                        <span className="font-semibold hover:underline">{comment.profiles.username}</span>
+                      </Link>
+                    ) : (
+                      <span className="font-semibold">{'Anônimo'}</span>
+                    )}
                     <span className="text-xs text-muted-foreground ml-2">{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}</span>
                   </div>
                   {canDelete(comment.profiles?.id) && (
