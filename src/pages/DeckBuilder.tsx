@@ -9,7 +9,6 @@ import { Switch } from "@/components/ui/switch";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
@@ -19,20 +18,16 @@ interface CardData {
   name: string; // English name
   pt_name?: string; // Portuguese name
   type: string;
-  desc: string;
+  description: string;
   race: string;
   attribute?: string;
   atk?: number;
   def?: number;
   level?: number;
-  card_images: {
-    image_url: string;
-    image_url_small: string;
-  }[];
-  banlist_info?: {
-    ban_tcg?: string;
-    ban_ocg?: string;
-  };
+  image_url: string;
+  image_url_small: string;
+  ban_tcg?: string;
+  ban_ocg?: string;
 }
 
 interface DeckBuilderProps {
@@ -40,8 +35,8 @@ interface DeckBuilderProps {
   onLogout: () => void;
 }
 
-const BanlistIcon = ({ status }: { status: string | undefined }) => {
-  if (status === undefined) return null;
+const BanlistIcon = ({ ban_tcg }: { ban_tcg: string | undefined }) => {
+  if (ban_tcg === undefined) return null;
 
   const baseStyle: React.CSSProperties = {
     position: "absolute",
@@ -59,7 +54,7 @@ const BanlistIcon = ({ status }: { status: string | undefined }) => {
     zIndex: 10,
   };
 
-  if (status === "Forbidden") {
+  if (ban_tcg === "Forbidden") {
     return (
       <div style={{ ...baseStyle, backgroundColor: "red" }}>
         <div style={{ width: "80%", height: "3px", backgroundColor: "white", transform: "rotate(45deg)", position: "absolute" }}></div>
@@ -67,86 +62,16 @@ const BanlistIcon = ({ status }: { status: string | undefined }) => {
       </div>
     );
   }
-  if (status === "Limited") {
+  if (ban_tcg === "Limited") {
     return <div style={{ ...baseStyle, backgroundColor: "yellow" }}>1</div>;
   }
-  if (status === "Semi-Limited") {
+  if (ban_tcg === "Semi-Limited") {
     return <div style={{ ...baseStyle, backgroundColor: "cyan" }}>2</div>;
   }
   return null;
 };
 
-const fetchBanlist = async () => {
-  const response = await fetch("/api/banlist");
-  if (!response.ok) {
-    throw new Error("Failed to fetch banlist");
-  }
-  const data = await response.json();
-  const banlistMap = new Map<string, string>();
-  // Assuming the banlist API returns an array of objects with card_id and ban_status
-  // The structure of the banlist API is not explicitly known, so I'm making an educated guess.
-  // Based on the usage `banlist?.get(String(card.konami_id))`, the key should be card ID.
-  // The banlist API from ygoprodeck.com actually returns an object with 'tcg', 'ocg', 'goat' keys,
-  // each containing an array of cards with 'name', 'konami_code', 'ban_status'.
-  // I will adapt to use 'konami_code' as the key and 'ban_status' as the value.
-  // The existing code uses `card.konami_id` which is not present in `CardData` interface.
-  // I will assume `card.id` is the correct ID to use for banlist lookup.
-  // I will also assume the banlist status is directly available.
-  // Let's refine this based on the actual API response structure.
 
-  // Re-checking the YGOPRODeck API documentation for banlist.php:
-  // It returns an object with keys 'tcg', 'ocg', 'goat'. Each value is an array of cards.
-  // Each card object has 'name', 'konami_code', 'ban_status'.
-  // The existing code uses `banlist?.get(String(card.konami_id))`.
-  // The `CardData` interface has `id` and `banlist_info`.
-  // The `banlist_info` already contains `ban_tcg` and `ban_ocg`.
-  // This means the `fetchBanlist` might not be necessary if `banlist_info` is always present.
-
-  // Let's re-evaluate the `isLoadingBanlist` error.
-  // The error is `isLoadingBanlist is not defined`.
-  // The user's suggested fix is `const { data: banlistData, isLoading: isLoadingBanlist } = useQuery({ queryKey: ['banlist'], queryFn: fetchBanlist, });`
-  // This implies that a separate banlist fetch is indeed intended.
-  // The `banlist?.get(String(card.konami_id))` usage is problematic because `card.konami_id` is not in `CardData`.
-  // I will assume `card.id` should be used for the banlist lookup.
-  // And the `fetchBanlist` should return a Map where key is card ID and value is ban status.
-
-  // Let's assume the banlist API returns a flat array of cards with 'id' and 'ban_status' for simplicity,
-  // or I need to parse the 'tcg', 'ocg' structure.
-  // Given the context of Yu-Gi-Oh!, 'OCG' banlist is often used in Asia, 'TCG' in other regions.
-  // The `searchCards` function already fetches with `banlist=ocg`.
-  // So, `banlist_info.ban_ocg` is already available in `CardData`.
-
-  // This means the `banlist` map is redundant if `banlist_info` is always populated.
-  // However, the error `isLoadingBanlist is not defined` and the user's explicit instruction
-  // to add a `useQuery` for `banlist` suggests that `banlist` is meant to be a global banlist state.
-
-  // I will proceed with the user's instruction to add a `useQuery` for a global banlist.
-  // I will assume `fetchBanlist` should return a Map of card_id to ban_status (OCG).
-  // The YGOPRODeck banlist API is structured as:
-  // { "tcg": [ { "name": "...", "konami_code": "...", "ban_status": "..." } ], "ocg": [ ... ] }
-  // So, I need to parse the 'ocg' part.
-
-  const ocgBanlist = data.ocg;
-  if (ocgBanlist) {
-    ocgBanlist.forEach((card: any) => {
-      // The API provides 'konami_code' which is a string, but `card.id` is also a string.
-      // I will use `konami_code` as it's more specific to the banlist.
-      // However, the `CardData` interface does not have `konami_code`.
-      // The `CardData` interface has `id` (string) and `banlist_info.ban_ocg`.
-      // This is a discrepancy.
-
-      // Let's assume `card.id` from `CardData` matches `konami_code` from banlist API for lookup.
-      // Or, more likely, `card.id` is the primary key for cards, and `konami_code` is an alternative ID.
-      // The `banlist?.get(String(card.konami_id))` is the problematic part.
-      // `card.konami_id` is not defined in `CardData`.
-      // I will change `card.konami_id` to `card.id` in the `BanlistIcon` component and search results.
-
-      // For `fetchBanlist`, I will create a map from `konami_code` to `ban_status`.
-      banlistMap.set(String(card.konami_code), card.ban_status);
-    });
-  }
-  return banlistMap;
-};
 
 const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
   const navigate = useNavigate();
@@ -167,12 +92,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
 
-  const { data: banlist, isLoading: isLoadingBanlist, isError: isErrorBanlist } = useQuery<Map<string, string>, Error>({
-    queryKey: ['banlist'],
-    queryFn: fetchBanlist,
-    staleTime: Infinity, // Banlist data doesn't change often
-    cacheTime: Infinity,
-  });
+
 
   const isExtraDeckCard = (type: string) => 
     type.includes("Fusion") || type.includes("Synchro") || type.includes("XYZ") || type.includes("Link");
@@ -220,11 +140,14 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
         return;
       }
 
-      const response = await fetch(`/api/cardinfo?id=${allIds.join(',')}&banlist=ocg`);
-      const apiData = await response.json();
-      if (apiData.error) throw new Error("Erro ao buscar dados das cartas na API.");
+      const { data: apiData, error: fetchCardsError } = await supabase
+        .from('cards')
+        .select('*')
+        .in('id', allIds);
 
-      const cardDataMap = new Map(apiData.data.map((c: CardData) => [String(c.id), c]));
+      if (fetchCardsError || !apiData) throw new Error("Erro ao buscar dados das cartas no banco de dados.");
+
+      const cardDataMap = new Map(apiData.map((c: CardData) => [String(c.id), c]));
 
       const newMain: CardData[] = deckCards.filter(dc => dc.deck_section === 'main').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
       const newExtra: CardData[] = deckCards.filter(dc => dc.deck_section === 'extra').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
@@ -248,42 +171,14 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
 
     setIsSearching(true);
     try {
-      const englishUrl = `/api/cardinfo?fname=${encodeURIComponent(trimmedQuery)}&banlist=ocg`;
-      const englishResponse = await fetch(englishUrl);
-      const englishData = await englishResponse.json();
+      const { data: cards, error } = await supabase
+        .from('cards')
+        .select('*')
+        .or(`name.ilike.%${trimmedQuery}%,pt_name.ilike.%${trimmedQuery}%`)
+        .limit(50); // Limit search results for performance
 
-      if (englishData.error) {
-        const portugueseUrl = `/api/cardinfo?fname=${encodeURIComponent(trimmedQuery)}&language=pt&banlist=ocg`;
-        const portugueseResponse = await fetch(portugueseUrl);
-        const portugueseData = await portugueseResponse.json();
+      if (error) throw error;
 
-        if (portugueseData.data) {
-          setSearchResults(portugueseData.data);
-        } else {
-          setSearchResults([]);
-        }
-        return;
-      }
-
-      const englishCards: CardData[] = englishData.data;
-      const cardIds = englishCards.map(card => card.id).join(',');
-
-      const portugueseUrl = `/api/cardinfo?id=${cardIds}&language=pt&banlist=ocg`;
-      const portugueseResponse = await fetch(portugueseUrl);
-      const portugueseData = await portugueseResponse.json();
-
-      const portugueseNames = new Map<string, string>();
-      if (portugueseData.data) {
-        portugueseData.data.forEach((card: CardData) => {
-          portugueseNames.set(String(card.id), card.name);
-        });
-      }
-
-      const mergedCards = englishCards.map(card => ({
-        ...card,
-        pt_name: portugueseNames.get(String(card.id)),
-      }));
-      
       const getSortRank = (type: string) => {
         if (type.includes('Normal Monster')) return 0;
         if (type.includes('Effect Monster') && !type.includes('Pendulum')) return 1;
@@ -298,7 +193,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
         return 10;
       };
 
-      mergedCards.sort((a, b) => {
+      cards.sort((a, b) => {
         const rankA = getSortRank(a.type);
         const rankB = getSortRank(b.type);
         if (rankA !== rankB) {
@@ -307,17 +202,17 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
         return a.name.localeCompare(b.name);
       });
 
-      setSearchResults(mergedCards);
+      setSearchResults(cards || []);
 
-    } catch (error) {
-      toast({ title: "Erro", description: "Erro ao buscar cartas", variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Erro ao buscar cartas", variant: "destructive" });
     } finally {
       setIsSearching(false);
     }
   };
 
   const addCardToDeck = (card: CardData, section: 'main' | 'extra' | 'side') => {
-    const status = card.banlist_info?.ban_ocg;
+    const status = card.ban_tcg;
     let limit = 3;
     if (status === "Forbidden") {
       toast({ title: "Carta Banida", description: `"${card.name}" é proibida e não pode ser adicionada ao deck.`, variant: "destructive" });
@@ -427,11 +322,14 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
       if (allIds.length === 0) return;
 
       try {
-        const response = await fetch(`/api/cardinfo?id=${allIds.join(',')}`);
-        const data = await response.json();
-        if (data.error || !data.data) throw new Error("Nenhuma carta encontrada para os IDs importados.");
+        const { data: apiData, error: fetchCardsError } = await supabase
+          .from('cards')
+          .select('*')
+          .in('id', allIds);
 
-        const cardDataMap = new Map(data.data.map((c: CardData) => [String(c.id), c]));
+        if (fetchCardsError || !apiData) throw new Error("Nenhuma carta encontrada para os IDs importados no banco de dados.");
+
+        const cardDataMap = new Map(apiData.map((c: CardData) => [String(c.id), c]));
 
         const newMain = mainIds.map(id => cardDataMap.get(id)).filter(Boolean) as CardData[];
         const newExtra = extraIds.map(id => cardDataMap.get(id)).filter(Boolean) as CardData[];
@@ -576,10 +474,10 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                   {mainDeck.map((card, index) => (
                     <HoverCard key={`${card.id}-${index}`} openDelay={200}>
-                      <HoverCardTrigger>
+                      <HoverCardTrigger asChild>
                         <div className="relative group">
-                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
-                          <BanlistIcon status={banlist?.get(String(card.id))} />
+                          <img src={card.image_url} alt={card.name} className="w-full" />
+                          <BanlistIcon ban_tcg={card.ban_tcg} />
                           <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "main")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -587,7 +485,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                       </HoverCardTrigger>
                       <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
                         <div className="w-2/5">
-                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
+                          <img src={card.image_url} alt={card.name} className="w-full" />
                         </div>
                         <div className="w-3/5 space-y-1">
                           <h3 className="font-bold text-md">{card.name}</h3>
@@ -600,7 +498,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                             {card.atk !== undefined && <span>ATK/{card.atk}</span>}
                             {card.def !== undefined && <span>DEF/{card.def}</span>}
                           </div>
-                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.desc}</p>
+                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.description}</p>
                         </div>
                       </HoverCardContent>
                     </HoverCard>
@@ -618,10 +516,10 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-15 gap-2">
                   {extraDeck.map((card, index) => (
                     <HoverCard key={`${card.id}-${index}`} openDelay={200}>
-                      <HoverCardTrigger>
+                      <HoverCardTrigger asChild>
                         <div className="relative group">
-                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
-                          <BanlistIcon status={banlist?.get(String(card.id))} />
+                          <img src={card.image_url} alt={card.name} className="w-full" />
+                          <BanlistIcon ban_tcg={card.ban_tcg} />
                           <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "extra")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -629,7 +527,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                       </HoverCardTrigger>
                       <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
                         <div className="w-2/5">
-                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
+                          <img src={card.image_url} alt={card.name} className="w-full" />
                         </div>
                         <div className="w-3/5 space-y-1">
                           <h3 className="font-bold text-md">{card.name}</h3>
@@ -642,7 +540,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                             {card.atk !== undefined && <span>ATK/{card.atk}</span>}
                             {card.def !== undefined && <span>DEF/{card.def}</span>}
                           </div>
-                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.desc}</p>
+                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.description}</p>
                         </div>
                       </HoverCardContent>
                     </HoverCard>
@@ -660,10 +558,10 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-15 gap-2">
                   {sideDeck.map((card, index) => (
                     <HoverCard key={`${card.id}-${index}`} openDelay={200}>
-                      <HoverCardTrigger>
+                      <HoverCardTrigger asChild>
                         <div className="relative group">
-                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
-                          <BanlistIcon status={banlist?.get(String(card.id))} />
+                          <img src={card.image_url} alt={card.name} className="w-full" />
+                          <BanlistIcon ban_tcg={card.ban_tcg} />
                           <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "side")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -671,7 +569,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                       </HoverCardTrigger>
                       <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
                         <div className="w-2/5">
-                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
+                          <img src={card.image_url} alt={card.name} className="w-full" />
                         </div>
                         <div className="w-3/5 space-y-1">
                           <h3 className="font-bold text-md">{card.name}</h3>
@@ -684,7 +582,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                             {card.atk !== undefined && <span>ATK/{card.atk}</span>}
                             {card.def !== undefined && <span>DEF/{card.def}</span>}
                           </div>
-                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.desc}</p>
+                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.description}</p>
                         </div>
                       </HoverCardContent>
                     </HoverCard>
@@ -717,20 +615,17 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                 </select>
                 <span className="text-muted-foreground">
                   Resultados: {searchResults.length}
-                  {isLoadingBanlist && <Loader2 className="h-4 w-4 animate-spin inline-block ml-2" />}
-                  {isErrorBanlist && <AlertTriangle className="h-4 w-4 text-red-500 inline-block ml-2" />}
                 </span>
               </div>
               <div className="h-[60vh] overflow-y-auto bg-stone-900/50 p-2 rounded-lg">
                 {searchResults.map((card) => {
-                  const status = banlist?.get(String(card.id));
                   return (
                     <HoverCard key={card.id} openDelay={200}>
                       <HoverCardTrigger asChild>
                         <div className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-800 cursor-pointer">
                           <div className="relative">
-                            <img src={card.card_images[0].image_url_small} alt={card.name} className="w-12" />
-                            <BanlistIcon status={status} />
+                            <img src={card.image_url_small} alt={card.name} className="w-12" />
+                            <BanlistIcon ban_tcg={card.ban_tcg} />
                           </div>
                           <div className="text-sm flex-1 min-w-0">
                             <p className="font-bold truncate">{card.name}</p>
@@ -753,7 +648,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                       </HoverCardTrigger>
                       <HoverCardContent side="left" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
                         <div className="w-2/5">
-                          <img src={card.card_images[0].image_url} alt={card.name} className="w-full" />
+                          <img src={card.image_url} alt={card.name} className="w-full" />
                         </div>
                         <div className="w-3/5 space-y-1">
                           <h3 className="font-bold text-md">{card.name}</h3>
@@ -766,7 +661,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                             {card.atk !== undefined && <span>ATK/{card.atk}</span>}
                             {card.def !== undefined && <span>DEF/{card.def}</span>}
                           </div>
-                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.desc}</p>
+                          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.description}</p>
                         </div>
                       </HoverCardContent>
                     </HoverCard>
