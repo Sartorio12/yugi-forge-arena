@@ -43,7 +43,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   const deckId = Number(id);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { profile } = useProfile();
+  const { profile } = useProfile(user?.id);
 
   const [newComment, setNewComment] = useState("");
 
