@@ -36,7 +36,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
 
     // Helper to convert banlist quantity to string
     const getMasterDuelBanStatus = (konami_id: string): string | null => {
-      const quantity = masterDuelBanlist[konami_id];
+      const quantity = masterDuelBanlist.regulation[konami_id];
       if (quantity === 0) return "Forbidden";
       if (quantity === 1) return "Limited";
       if (quantity === 2) return "Semi-Limited";
