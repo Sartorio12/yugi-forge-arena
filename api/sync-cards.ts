@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import fetch from 'node-fetch'; // Added explicit import for fetch
 
 // Initialize Supabase client
 const SUPABASE_URL = process.env.SUPABASE_URL; // Corrected: Removed VITE_ prefix
