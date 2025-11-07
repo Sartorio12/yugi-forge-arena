@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function (request: VercelRequest, response: VercelResponse) {
   try {
-    const apiResponse = await fetch('https://db.ygoprodeck.com/api/v7/banlist.php?format=ocg');
+    const apiResponse = await fetch('https://db.ygoprodeck.com/api/v7/banlist.php?format=tcg');
     if (!apiResponse.ok) {
       throw new Error(`API responded with status ${apiResponse.status}`);
     }
