@@ -16,7 +16,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 interface CardData {
   id: string;
   name: string; // English name
-  pt_name?: string; // Portuguese name
+  pt_name?: string | null; // Portuguese name - Updated to be nullable
   type: string;
   description: string;
   race: string;
@@ -28,6 +28,7 @@ interface CardData {
   image_url_small: string;
   ban_tcg?: string;
   ban_ocg?: string;
+  ban_master_duel?: string | null; // New field for Master Duel banlist
 }
 
 interface DeckBuilderProps {
@@ -35,8 +36,8 @@ interface DeckBuilderProps {
   onLogout: () => void;
 }
 
-const BanlistIcon = ({ ban_tcg }: { ban_tcg: string | undefined }) => {
-  if (ban_tcg === undefined) return null;
+const BanlistIcon = ({ banStatus }: { banStatus: string | undefined | null }) => {
+  if (banStatus === undefined || banStatus === null) return null;
 
   const baseStyle: React.CSSProperties = {
     position: "absolute",
@@ -54,7 +55,7 @@ const BanlistIcon = ({ ban_tcg }: { ban_tcg: string | undefined }) => {
     zIndex: 10,
   };
 
-  if (ban_tcg === "Forbidden") {
+  if (banStatus === "Forbidden") {
     return (
       <div style={{ ...baseStyle, backgroundColor: "red" }}>
         <div style={{ width: "80%", height: "3px", backgroundColor: "white", transform: "rotate(45deg)", position: "absolute" }}></div>
@@ -62,10 +63,10 @@ const BanlistIcon = ({ ban_tcg }: { ban_tcg: string | undefined }) => {
       </div>
     );
   }
-  if (ban_tcg === "Limited") {
+  if (banStatus === "Limited") {
     return <div style={{ ...baseStyle, backgroundColor: "yellow" }}>1</div>;
   }
-  if (ban_tcg === "Semi-Limited") {
+  if (banStatus === "Semi-Limited") {
     return <div style={{ ...baseStyle, backgroundColor: "cyan" }}>2</div>;
   }
   return null;
@@ -212,7 +213,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
   };
 
   const addCardToDeck = (card: CardData, section: 'main' | 'extra' | 'side') => {
-    const status = card.ban_tcg;
+    const status = card.ban_master_duel; // Use Master Duel banlist
     let limit = 3;
     if (status === "Forbidden") {
       toast({ title: "Carta Banida", description: `"${card.name}" é proibida e não pode ser adicionada ao deck.`, variant: "destructive" });
@@ -477,7 +478,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                       <HoverCardTrigger asChild>
                         <div className="relative group">
                           <img src={card.image_url} alt={card.name} className="w-full" />
-                          <BanlistIcon ban_tcg={card.ban_tcg} />
+                          <BanlistIcon banStatus={card.ban_master_duel} />
                           <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "main")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -519,7 +520,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                       <HoverCardTrigger asChild>
                         <div className="relative group">
                           <img src={card.image_url} alt={card.name} className="w-full" />
-                          <BanlistIcon ban_tcg={card.ban_tcg} />
+                          <BanlistIcon banStatus={card.ban_master_duel} />
                           <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "extra")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -561,7 +562,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                       <HoverCardTrigger asChild>
                         <div className="relative group">
                           <img src={card.image_url} alt={card.name} className="w-full" />
-                          <BanlistIcon ban_tcg={card.ban_tcg} />
+                          <BanlistIcon banStatus={card.ban_master_duel} />
                           <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "side")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -625,7 +626,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                         <div className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-800 cursor-pointer">
                           <div className="relative">
                             <img src={card.image_url_small} alt={card.name} className="w-12" />
-                            <BanlistIcon ban_tcg={card.ban_tcg} />
+                            <BanlistIcon banStatus={card.ban_master_duel} />
                           </div>
                           <div className="text-sm flex-1 min-w-0">
                             <p className="font-bold truncate">{card.name}</p>

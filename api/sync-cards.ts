@@ -22,6 +22,22 @@ export default async function (request: VercelRequest, response: VercelResponse)
   }
 
   try {
+    // Fetch Master Duel banlist
+    const masterDuelBanlistResponse = await fetch('https://dawnbrandbots.github.io/yaml-yugi-limit-regulation/master-duel/current.vector.json');
+    if (!masterDuelBanlistResponse.ok) {
+      throw new Error(`Master Duel Banlist API responded with status ${masterDuelBanlistResponse.status}`);
+    }
+    const masterDuelBanlist: { [konami_id: string]: number } = await masterDuelBanlistResponse.json();
+
+    // Helper to convert banlist quantity to string
+    const getMasterDuelBanStatus = (konami_id: string): string | null => {
+      const quantity = masterDuelBanlist[konami_id];
+      if (quantity === 0) return "Forbidden";
+      if (quantity === 1) return "Limited";
+      if (quantity === 2) return "Semi-Limited";
+      return null; // Not on banlist or quantity > 2
+    };
+
     const ygoprodeckApiResponse = await fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes');
     if (!ygoprodeckApiResponse.ok) {
       throw new Error(`YGOPRODeck API responded with status ${ygoprodeckApiResponse.status}`);
@@ -35,7 +51,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
     const cardsToUpsert = allCards.map((card: any) => ({
       id: String(card.id),
       name: card.name,
-      pt_name: card.name, // YGOPRODeck API doesn't provide pt_name directly in this endpoint, will use English name for now.
+      pt_name: null, // Set to null as misc=yes endpoint does not provide pt_name
       type: card.type,
       description: card.desc,
       race: card.race,
@@ -48,6 +64,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
       image_url_small: card.card_images?.[0]?.image_url_small || '',
       ban_tcg: card.banlist_info?.ban_tcg || null,
       ban_ocg: card.banlist_info?.ban_ocg || null,
+      ban_master_duel: getMasterDuelBanStatus(String(card.konami_id)), // Populate Master Duel ban status
     }));
 
     // Upsert data into Supabase
