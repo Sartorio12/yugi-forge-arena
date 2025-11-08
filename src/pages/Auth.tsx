@@ -12,7 +12,10 @@ import { z } from "zod";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
-  password: z.string().min(6, { message: "Senha deve ter no mínimo 6 caracteres" }),
+  password: z.string()
+    .min(8, { message: "Senha deve ter no mínimo 8 caracteres" })
+    .regex(/[A-Z]/, { message: "Senha deve conter ao menos uma letra maiúscula" })
+    .regex(/[^a-zA-Z0-9]/, { message: "Senha deve conter ao menos um caractere especial" }),
   username: z.string().min(3, { message: "Nome de usuário deve ter no mínimo 3 caracteres" }).optional(),
 });
 
@@ -23,7 +26,25 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
-  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+
+  // Password schema for real-time validation
+  const passwordSchema = z.string()
+    .min(8, { message: "Senha deve ter no mínimo 8 caracteres" })
+    .regex(/[A-Z]/, { message: "Senha deve conter ao menos uma letra maiúscula" })
+    .regex(/[^a-zA-Z0-9]/, { message: "Senha deve conter ao menos um caractere especial" });
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+
+    const result = passwordSchema.safeParse(newPassword);
+    if (!result.success) {
+      setPasswordErrors(result.error.errors.map(err => err.message));
+    } else {
+      setPasswordErrors([]);
+    }
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -197,9 +218,16 @@ const Auth = () => {
                     type="password"
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={handlePasswordChange} // Use the new handler
                     required
                   />
+                  {passwordErrors.length > 0 && (
+                    <div className="text-sm text-red-500 space-y-1 mt-1">
+                      {passwordErrors.map((msg, index) => (
+                        <p key={index}>{msg}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <Button
                   type="submit"
