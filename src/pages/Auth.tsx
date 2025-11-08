@@ -19,6 +19,12 @@ const authSchema = z.object({
   username: z.string().min(3, { message: "Nome de usuário deve ter no mínimo 3 caracteres" }).optional(),
 });
 
+// Password schema for real-time validation
+const passwordSchema = z.string()
+  .min(8, { message: "Senha deve ter no mínimo 8 caracteres" })
+  .regex(/[A-Z]/, { message: "Senha deve conter ao menos uma letra maiúscula" })
+  .regex(/[^a-zA-Z0-9]/, { message: "Senha deve conter ao menos um caractere especial" });
+
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -26,13 +32,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
-
-  // Password schema for real-time validation
-  const passwordSchema = z.string()
-    .min(8, { message: "Senha deve ter no mínimo 8 caracteres" })
-    .regex(/[A-Z]/, { message: "Senha deve conter ao menos uma letra maiúscula" })
-    .regex(/[^a-zA-Z0-9]/, { message: "Senha deve conter ao menos um caractere especial" });
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPassword = e.target.value;
