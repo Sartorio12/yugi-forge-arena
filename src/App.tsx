@@ -22,6 +22,8 @@ import NewsDashboard from "./pages/admin/NewsDashboard";
 import NewsPostPage from "./pages/NewsPostPage";
 import NewsListPage from "./pages/NewsListPage";
 import NewsEditorFormPage from "./pages/admin/NewsEditorFormPage";
+import { RequestPasswordResetPage } from './pages/RequestPasswordResetPage';
+import { UpdatePasswordPage } from './pages/UpdatePasswordPage';
 
 const queryClient = new QueryClient();
 
@@ -100,6 +102,10 @@ const App = () => {
               path="/news/:id"
               element={<NewsPostPage user={user} onLogout={handleLogout} />}
             />
+
+            {/* Password Reset Routes */}
+            <Route path="/esqueci-senha" element={<RequestPasswordResetPage />} />
+            <Route path="/atualizar-senha" element={<UpdatePasswordPage />} />
 
             {/* Admin Routes */}
             <Route element={<AdminRoute user={user} onLogout={handleLogout} />}>
