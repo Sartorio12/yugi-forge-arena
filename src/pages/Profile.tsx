@@ -51,7 +51,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const { data: decks, isLoading: decksLoading } = useQuery({
     queryKey: ["user-decks", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("decks").select(`id, deck_name, is_private, deck_cards (count)`).eq("user_id", id);
+      const { data, error } = await supabase.from("decks").select(`id, deck_name, is_private, user_id, deck_cards (count)`).eq("user_id", id);
       if (error) throw error;
       return data;
     },
@@ -112,7 +112,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
 
   const publicDecks = decks?.filter((deck: any) => !deck.is_private) || [];
   const privateDecks = decks?.filter((deck: any) => deck.is_private) || [];
-  const isOwner = user?.id === profile?.id;
+  const isProfileOwner = user?.id === profile?.id; // Renamed to avoid conflict with DeckCard's isOwner
 
   return (
     <div className="min-h-screen bg-background">
@@ -138,7 +138,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                   <h1 className="text-3xl font-bold mb-2">{profile.username}</h1>
                   {profile.bio && <p className="text-muted-foreground">{profile.bio}</p>}
                 </div>
-                {user?.id === profile.id && (
+                {isProfileOwner && ( // Use isProfileOwner here
                   <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild><Button variant="outline"><Pencil className="h-4 w-4 mr-2" /> Editar Perfil</Button></DialogTrigger>
                     <DialogContent>
@@ -176,7 +176,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                 <h2 className="text-3xl font-bold tracking-tight">
                   Meus Decks
                 </h2>
-                {isOwner && (
+                {isProfileOwner && ( // Use isProfileOwner here
                   <Button asChild>
                     <Link to="/deck-builder">
                       <Plus className="mr-2 h-4 w-4" /> Novo Deck
@@ -196,6 +196,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                       cardCount={deck.deck_cards?.[0]?.count || 0}
                       isPrivate={deck.is_private}
                       onDelete={handleDeleteDeck}
+                      isOwner={user?.id === deck.user_id} // Pass isOwner prop
                     />
                   ))}
                 </div>
@@ -205,7 +206,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                 </p></div>
               )}
 
-              {user?.id === profile.id && (
+              {isProfileOwner && ( // Use isProfileOwner here
                 <div className="mt-12">
                   <h3 className="text-2xl font-bold mb-6">Decks Privados</h3>
                   {privateDecks.length > 0 ? (
@@ -218,6 +219,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                           cardCount={deck.deck_cards?.[0]?.count || 0}
                           isPrivate={deck.is_private}
                           onDelete={handleDeleteDeck}
+                          isOwner={user?.id === deck.user_id} // Pass isOwner prop
                         />
                       ))}
                     </div>

@@ -21,9 +21,10 @@ interface DeckCardProps {
   cardCount?: number;
   isPrivate?: boolean;
   onDelete: (id: number) => void;
+  isOwner: boolean; // Added isOwner prop
 }
 
-const DeckCard = ({ id, deckName, cardCount = 0, isPrivate = false, onDelete }: DeckCardProps) => {
+const DeckCard = ({ id, deckName, cardCount = 0, isPrivate = false, onDelete, isOwner }: DeckCardProps) => {
   return (
     <Card className="p-4 group transition-all duration-300 border-border bg-gradient-card flex flex-col">
       <Link to={`/deck/${id}`} className="flex-grow">
@@ -46,34 +47,36 @@ const DeckCard = ({ id, deckName, cardCount = 0, isPrivate = false, onDelete }: 
           </div>
         </div>
       </Link>
-      <div className="border-t border-border/50 mt-4 pt-4 flex justify-end gap-2">
-        <Button asChild variant="outline" size="sm">
-          <Link to={`/deck-builder?edit=${id}`}>
-            <Pencil className="h-4 w-4 mr-2" />
-            Editar
-          </Link>
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Deletar
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação não pode ser desfeita. Isso irá deletar permanentemente o deck "{deckName}" e todas as suas cartas.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={() => onDelete(id)}>Confirmar</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+      {isOwner && ( // Conditional rendering for owner-only actions
+        <div className="border-t border-border/50 mt-4 pt-4 flex justify-end gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to={`/deck-builder?edit=${id}`}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Editar
+            </Link>
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Deletar
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. Isso irá deletar permanentemente o deck "{deckName}" e todas as suas cartas.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDelete(id)}>Confirmar</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
     </Card>
   );
 };

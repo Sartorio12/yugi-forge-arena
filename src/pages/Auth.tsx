@@ -1,33 +1,32 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client";
+import { useToast } from "../hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
 import { Swords } from "lucide-react";
-import { z, ZodError } from "zod"; // Import ZodError
+import { z, ZodError } from "zod";
+
+// Esquema de validação com Zod
+const passwordSchema = z.string()
+  .min(8, "A senha deve ter no mínimo 8 caracteres")
+  .regex(/[a-z]/, "A senha deve conter pelo menos uma letra minúscula")
+  .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
+  .regex(/[0-9]/, "A senha deve conter pelo menos um número")
+  .regex(/[^a-zA-Z0-9]/, "A senha deve conter pelo menos um caractere especial");
 
 const authSchema = z.object({
-  email: z.string().email({ message: "Email inválido" }),
-  password: z.string()
-    .min(8, { message: "Senha deve ter no mínimo 8 caracteres" })
-    .regex(/[A-Z]/, { message: "Senha deve conter ao menos uma letra maiúscula" })
-    .regex(/[^a-zA-Z0-9]/, { message: "Senha deve conter ao menos um caractere especial" }),
-  username: z.string().min(3, { message: "Nome de usuário deve ter no mínimo 3 caracteres" }).optional(),
+  email: z.string().email("Email inválido"),
+  password: passwordSchema,
+  username: z.string().min(3, "O nome de usuário deve ter no mínimo 3 caracteres").optional(),
 });
 
-// Password schema for real-time validation
-const passwordSchema = z.string()
-  .min(8, { message: "Senha deve ter no mínimo 8 caracteres" })
-  .regex(/[A-Z]/, { message: "Senha deve conter ao menos uma letra maiúscula" })
-  .regex(/[^a-zA-Z0-9]/, { message: "Senha deve conter ao menos um caractere especial" });
-
-// Helper function to format Zod errors
-const formatZodError = (error: ZodError): string => {
-  return error.errors.map(err => err.message).join(". ");
+// Função para formatar erros do Zod
+const formatZodError = (error: ZodError) => {
+  return error.errors.map(err => err.message).join(", ");
 };
 
 const Auth = () => {
@@ -105,7 +104,7 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      const validatedData = authSchema.parse({ email, password });
+      const validatedData = authSchema.pick({ email: true, password: true }).parse({ email, password });
       setLoading(true);
 
       const { error } = await supabase.auth.signInWithPassword({
