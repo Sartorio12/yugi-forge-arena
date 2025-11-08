@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Switch } from "@/components/ui/switch";
 import { TablesInsert } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -41,6 +43,7 @@ const tournamentFormSchema = z.object({
   }),
   status: z.enum(["Aberto", "Fechado", "Em Andamento"], { required_error: "O status é obrigatório." }),
   registration_link: z.string().url({ message: "URL de inscrição inválida." }).optional().or(z.literal("")),
+  is_decklist_required: z.boolean().default(true),
 });
 
 interface TournamentFormProps {
@@ -70,6 +73,7 @@ export const TournamentForm = ({
       event_date: initialData?.event_date ? new Date(initialData.event_date) : undefined,
       status: initialData?.status || "Aberto",
       registration_link: initialData?.registration_link || "",
+      is_decklist_required: initialData?.is_decklist_required ?? true,
     },
   });
 
@@ -206,6 +210,26 @@ export const TournamentForm = ({
                 <Textarea placeholder="Detalhes do torneio..." {...field} rows={5} />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="is_decklist_required"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel>Exigir Decklist</FormLabel>
+                <FormDescription>
+                  Se ativado, os jogadores deverão submeter um deck para se inscrever.
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
             </FormItem>
           )}
         />

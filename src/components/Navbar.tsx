@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
@@ -13,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserSearch } from "./UserSearch"; // Import the new component
 
 interface NavbarProps {
   user: User | null;
@@ -32,6 +32,8 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
               STAFF YUGIOH
             </span>
           </Link>
+
+          <UserSearch />
 
           <div className="flex items-center gap-2">
             {user && <UserDropdown user={user} onLogout={onLogout} profile={profile} />}

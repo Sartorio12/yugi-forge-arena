@@ -153,12 +153,44 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                           <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="avatar">Avatar</Label>
-                          <Input id="avatar" type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files?.[0] || null)} />
+                          <Label htmlFor="avatar">Avatar (Max 10MB)</Label>
+                          <Input id="avatar" type="file" accept="image/*" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) {
+                              setAvatarFile(null);
+                              return;
+                            }
+                            if (file.size > 10 * 1024 * 1024) { // 10MB
+                              toast({
+                                title: "Arquivo muito grande",
+                                description: "O avatar não pode exceder 10MB.",
+                                variant: "destructive",
+                              });
+                              e.target.value = "";
+                              return;
+                            }
+                            setAvatarFile(file);
+                          }} />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="banner">Banner</Label>
-                          <Input id="banner" type="file" accept="image/*" onChange={(e) => setBannerFile(e.target.files?.[0] || null)} />
+                          <Label htmlFor="banner">Banner (Max 10MB)</Label>
+                          <Input id="banner" type="file" accept="image/*" onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) {
+                              setBannerFile(null);
+                              return;
+                            }
+                            if (file.size > 10 * 1024 * 1024) { // 10MB
+                              toast({
+                                title: "Arquivo muito grande",
+                                description: "O banner não pode exceder 10MB.",
+                                variant: "destructive",
+                              });
+                              e.target.value = "";
+                              return;
+                            }
+                            setBannerFile(file);
+                          }} />
                         </div>
                       </div>
                       <DialogFooter>

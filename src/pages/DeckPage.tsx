@@ -52,7 +52,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     queryKey: ["deck", deckId],
     queryFn: async () => {
       const { data, error } = await supabase.from("decks").select("*").eq("id", deckId).single();
-      if (error) throw new Error(`Deck com ID ${id} não encontrado.`);
+      if (error) throw new Error("Esse deck é privado");
       return data;
     },
     enabled: !!deckId,
