@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Swords } from "lucide-react";
-import { z } from "zod";
+import { z, ZodError } from "zod"; // Import ZodError
 
 const authSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -24,6 +24,11 @@ const passwordSchema = z.string()
   .min(8, { message: "Senha deve ter no mínimo 8 caracteres" })
   .regex(/[A-Z]/, { message: "Senha deve conter ao menos uma letra maiúscula" })
   .regex(/[^a-zA-Z0-9]/, { message: "Senha deve conter ao menos um caractere especial" });
+
+// Helper function to format Zod errors
+const formatZodError = (error: ZodError): string => {
+  return error.errors.map(err => err.message).join(". ");
+};
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -80,9 +85,15 @@ const Auth = () => {
         duration: 10000,
       });
     } catch (error: any) {
+      let errorMessage = "Erro ao criar conta";
+      if (error instanceof ZodError) {
+        errorMessage = formatZodError(error);
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       toast({
         title: "Erro",
-        description: error.message || "Erro ao criar conta",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -111,9 +122,15 @@ const Auth = () => {
       
       navigate("/");
     } catch (error: any) {
+      let errorMessage = "Email ou senha incorretos";
+      if (error instanceof ZodError) {
+        errorMessage = formatZodError(error);
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       toast({
         title: "Erro",
-        description: error.message || "Email ou senha incorretos",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
