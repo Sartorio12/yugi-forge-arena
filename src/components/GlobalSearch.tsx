@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "use-debounce";
-import { User as UserIcon, Loader2 } from "lucide-react";
+import { User as UserIcon, Shield, Loader2 } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -16,23 +16,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface SearchResult {
   id: string;
-  username: string;
+  name: string;
   avatar_url: string;
+  type: 'user' | 'clan';
+  tag?: string;
 }
 
-export const UserSearch = () => {
+export const GlobalSearch = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
   const { data: results, isLoading } = useQuery({
-    queryKey: ["userSearch", debouncedSearchTerm],
+    queryKey: ["globalSearch", debouncedSearchTerm],
     queryFn: async (): Promise<SearchResult[]> => {
       if (!debouncedSearchTerm.trim()) {
         return [];
       }
-      const { data, error } = await supabase.rpc("search_users", {
+      const { data, error } = await supabase.rpc("search_global", {
         search_term: debouncedSearchTerm,
       });
       if (error) {
@@ -44,8 +46,12 @@ export const UserSearch = () => {
     enabled: !!debouncedSearchTerm,
   });
 
-  const handleSelect = (userId: string) => {
-    navigate(`/profile/${userId}`);
+  const handleSelect = (result: SearchResult) => {
+    if (result.type === 'user') {
+      navigate(`/profile/${result.id}`);
+    } else if (result.type === 'clan') {
+      navigate(`/clans/${result.id}`);
+    }
     setSearchTerm("");
     setIsOpen(false);
   };
@@ -62,7 +68,7 @@ export const UserSearch = () => {
     <div className="relative flex-1 max-w-xs mx-4">
       <Command className="relative overflow-visible">
         <CommandInput
-          placeholder="Buscar usuários..."
+          placeholder="Buscar usuários ou clãs..."
           value={searchTerm}
           onValueChange={setSearchTerm}
           onFocus={() => setIsOpen(true)}
@@ -76,24 +82,27 @@ export const UserSearch = () => {
               </div>
             )}
             {!isLoading && debouncedSearchTerm && !results?.length && (
-              <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
+              <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
             )}
             {results && results.length > 0 && (
               <CommandGroup>
-                {results.map((user) => (
+                {results.map((result) => (
                   <CommandItem
-                    key={user.id}
-                    value={user.username}
-                    onSelect={() => handleSelect(user.id)}
+                    key={`${result.type}-${result.id}`}
+                    value={result.name}
+                    onSelect={() => handleSelect(result)}
                     className="flex items-center gap-3 cursor-pointer"
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar_url} alt={user.username} />
+                      <AvatarImage src={result.avatar_url} alt={result.name} />
                       <AvatarFallback>
-                        <UserIcon className="h-4 w-4" />
+                        {result.type === 'user' ? <UserIcon className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                       </AvatarFallback>
                     </Avatar>
-                    <span>{user.username}</span>
+                    <span>{result.name}</span>
+                    {result.type === 'clan' && result.tag && (
+                      <span className="text-xs text-muted-foreground">[{result.tag}]</span>
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>

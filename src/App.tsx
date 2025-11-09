@@ -24,6 +24,9 @@ import NewsListPage from "./pages/NewsListPage";
 import NewsEditorFormPage from "./pages/admin/NewsEditorFormPage";
 import { RequestPasswordResetPage } from './pages/RequestPasswordResetPage';
 import { UpdatePasswordPage } from './pages/UpdatePasswordPage';
+import CreateClanPage from "./pages/CreateClanPage";
+import ClanProfilePage from "./pages/ClanProfilePage";
+import ClanManagementPage from "./pages/ClanManagementPage";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +101,18 @@ const App = () => {
             <Route
               path="/news/:id"
               element={<NewsPostPage user={user} onLogout={handleLogout} />}
+            />
+            <Route
+              path="/clans/create"
+              element={<CreateClanPage user={user} onLogout={handleLogout} />}
+            />
+            <Route
+              path="/clans/:id"
+              element={<ClanProfilePage user={user} onLogout={handleLogout} />}
+            />
+            <Route
+              path="/clans/:id/manage"
+              element={<ClanManagementPage user={user} onLogout={handleLogout} />}
             />
 
             {/* Password Reset Routes */}
