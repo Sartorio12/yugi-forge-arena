@@ -38,7 +38,8 @@ export default async function (request: VercelRequest, response: VercelResponse)
         let ptName: string | null = null;
         try {
           // Step 2: For each English card, try to fetch its Portuguese translation
-          const ptCardResponse = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${card.id}&language=pt`);
+          // Corrected: Use konami_id as the parameter name
+          const ptCardResponse = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?konami_id=${card.id}&language=pt`);
           if (ptCardResponse.ok) {
             const { data: ptCardData } = await ptCardResponse.json();
             if (ptCardData && ptCardData.length > 0 && typeof ptCardData[0].name === 'string' && ptCardData[0].name.trim() !== '') {
