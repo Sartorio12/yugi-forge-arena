@@ -44,6 +44,10 @@ const tournamentFormSchema = z.object({
   status: z.enum(["Aberto", "Fechado", "Em Andamento"], { required_error: "O status é obrigatório." }),
   registration_link: z.string().url({ message: "URL de inscrição inválida." }).optional().or(z.literal("")),
   is_decklist_required: z.boolean().default(true),
+  max_participants: z.preprocess(
+    (val) => (val === "" ? null : Number(val)),
+    z.number().int().positive({ message: "O número máximo de participantes deve ser um inteiro positivo." }).nullable().optional()
+  ),
 });
 
 interface TournamentFormProps {
@@ -74,6 +78,7 @@ export const TournamentForm = ({
       status: initialData?.status || "Aberto",
       registration_link: initialData?.registration_link || "",
       is_decklist_required: initialData?.is_decklist_required ?? true,
+      max_participants: initialData?.max_participants || undefined,
     },
   });
 
@@ -149,6 +154,7 @@ export const TournamentForm = ({
       ...values,
       banner_image_url: finalBannerImageUrl,
       event_date: values.event_date.toISOString(),
+      max_participants: values.max_participants || null,
     };
     onSubmit(dataToSubmit);
   };
@@ -165,6 +171,22 @@ export const TournamentForm = ({
               <FormControl>
                 <Input placeholder="Nome do Torneio" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="max_participants"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Máximo de Participantes (Opcional)</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="Ex: 32" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+              </FormControl>
+              <FormDescription>
+                Deixe em branco para não definir um limite.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
