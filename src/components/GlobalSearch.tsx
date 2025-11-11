@@ -13,6 +13,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import UserDisplay from "@/components/UserDisplay";
 
 interface SearchResult {
   id: string;
