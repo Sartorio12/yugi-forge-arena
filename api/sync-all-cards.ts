@@ -24,38 +24,43 @@ export default async function (request: VercelRequest, response: VercelResponse)
     console.log('Fetching all cards from YGOPRODeck (English)...');
     const allCardsResponse = await fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php');
     if (!allCardsResponse.ok) {
-      throw new Error(`YGOPRODeck API responded with status ${allCardsResponse.status}`);
+      throw new Error(`YGOPRODeck API (English) responded with status ${allCardsResponse.status}`);
     }
     const { data: allEnglishCards } = await allCardsResponse.json();
     console.log(`Total English cards fetched: ${allEnglishCards.length}`);
 
+    // Step 2: Fetch all cards in Portuguese
+    console.log('Fetching all cards from YGOPRODeck (Portuguese)...');
+    const allPtCardsResponse = await fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?language=pt');
+    if (!allPtCardsResponse.ok) {
+      console.warn(`YGOPRODeck API (Portuguese) responded with status ${allPtCardsResponse.status}. Portuguese names might be incomplete.`);
+      // Continue even if Portuguese fetch fails, just pt_name will be null
+    }
+    const { data: allPortugueseCards } = allPtCardsResponse.ok ? await allPtCardsResponse.json() : { data: [] };
+    console.log(`Total Portuguese cards fetched: ${allPortugueseCards.length}`);
+
+    // Create a map for quick lookup of Portuguese names by card ID
+    const ptNameMap = new Map<string, string>();
+    for (const ptCard of allPortugueseCards) {
+      if (ptCard.id && ptCard.name) {
+        ptNameMap.set(String(ptCard.id), ptCard.name);
+      }
+    }
+    console.log(`Portuguese name map created with ${ptNameMap.size} entries.`);
+
     const cardsToUpsert: any[] = [];
-    const batchSize = 50; // Process in batches to avoid overwhelming the API and Vercel limits
+    const batchSize = 50; // Process in batches for Supabase upsert
 
     for (let i = 0; i < allEnglishCards.length; i += batchSize) {
       const batch = allEnglishCards.slice(i, i + batchSize);
-      await Promise.all(batch.map(async (card: any) => {
+      const processedBatch = batch.map((card: any) => {
         let ptName: string | null = null;
-        try {
-          // Step 2: For each English card, try to fetch its Portuguese translation
-          // Corrected: Use 'id' as the parameter name as per user's clarification
-          const ptCardResponse = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?id=${card.id}&language=pt`);
-          if (ptCardResponse.ok) {
-            const { data: ptCardData } = await ptCardResponse.json();
-            if (ptCardData && ptCardData.length > 0 && typeof ptCardData[0].name === 'string' && ptCardData[0].name.trim() !== '') {
-              // Only assign ptName if it's actually a different name (i.e., a translation)
-              if (ptCardData[0].name.toLowerCase() !== card.name.toLowerCase()) {
-                ptName = ptCardData[0].name;
-              }
-            }
-          } else {
-            console.warn(`Could not fetch YGOPRODeck PT info for card ID ${card.id}: ${ptCardResponse.statusText}`);
-          }
-        } catch (ptError) {
-          console.warn(`Error fetching PT name for card ID ${card.id}:`, ptError);
+        const fetchedPtName = ptNameMap.get(String(card.id));
+        if (fetchedPtName && fetchedPtName.toLowerCase() !== card.name.toLowerCase()) {
+          ptName = fetchedPtName;
         }
 
-        cardsToUpsert.push({
+        return {
           id: String(card.id),
           name: card.name,
           pt_name: ptName,
@@ -72,16 +77,18 @@ export default async function (request: VercelRequest, response: VercelResponse)
           ban_ocg: card.banlist_info?.ban_ocg || null,
           // ban_master_duel will be handled by a separate sync function
           ban_master_duel: null, 
-        });
-      }));
-      // Add a small delay between batches to respect API rate limits and Vercel limits
-      await new Promise(resolve => setTimeout(resolve, 500)); 
+        };
+      });
+      cardsToUpsert.push(...processedBatch);
+      // No need for delay here, as individual API calls are removed
     }
 
     console.log(`Finished processing details for ${cardsToUpsert.length} cards.`);
 
     // Step 3: Upsert into Supabase
     console.log(`Attempting to upsert ${cardsToUpsert.length} cards into Supabase.`);
+    // Supabase upsert also benefits from batching, but the client handles it to some extent.
+    // For very large arrays, consider breaking this into smaller upsert calls.
     const { error: upsertError } = await supabaseAdmin
       .from('cards')
       .upsert(cardsToUpsert, { onConflict: 'id' });
