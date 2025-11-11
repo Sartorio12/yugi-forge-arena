@@ -6,6 +6,7 @@ import { User } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
 
 import Navbar from "@/components/Navbar";
+import UserDisplay from "@/components/UserDisplay";
 import { Loader2, Trash2, UserX, Crown, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -51,9 +52,7 @@ const ClanManagementPage = ({ user, onLogout }: ClanManagementPageProps) => {
     enabled: !!clanId,
   });
 
-  const isLeader = clan?.owner_id === user?.id;
-
-  // Step 2: Fetch members and applications only if the user is the leader
+  // Step 2: Fetch members and applications
   const { data: members, isLoading: isLoadingMembers } = useQuery({
     queryKey: ["clanMembers", clanId],
     queryFn: async () => {
@@ -64,7 +63,7 @@ const ClanManagementPage = ({ user, onLogout }: ClanManagementPageProps) => {
       if (error) throw new Error(error.message);
       return data;
     },
-    enabled: !!clanId && isLeader,
+    enabled: !!clanId,
   });
 
   const { data: applications, isLoading: isLoadingApplications } = useQuery({
@@ -78,8 +77,11 @@ const ClanManagementPage = ({ user, onLogout }: ClanManagementPageProps) => {
       if (error) throw new Error(error.message);
       return data;
     },
-    enabled: !!clanId && isLeader,
+    enabled: !!clanId,
   });
+
+  const currentUserMembership = members ? members.find(member => member.profiles?.id === user?.id) : undefined;
+  const hasManagementPrivileges = currentUserMembership?.role === 'LEADER' || currentUserMembership?.role === 'STRATEGIST';
 
   const handleUpdateClan = async (values: ClanFormValues, iconFile: File | null, bannerFile: File | null) => {
     if (!user || !clan) return;
@@ -151,29 +153,43 @@ const ClanManagementPage = ({ user, onLogout }: ClanManagementPageProps) => {
   };
 
   const handleDeleteClan = async () => { /* ... */ };
-  const handleKickMember = async (memberId: string) => { /* ... */ };
-  const handlePromoteMember = async (memberId: string) => { /* ... */ };
+  const handleKickMember = async (memberId: string) => {
+    if (!user || !clan) return;
 
-  if (isLoadingClan || (isLeader && (isLoadingMembers || isLoadingApplications))) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-primary">
-        <Loader2 className="h-8 w-8 animate-spin mr-4" />
-        Carregando...
-      </div>
-    );
-  }
+    try {
+      const { error } = await supabase
+        .from('clan_members')
+        .delete()
+        .eq('clan_id', clanId)
+        .eq('user_id', memberId);
 
-  if (clanError || !clan || !isLeader) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-red-500">
-        <p className="text-2xl mb-4">Acesso Negado ou Clã Não Encontrado</p>
-        <p className="text-center mb-4">
-          {clanError ? clanError.message : "Você não tem permissão para gerenciar este clã ou o clã não existe."}
-        </p>
-        <Button asChild><Link to="/">Voltar para a Home</Link></Button>
-      </div>
-    );
-  }
+      if (error) throw new Error(error.message);
+
+      toast({ title: "Sucesso!", description: "Membro expulso do clã." });
+      queryClient.invalidateQueries({ queryKey: ["clanMembers", clanId] });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Ocorreu um erro ao expulsar o membro.", variant: "destructive" });
+    }
+  };
+  const handlePromoteMember = async (memberId: string, role: 'LEADER' | 'STRATEGIST') => {
+    if (!user || !clan) return;
+
+    try {
+      // Call the new RPC function to transfer ownership
+      const { error: rpcError } = await supabase.rpc('transfer_clan_ownership', {
+        p_clan_id: clanId,
+        p_new_owner_id: memberId,
+        p_new_role: role as 'LEADER' | 'STRATEGIST',
+      });
+      if (rpcError) throw new Error(`Erro ao transferir a liderança do clã: ${rpcError.message}`);
+
+      toast({ title: "Sucesso!", description: `${role === 'LEADER' ? 'Líder' : 'Estrategista'} do clã atualizado.` });
+      queryClient.invalidateQueries({ queryKey: ["clanMembers", clanId] });
+      queryClient.invalidateQueries({ queryKey: ["clan", clanId] });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Ocorreu um erro ao promover o membro.", variant: "destructive" });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -206,7 +222,7 @@ const ClanManagementPage = ({ user, onLogout }: ClanManagementPageProps) => {
                 applications.map(app => (
                   <div key={app.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
                     <Link to={`/profile/${app.profiles.id}`} className="flex items-center gap-4 group">
-                      <span>{app.profiles.username}</span>
+                      <UserDisplay profile={app.profiles} clan={clan} />
                     </Link>
                     <div className="flex items-center gap-2">
                       <Button variant="ghost" size="sm" className="text-green-500 hover:text-green-600" onClick={() => handleManageApplication(app.id, 'ACCEPTED')}>
@@ -227,15 +243,36 @@ const ClanManagementPage = ({ user, onLogout }: ClanManagementPageProps) => {
           <Card className="mb-8">
             <CardHeader><CardTitle>Gerenciar Membros</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {members?.filter(m => m.profiles.id !== user?.id).map(member => (
+              {members?.filter(m => m.profiles && m.profiles.id !== user?.id).map(member => (
                 <div key={member.profiles.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
-                  <Link to={`/profile/${member.profiles.id}`} className="flex items-center gap-4 group">
-                    <span>{member.profiles.username}</span>
+                  <Link to={`/profile/${member.profiles?.id}`} className="flex items-center gap-4 group">
+                    <UserDisplay profile={member.profiles} clan={clan} />
                   </Link>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handlePromoteMember(member.profiles.id)}>
-                      <Crown className="h-4 w-4 mr-2" /> Promover a Líder
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Crown className="h-4 w-4 mr-2" /> Promover
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Promover Membro</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Selecione a função para o membro promovido.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handlePromoteMember(member.profiles.id, 'LEADER')}>
+                            Promover a Líder
+                          </AlertDialogAction>
+                          <AlertDialogAction onClick={() => handlePromoteMember(member.profiles.id, 'STRATEGIST')}>
+                            Promover a Estrategista
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                     <Button variant="destructive" size="sm" onClick={() => handleKickMember(member.profiles.id)}>
                       <UserX className="h-4 w-4 mr-2" /> Expulsar
                     </Button>

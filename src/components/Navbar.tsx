@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
 import { LogOut, User as UserIcon, Swords, Menu, Shield } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GlobalSearch } from "./GlobalSearch";
+import UserDisplay from "./UserDisplay";
 
 interface NavbarProps {
   user: User | null;
@@ -21,6 +24,19 @@ interface NavbarProps {
 
 const Navbar = ({ user, onLogout }: NavbarProps) => {
   const { profile } = useProfile(user?.id);
+  const { data: clan } = useQuery({
+    queryKey: ["user-clan", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from("clan_members")
+        .select("clans(*)")
+        .eq("user_id", user.id)
+        .single();
+      return data?.clans;
+    },
+    enabled: !!user?.id,
+  });
 
   return (
     <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -36,7 +52,7 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
           <GlobalSearch />
 
           <div className="flex items-center gap-2">
-            {user && <UserDropdown user={user} onLogout={onLogout} profile={profile} />}
+            {user && <UserDropdown user={user} onLogout={onLogout} profile={profile} clan={clan} />}
             <NavMenu user={user} profile={profile} />
           </div>
         </div>
@@ -45,9 +61,7 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
   );
 };
 
-const UserDropdown = ({ user, onLogout, profile }) => {
-  const userClan = profile?.clan_members?.[0]?.clans;
-
+const UserDropdown = ({ user, onLogout, profile, clan }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -63,7 +77,9 @@ const UserDropdown = ({ user, onLogout, profile }) => {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{profile?.username}</p>
+            <p className="text-sm font-medium leading-none">
+              {profile && <UserDisplay profile={profile} clan={clan} />}
+            </p>
             <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
           </div>
         </DropdownMenuLabel>
@@ -75,9 +91,9 @@ const UserDropdown = ({ user, onLogout, profile }) => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {userClan ? (
+        {clan ? (
           <DropdownMenuItem asChild>
-            <Link to={`/clans/${userClan.id}`}>
+            <Link to={`/clans/${clan.id}`}>
               <Shield className="mr-2 h-4 w-4" />
               <span>Meu Clã</span>
             </Link>
@@ -100,8 +116,6 @@ const UserDropdown = ({ user, onLogout, profile }) => {
 };
 
 const NavMenu = ({ user, profile }) => {
-  const userClan = profile?.clan_members?.[0]?.clans;
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

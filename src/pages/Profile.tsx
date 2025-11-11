@@ -13,6 +13,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 
+interface Deck {
+  id: number;
+  deck_name: string;
+  is_private: boolean;
+  user_id: string;
+  deck_cards: { count: number }[];
+}
+
+import { Profile } from "@/hooks/useProfile";
+import UserDisplay from "@/components/UserDisplay";
+
 interface ProfileProps {
   user: User | null;
   onLogout: () => void;
@@ -20,8 +31,12 @@ interface ProfileProps {
 
 const Profile = ({ user, onLogout }: ProfileProps) => {
   const { id } = useParams();
+  console.log("Profile page ID:", id);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   // State for edit modal
   const [open, setOpen] = useState(false);
@@ -31,12 +46,36 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["profile", id],
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!id) return;
+      setProfileLoading(true);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+      }
+      setProfile(data);
+      setProfileLoading(false);
+    };
+
+    fetchProfile();
+  }, [id]);
+
+  const { data: clan, isLoading: clanLoading } = useQuery({
+    queryKey: ["user-clan", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", id).single();
-      if (error) throw error;
-      return data;
+      if (!id) return null;
+      const { data } = await supabase
+        .from("clan_members")
+        .select("clans(*)")
+        .eq("user_id", id)
+        .single();
+      return data?.clans;
     },
     enabled: !!id,
   });
@@ -48,12 +87,12 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
     }
   }, [profile]);
 
-  const { data: decks, isLoading: decksLoading } = useQuery({
+  const { data: decks, isLoading: decksLoading } = useQuery<Deck[]>({
     queryKey: ["user-decks", id],
     queryFn: async () => {
       const { data, error } = await supabase.from("decks").select(`id, deck_name, is_private, user_id, deck_cards (count)`).eq("user_id", id);
       if (error) throw error;
-      return data;
+      return data as Deck[];
     },
   });
 
@@ -65,7 +104,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
       if (deckError) throw deckError;
       toast({ title: "Sucesso", description: "Deck deletado com sucesso." });
       queryClient.invalidateQueries({ queryKey: ["user-decks", id] });
-    } catch (error: any) {
+    } catch (error: Error) {
       toast({ title: "Erro", description: error.message || "Falha ao deletar o deck.", variant: "destructive" });
     }
   };
@@ -97,18 +136,18 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
       if (error) throw error;
 
       toast({ title: "Sucesso!", description: "Perfil atualizado." });
-      queryClient.invalidateQueries({ queryKey: ["profile", id] });
+      // queryClient.invalidateQueries({ queryKey: ["profile", id] });
       setOpen(false);
       setAvatarFile(null);
       setBannerFile(null);
-    } catch (error: any) {
+    } catch (error: Error) {
       toast({ title: "Erro", description: error.message || "Falha ao atualizar o perfil.", variant: "destructive" });
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const isLoading = profileLoading || decksLoading;
+  const isLoading = profileLoading || decksLoading || clanLoading;
 
   const publicDecks = decks?.filter((deck: any) => !deck.is_private) || [];
   const privateDecks = decks?.filter((deck: any) => deck.is_private) || [];
@@ -135,7 +174,9 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                   )}
                 </div>
                 <div className="flex-1 md:pt-12">
-                  <h1 className="text-3xl font-bold mb-2">{profile.username}</h1>
+                  <h1 className="text-3xl font-bold mb-2">
+                    <UserDisplay profile={profile} clan={clan} />
+                  </h1>
                   {profile.bio && <p className="text-muted-foreground">{profile.bio}</p>}
                 </div>
                 {isProfileOwner && ( // Use isProfileOwner here
@@ -203,12 +244,11 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
               </div>
             </div>
             <div>
-              {/* START: New Header (Meus Decks + Novo Deck Button) */}
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-bold tracking-tight">
                   Meus Decks
                 </h2>
-                {isProfileOwner && ( // Use isProfileOwner here
+                {isProfileOwner && ( 
                   <Button asChild>
                     <Link to="/deck-builder">
                       <Plus className="mr-2 h-4 w-4" /> Novo Deck
@@ -216,19 +256,18 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                   </Button>
                 )}
               </div>
-              {/* END: New Header */}
               <h3 className="text-2xl font-bold mb-6">Decks Públicos</h3>
               {publicDecks.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {publicDecks.map((deck: any) => (
+                  {publicDecks.map((deck) => (
                     <DeckCard
                       key={deck.id}
                       id={deck.id}
                       deckName={deck.deck_name}
-                      cardCount={deck.deck_cards?.[0]?.count || 0}
+                      cardCount={deck.deck_cards && deck.deck_cards.length > 0 ? deck.deck_cards[0].count : 0}
                       isPrivate={deck.is_private}
                       onDelete={handleDeleteDeck}
-                      isOwner={user?.id === deck.user_id} // Pass isOwner prop
+                      isOwner={user?.id === deck.user_id} 
                     />
                   ))}
                 </div>
@@ -238,20 +277,20 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                 </p></div>
               )}
 
-              {isProfileOwner && ( // Use isProfileOwner here
+              {isProfileOwner && ( 
                 <div className="mt-12">
                   <h3 className="text-2xl font-bold mb-6">Decks Privados</h3>
                   {privateDecks.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {privateDecks.map((deck: any) => (
+                      {privateDecks.map((deck) => (
                         <DeckCard
                           key={deck.id}
                           id={deck.id}
                           deckName={deck.deck_name}
-                          cardCount={deck.deck_cards?.[0]?.count || 0}
+                          cardCount={deck.deck_cards && deck.deck_cards.length > 0 ? deck.deck_cards[0].count : 0}
                           isPrivate={deck.is_private}
                           onDelete={handleDeleteDeck}
-                          isOwner={user?.id === deck.user_id} // Pass isOwner prop
+                          isOwner={user?.id === deck.user_id} 
                         />
                       ))}
                     </div>

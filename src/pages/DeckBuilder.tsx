@@ -175,7 +175,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
       const { data: cards, error } = await supabase
         .from('cards')
         .select('*')
-        .or(`name.ilike.%${trimmedQuery}%,pt_name.ilike.%${trimmedQuery}%`)
+        .or(`name.ilike.%${trimmedQuery.toLowerCase()}%,pt_name.ilike.%${trimmedQuery.toLowerCase()}%`)
         .limit(50); // Limit search results for performance
 
       if (error) throw error;

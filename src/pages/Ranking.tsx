@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import UserDisplay from "@/components/UserDisplay";
 
 interface RankingPageProps {
   user: User | null;
@@ -32,17 +33,14 @@ interface PlayerRanking {
   avatar_url: string;
   total_wins: number;
   total_points: number;
+  clan_tag: string | null;
 }
 
 const RankingPage = ({ user, onLogout }: RankingPageProps) => {
   const { data: rankings, isLoading } = useQuery({
     queryKey: ["playerRankings"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("player_rankings_view")
-        .select("*")
-        .gt("total_points", 0);
-
+      const { data, error } = await supabase.rpc("get_player_rankings");
       if (error) throw error;
       return data as PlayerRanking[];
     },
@@ -105,7 +103,9 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
                             <AvatarImage src={player.avatar_url} alt={player.username} />
                             <AvatarFallback>{player.username?.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <span className="font-medium group-hover:underline">{player.username}</span>
+                          <span className="font-medium group-hover:underline">
+                            <UserDisplay profile={player} clan={player.clan_tag ? { tag: player.clan_tag } : null} />
+                          </span>
                         </Link>
                       </TableCell>
                       <TableCell className="text-right font-semibold text-primary">{player.total_points}</TableCell>

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { Loader2, Trophy } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,27 +10,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import UserDisplay from "./UserDisplay";
 
 interface PlayerRanking {
   user_id: string;
   username: string;
   avatar_url: string;
   total_points: number;
+  clan_tag: string | null;
 }
 
 export const TopRankedPlayers = () => {
   const { data: players, isLoading } = useQuery({
     queryKey: ["topRankedPlayers"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("player_rankings_view")
-        .select("user_id, username, avatar_url, total_points")
-        .gt("total_points", 0)
-        .order("total_points", { ascending: false })
-        .limit(5);
-
+      const { data, error } = await supabase.rpc("get_top_ranked_players");
       if (error) throw error;
       return data as PlayerRanking[];
     },
@@ -82,7 +78,9 @@ export const TopRankedPlayers = () => {
                             <AvatarImage src={player.avatar_url} alt={player.username} />
                             <AvatarFallback>{player.username?.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{player.username}</span>
+                          <span className="font-medium">
+                            <UserDisplay profile={player} clan={player.clan_tag ? { tag: player.clan_tag } : null} />
+                          </span>
                         </Link>
                       </TableCell>
                       <TableCell className="text-right font-semibold text-primary">{player.total_points}</TableCell>

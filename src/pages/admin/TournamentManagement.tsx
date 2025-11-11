@@ -130,7 +130,7 @@ const TournamentManagementPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {participants.map((p) => (
+                  {participants.sort((a, b) => a.id - b.id).map((p) => (
                     <TableRow key={p.id}>
                       <TableCell>
                         <div className="flex items-center gap-4">

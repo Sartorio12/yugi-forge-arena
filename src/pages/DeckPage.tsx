@@ -38,6 +38,19 @@ interface Comment {
   } | null;
 }
 
+interface Deck {
+  id: number;
+  deck_name: string;
+  description: string | null;
+  is_private: boolean;
+  created_at: string;
+  user_id: string;
+  profiles: {
+    username: string;
+    avatar_url: string;
+  } | null;
+}
+
 const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   const { id } = useParams<{ id: string }>();
   const deckId = Number(id);
@@ -48,10 +61,10 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   const [newComment, setNewComment] = useState("");
 
   // --- QUERIES ---
-  const { data: deck, isLoading: isLoadingDeck, error: deckError } = useQuery({
+  const { data: deck, isLoading: isLoadingDeck, error: deckError } = useQuery<Deck>({
     queryKey: ["deck", deckId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("decks").select("*").eq("id", deckId).single();
+      const { data, error } = await supabase.from("decks").select("*, profiles(username, avatar_url)").eq("id", deckId).single();
       if (error) throw new Error("Esse deck é privado");
       return data;
     },
@@ -95,7 +108,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("deck_comments")
-        .select("*, profiles (username, avatar_url)")
+        .select("*, profiles (username, avatar_url, clans(tag))")
         .eq("deck_id", deckId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -180,6 +193,14 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
         <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
           {deck?.deck_name}
         </h1>
+        {deck?.profiles && (
+          <p className="text-lg text-muted-foreground mb-4">
+            Criado por:{" "}
+            <Link to={`/profile/${deck.user_id}`} className="text-primary hover:underline">
+              {deck.profiles.username}
+            </Link>
+          </p>
+        )}
         {deck?.is_private && <p className="text-yellow-400 mb-8">Este deck é privado.</p>}
 
         <div className="space-y-8">
@@ -246,7 +267,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                         <div className="flex-grow">
                           <div className="flex items-center justify-between">
                             <div>
-                              <span className="font-bold">{comment.profiles?.username || "Usuário"}</span>
+                              <UserDisplay profile={comment.profiles} clan={comment.profiles.clans} />
                               <span className="text-xs text-muted-foreground ml-2">
                                 {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}
                               </span>

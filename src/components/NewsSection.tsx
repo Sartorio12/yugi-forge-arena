@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import UserDisplay from "./UserDisplay";
 
 interface NewsPost {
   id: number;
@@ -31,7 +32,7 @@ export const NewsSection = () => {
           content,
           created_at,
           banner_url,
-          profiles ( username, avatar_url )
+          profiles ( username, avatar_url, clans(tag) )
         `)
         .order('created_at', { ascending: false })
         .limit(3);
@@ -73,7 +74,7 @@ export const NewsSection = () => {
                       <AvatarImage src={post.profiles?.avatar_url || undefined} />
                       <AvatarFallback>{post.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span>{post.profiles?.username || "Admin"}</span>
+                    <UserDisplay profile={post.profiles} clan={post.profiles.clans && post.profiles.clans.length > 0 ? post.profiles.clans[0] : null} />
                     <span>•</span>
                     <span>{format(new Date(post.created_at), "dd/MM/yy", { locale: ptBR })}</span>
                   </div>

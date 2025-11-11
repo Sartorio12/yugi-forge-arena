@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
+import UserDisplay from "@/components/UserDisplay";
 
 interface ClanProfilePageProps {
   user: User | null;
@@ -41,17 +42,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
   const { data: members, isLoading: isLoadingMembers } = useQuery({
     queryKey: ["clanMembers", clanId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clan_members")
-        .select(`
-          role,
-          profiles (
-            id,
-            username,
-            avatar_url
-          )
-        `)
-        .eq("clan_id", clanId);
+      const { data, error } = await supabase.rpc('get_clan_members', { p_clan_id: clanId });
       if (error) throw new Error(error.message);
       return data;
     },
@@ -79,9 +70,19 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
   });
 
   const isLoading = isLoadingClan || isLoadingMembers || isLoadingApplication;
-  const currentUserMemberInfo = members?.find(m => m.profiles?.id === user?.id);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-primary">
+        <Loader2 className="h-8 w-8 animate-spin mr-4" />
+        Carregando Clã...
+      </div>
+    );
+  }
+
+  const currentUserMemberInfo = members?.find(m => m.id === user?.id);
   const isMember = !!currentUserMemberInfo;
-  const isLeader = currentUserMemberInfo?.role === 'LEADER';
+  const hasManagementPrivileges = (user?.id === clan?.owner_id) || (currentUserMemberInfo?.role === 'STRATEGIST');
   const hasPendingApplication = application?.status === 'PENDING';
 
   const handleApply = async () => {
@@ -106,15 +107,6 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-primary">
-        <Loader2 className="h-8 w-8 animate-spin mr-4" />
-        Carregando Clã...
-      </div>
-    );
-  }
-
   if (!clan) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-red-500">
@@ -124,7 +116,8 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
     );
   }
 
-  const leader = members?.find(m => m.role === 'LEADER');
+  const leader = members?.find(m => m.id === clan?.owner_id);
+  const strategists = members?.filter(m => m.role === 'STRATEGIST' && m.id !== clan?.owner_id);
   const regularMembers = members?.filter(m => m.role === 'MEMBER');
 
   return (
@@ -159,7 +152,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                 <p className="text-muted-foreground mt-2">{clan.description}</p>
               </div>
               <div className="flex items-center gap-2">
-                {isLeader && (
+                {hasManagementPrivileges && (
                   <Button asChild variant="outline">
                     <Link to={`/clans/${clanId}/manage`}>
                       <Settings className="mr-2 h-4 w-4" />
@@ -195,12 +188,14 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                   {/* Leader */}
                   {leader && (
                     <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
-                      <Link to={`/profile/${leader.profiles.id}`} className="flex items-center gap-4 group">
+                      <Link to={`/profile/${leader.id}`} className="flex items-center gap-4 group">
                         <Avatar>
-                          <AvatarImage src={leader.profiles.avatar_url} />
+                          <AvatarImage src={leader.avatar_url} />
                           <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
                         </Avatar>
-                        <span className="font-medium group-hover:text-primary transition-colors">{leader.profiles.username}</span>
+                        <span className="font-medium group-hover:text-primary transition-colors">
+                          <UserDisplay profile={{ ...leader, clan: { tag: leader.clan_tag } }} />
+                        </span>
                       </Link>
                       <div className="flex items-center gap-2 text-yellow-400">
                         <ShieldCheck className="h-5 w-5" />
@@ -208,15 +203,35 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                       </div>
                     </div>
                   )}
-                  {/* Members */}
-                  {regularMembers && regularMembers.map(member => (
-                     <div key={member.profiles.id} className="flex items-center justify-between p-3 rounded-md">
-                       <Link to={`/profile/${member.profiles.id}`} className="flex items-center gap-4 group">
+                  {/* Strategists */}
+                  {strategists && strategists.map(strategist => (
+                     <div key={strategist.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
+                       <Link to={`/profile/${strategist.id}`} className="flex items-center gap-4 group">
                          <Avatar>
-                           <AvatarImage src={member.profiles.avatar_url} />
+                           <AvatarImage src={strategist.avatar_url} />
                            <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
                          </Avatar>
-                         <span className="font-medium group-hover:text-primary transition-colors">{member.profiles.username}</span>
+                         <span className="font-medium group-hover:text-primary transition-colors">
+                           <UserDisplay profile={{ ...strategist, clan: { tag: strategist.clan_tag } }} />
+                         </span>
+                       </Link>
+                       <div className="flex items-center gap-2 text-blue-400"> {/* Use a different color for strategists */}
+                         <ShieldCheck className="h-5 w-5" />
+                         <span className="font-semibold">Estrategista</span>
+                       </div>
+                     </div>
+                  ))}
+                  {/* Members */}
+                  {regularMembers && regularMembers.map(member => (
+                     <div key={member.id} className="flex items-center justify-between p-3 rounded-md">
+                       <Link to={`/profile/${member.id}`} className="flex items-center gap-4 group">
+                         <Avatar>
+                           <AvatarImage src={member.avatar_url} />
+                           <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
+                         </Avatar>
+                         <span className="font-medium group-hover:text-primary transition-colors">
+                           <UserDisplay profile={{ ...member, clan: { tag: member.clan_tag } }} />
+                         </span>
                        </Link>
                        <div className="flex items-center gap-2 text-muted-foreground">
                          <Shield className="h-5 w-5" />

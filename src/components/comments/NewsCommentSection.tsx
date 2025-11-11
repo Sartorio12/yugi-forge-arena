@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import UserDisplay from '../UserDisplay';
 
 interface NewsCommentSectionProps {
   postId: number;
@@ -18,7 +19,7 @@ interface NewsCommentSectionProps {
 }
 
 const fetchComments = async (postId) => {
-  const { data, error } = await supabase.from('news_comments').select(`id, comment_text, created_at, profiles ( id, username, avatar_url )`).eq('post_id', postId).order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('news_comments').select(`id, comment_text, created_at, profiles ( id, username, avatar_url, clans(tag) )`).eq('post_id', postId).order('created_at', { ascending: false });
   if (error) throw error;
   return data;
 };
@@ -92,7 +93,9 @@ export const NewsCommentSection = ({ postId, user }: NewsCommentSectionProps) =>
                   <div>
                     {comment.profiles ? (
                       <Link to={`/profile/${comment.profiles.id}`}>
-                        <span className="font-semibold hover:underline">{comment.profiles.username}</span>
+                        <span className="font-semibold hover:underline">
+                          <UserDisplay profile={{ ...comment.profiles, clan: comment.profiles.clans }} />
+                        </span>
                       </Link>
                     ) : (
                       <span className="font-semibold">{'Anônimo'}</span>

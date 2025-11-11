@@ -99,10 +99,7 @@ export const GlobalSearch = () => {
                         {result.type === 'user' ? <UserIcon className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                       </AvatarFallback>
                     </Avatar>
-                    <span>{result.name}</span>
-                    {result.type === 'clan' && result.tag && (
-                      <span className="text-xs text-muted-foreground">[{result.tag}]</span>
-                    )}
+                    <UserDisplay profile={{ ...result, username: result.name }} clan={result.tag ? { tag: result.tag } : null} />
                   </CommandItem>
                 ))}
               </CommandGroup>

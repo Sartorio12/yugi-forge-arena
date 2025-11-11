@@ -10,6 +10,7 @@ import { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 import { NewsLikeButton } from '@/components/likes/NewsLikeButton';
 import { NewsCommentSection } from '@/components/comments/NewsCommentSection';
+import UserDisplay from "@/components/UserDisplay";
 
 interface NewsPostPageProps {
   user: User | null;
@@ -17,7 +18,9 @@ interface NewsPostPageProps {
 }
 
 const fetchNewsPost = async (postId) => {
-  const { data, error } = await supabase.from("news_posts").select(`id, title, content, created_at, profiles ( username, avatar_url )`).eq("id", postId).single();
+  const { data, error } = await supabase.from("news_posts").select(`id, title, content, created_at, profiles ( username, avatar_url, clans(tag) )`).eq("id", postId).single();
+  console.log("fetchNewsPost data:", data);
+  console.log("fetchNewsPost error:", error);
   if (error) throw error;
   return data;
 };
@@ -40,7 +43,9 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
               {post.profiles && (
                 <>
                   <Avatar className="h-8 w-8"><AvatarImage src={post.profiles.avatar_url} /><AvatarFallback>{post.profiles.username?.substring(0, 2)}</AvatarFallback></Avatar>
-                  <span>{post.profiles.username}</span>
+                  <span>
+                    <UserDisplay profile={post.profiles} clan={post.profiles.clans && post.profiles.clans.length > 0 ? post.profiles.clans[0] : null} />
+                  </span>
                   <span>•</span>
                 </>
               )}

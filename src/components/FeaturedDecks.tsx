@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Loader2, Layers } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import UserDisplay from "./UserDisplay";
 
 interface Deck {
   id: number;
@@ -20,7 +21,7 @@ export const FeaturedDecks = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("decks")
-        .select("id, deck_name, profiles ( username, avatar_url )")
+        .select("id, deck_name, profiles ( username, avatar_url, clans(tag) )")
         .eq("is_private", false) // <<< ADIÇÃO CRUCIAL
         .order("created_at", { ascending: false })
         .limit(4);
@@ -57,7 +58,7 @@ export const FeaturedDecks = () => {
                           <AvatarImage src={deck.profiles.avatar_url} alt={deck.profiles.username} />
                           <AvatarFallback>{deck.profiles.username?.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <span>por {deck.profiles.username}</span>
+                        <UserDisplay profile={deck.profiles} clan={deck.profiles.clans && deck.profiles.clans.length > 0 ? deck.profiles.clans[0] : null} />
                       </div>
                     ) : (
                       <span className="text-sm text-muted-foreground">por Usuário Desconhecido</span>
