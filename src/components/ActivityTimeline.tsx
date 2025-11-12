@@ -27,8 +27,8 @@ export const ActivityTimeline = () => {
         // Fetch recent user registrations
         const { data: users, error: userError } = await supabase
           .from("profiles")
-          .select("id, username, created_at")
-          .order("created_at", { ascending: false })
+          .select("id, username, updated_at")
+          .order("updated_at", { ascending: false })
           .limit(5);
         if (userError) console.error("Error fetching users:", userError);
         (users || []).forEach((user) =>
@@ -36,7 +36,7 @@ export const ActivityTimeline = () => {
             id: `user-${user.id}`,
             type: "user_registration",
             message: `Novo usuário: ${user.username}`,
-            timestamp: user.created_at,
+            timestamp: user.updated_at,
             link: `/profile/${user.id}`,
           })
         );

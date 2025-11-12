@@ -30,12 +30,20 @@ import { supabase } from '../../integrations/supabase/client';
 interface Participant {
   id: number;
   total_wins_in_tournament: number;
-  deck_id: number | null;
-  deck_name: string | null;
-  profile_id: string | null;
-  profile_username: string | null;
-  profile_avatar_url: string | null;
-  clan_tag: string | null;
+  decks: {
+    id: number;
+    deck_name: string;
+  } | null;
+  profiles: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+    clan_members: {
+      clans: {
+        tag: string;
+      } | null;
+    }[] | null;
+  } | null;
 }
 
 const TournamentManagementPage = () => {
@@ -58,21 +66,33 @@ const TournamentManagementPage = () => {
   const { data: participants, isLoading: isLoadingParticipants } = useQuery({
     queryKey: ["tournamentParticipantsManagement", id],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase.rpc("get_tournament_participants", {
-          p_tournament_id: Number(id),
-        });
+      const { data, error } = await supabase
+        .from("tournament_participants")
+        .select(`
+          id,
+          total_wins_in_tournament,
+          decks (
+            id,
+            deck_name
+          ),
+          profiles (
+            id,
+            username,
+            avatar_url,
+            clan_members (
+              clans (
+                tag
+              )
+            )
+          )
+        `)
+        .eq("tournament_id", Number(id));
 
-        if (error) {
-          console.error("Supabase RPC error caught in try-catch:", error);
-          throw error;
-        }
-        console.log("Supabase RPC data received successfully:", data);
-        return data as Participant[];
-      } catch (e) {
-        console.error("Unexpected error during Supabase RPC call:", e);
-        throw e;
+      if (error) {
+        throw error;
       }
+
+      return data as Participant[];
     },
     enabled: !!id,
   });
@@ -173,18 +193,18 @@ const TournamentManagementPage = () => {
                       <TableCell>
                         <div className="flex items-center gap-4">
                           <Avatar>
-                            <AvatarImage src={p.profile_avatar_url || undefined} alt={p.profile_username || "Usuário desconhecido"} />
-                            <AvatarFallback>{p.profile_username?.charAt(0).toUpperCase()}</AvatarFallback>
+                            <AvatarImage src={p.profiles?.avatar_url || undefined} alt={p.profiles?.username || "Usuário desconhecido"} />
+                            <AvatarFallback>{p.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className="font-medium">
-                            <UserDisplay profile={{id: p.profile_id || "", username: p.profile_username || "Usuário desconhecido"}} clan={p.clan_tag ? { tag: p.clan_tag } : null} />
+                            <UserDisplay profile={{id: p.profiles?.id || "", username: p.profiles?.username || "Usuário desconhecido"}} clan={p.profiles?.clan_members?.[0]?.clans?.tag ? { tag: p.profiles.clan_members[0].clans.tag } : null} />
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        {p.deck_id ? (
-                          <Link to={`/deck/${p.deck_id}`} className="text-primary hover:underline">
-                            {p.deck_name}
+                        {p.decks?.id ? (
+                          <Link to={`/deck/${p.decks.id}`} className="text-primary hover:underline">
+                            {p.decks.deck_name}
                           </Link>
                         ) : (
                           <span className="text-muted-foreground">Pendente</span>
@@ -221,7 +241,7 @@ const TournamentManagementPage = () => {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Esta ação removerá o participante {p.profile_username} do torneio.
+                                  Esta ação removerá o participante {p.profiles?.username} do torneio.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -235,7 +255,7 @@ const TournamentManagementPage = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        {p.decks ? (
+                        {p.decks?.id ? (
                           <Button asChild variant="outline" size="sm">
                             <Link 
                               to={`/deck/${p.decks.id}`} 

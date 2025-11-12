@@ -18,8 +18,20 @@ interface NotificationBellProps {
     user: User;
 }
 
+const fetchNotifications = async (userId: string) => {
+    const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10); // Fetch a reasonable number of notifications
 
-// ...
+    if (error) {
+        console.error("Error fetching notifications:", error);
+        throw error;
+    }
+    return data;
+};
 
 export const NotificationBell = ({ user }: NotificationBellProps) => {
     const queryClient = useQueryClient();
@@ -54,6 +66,8 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
     }, [isOpen, unreadCount, markAsReadMutation]);
     
     useEffect(() => {
+        if (!user) return; // Only subscribe if user is defined
+
         const channel = supabase.channel(`notifications:${user.id}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
                 (payload) => {
@@ -78,7 +92,7 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [user.id, queryClient]);
+    }, [user, queryClient]);
 
 
     const renderNotificationText = (notification) => {
@@ -129,8 +143,12 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
                         <div className="space-y-1">
                             {notifications.map(n => {
                                 const isClanNotification = n.type === 'new_clan_member';
+                                let correctedLink = n.link;
+                                if (n.type === 'new_clan_member' && n.link && n.link.startsWith('/clan/')) {
+                                    correctedLink = n.link.replace('/clan/', '/clans/');
+                                }
                                 return (
-                                    <Link key={n.id} to={n.link || '#'} className={`block p-3 rounded-md hover:bg-muted ${!n.is_read ? 'bg-blue-950/50' : ''}`}>
+                                    <Link key={n.id} to={correctedLink || '#'} className={`block p-3 rounded-md hover:bg-muted ${!n.is_read ? 'bg-blue-950/50' : ''}`}>
                                         <div className="flex items-start gap-3">
                                             {!isClanNotification && n.data.actor_username && (
                                                 <Avatar className="h-8 w-8 border-2 border-transparent group-hover:border-primary transition-colors">

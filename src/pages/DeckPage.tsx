@@ -60,6 +60,20 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   const { toast } = useToast();
   const commentsRef = useRef<HTMLDivElement>(null);
 
+  const { data: currentUserRole } = useQuery<string | null>({
+    queryKey: ["userRole", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase.rpc("get_user_role");
+      if (error) {
+        console.error("Error fetching user role:", error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const { data: deck, isLoading: isLoadingDeck } = useQuery<Deck | null>({
     queryKey: ["deck", id],
     queryFn: async () => {
@@ -221,7 +235,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     );
   }
 
-  if (deck.is_private && deck.user_id !== user?.id) {
+  if (deck.is_private && deck.user_id !== user?.id && currentUserRole !== 'admin' && currentUserRole !== 'organizer') {
     return (
         <div className="min-h-screen bg-background text-center py-20">
             <p className="text-2xl text-destructive">Este deck é privado.</p>
