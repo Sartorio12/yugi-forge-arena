@@ -9,6 +9,7 @@ import { UpcomingTournaments } from "@/components/UpcomingTournaments";
 import { TopRankedPlayers } from "@/components/TopRankedPlayers";
 import { FeaturedDecks } from "@/components/FeaturedDecks";
 import { NewsSection } from "@/components/NewsSection";
+import { ActivityTimeline } from "@/components/ActivityTimeline"; // Import the new component
 
 interface IndexProps {
   user: User | null;
@@ -34,8 +35,9 @@ const Index = ({ user, onLogout }: IndexProps) => {
         </div>
 
         {/* COLUNA DA DIREITA (BARRA LATERAL) */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-12">
           <TopRankedPlayers />
+          <ActivityTimeline /> {/* Add the new component here */}
         </div>
         
       </div>
