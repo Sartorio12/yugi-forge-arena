@@ -28,6 +28,7 @@ import CreateClanPage from "./pages/CreateClanPage";
 import ClanProfilePage from "./pages/ClanProfilePage";
 import ClanManagementPage from "./pages/ClanManagementPage";
 import { Footer } from "./components/Footer"; // Import the Footer component
+import SearchPage from "./pages/SearchPage";
 
 const queryClient = new QueryClient();
 
@@ -114,6 +115,10 @@ const App = () => {
             <Route
               path="/clans/:id/manage"
               element={<ClanManagementPage user={user} onLogout={handleLogout} />}
+            />
+            <Route
+              path="/search"
+              element={<SearchPage user={user} onLogout={handleLogout} />}
             />
 
             {/* Password Reset Routes */}
