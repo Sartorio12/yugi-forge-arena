@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
-import { LogOut, User as UserIcon, Swords, Menu, Shield } from "lucide-react";
+import { LogOut, User as UserIcon, Swords, Menu, Shield, Search } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +50,9 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
             </span>
           </Link>
 
-          <GlobalSearch />
+          <div className="hidden md:block">
+            <GlobalSearch />
+          </div>
 
           <div className="flex items-center gap-2">
             {user && <NotificationBell user={user} />}
@@ -126,6 +128,12 @@ const NavMenu = ({ user, profile }) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuItem asChild className="md:hidden">
+          <Link to="/search" className="flex items-center">
+            <Search className="mr-2 h-4 w-4" />
+            <span>Buscar</span>
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/tournaments">Torneios</Link>
         </DropdownMenuItem>
