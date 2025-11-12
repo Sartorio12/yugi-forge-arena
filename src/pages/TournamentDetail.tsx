@@ -1,4 +1,5 @@
 import { useParams, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -19,6 +20,7 @@ interface TournamentDetailProps {
 
 const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isRegistered, setIsRegistered] = useState(false);
   const [currentDeckId, setCurrentDeckId] = useState<number | null>(null);
@@ -185,20 +187,29 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                {/* Show registration button ONLY if tournament is open and user is not registered */}
-                {user && !isRegistered && tournament.status === 'Aberto' && (
-                  <Button
-                    onClick={handleRegister}
-                    disabled={registrationMutation.isPending}
-                    className="w-full sm:w-auto flex-grow bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg py-6"
-                  >
-                    {registrationMutation.isPending ? (
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    ) : null}
-                    Inscrever-se no Torneio
-                  </Button>
-                )}
-
+                              {/* Show "Login/Register to Enroll" button if user is not logged in */}
+                              {!user && (
+                                <Button
+                                  onClick={() => navigate("/auth")}
+                                  className="w-full sm:w-auto flex-grow bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg py-6"
+                                >
+                                  Faça login ou cadastre-se no site para se inscrever !
+                                </Button>
+                              )}
+                
+                              {/* Show registration button ONLY if tournament is open and user is not registered */}
+                              {user && !isRegistered && tournament.status === 'Aberto' && (
+                                <Button
+                                  onClick={handleRegister}
+                                  disabled={registrationMutation.isPending}
+                                  className="w-full sm:w-auto flex-grow bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg py-6"
+                                >
+                                  {registrationMutation.isPending ? (
+                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                  ) : null}
+                                  Inscrever-se no Torneio
+                                </Button>
+                              )}
                 {/* Show "Registrations Closed" if tournament is not open and user is not registered */}
                 {user && !isRegistered && tournament.status !== 'Aberto' && (
                   <Button variant="outline" disabled className="w-full sm:w-auto flex-grow text-lg py-6">
