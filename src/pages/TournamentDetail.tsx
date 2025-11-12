@@ -175,7 +175,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
               </div>
 
               {/* Decklist Management for registered users */}
-              {user && isRegistered && (
+              {user && isRegistered && tournament.is_decklist_required && (
                 <ManageDecklist 
                   user={user} 
                   tournamentId={tournament.id} 

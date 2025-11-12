@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import DeckCard from "@/components/DeckCard";
+import TrophyShelf from "@/components/TrophyShelf"; // Import TrophyShelf
+import BannerUploadForm from "@/components/forms/BannerUploadForm"; // Import BannerUploadForm
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
 import { Loader2, User as UserIcon, Pencil, Plus } from "lucide-react";
@@ -23,6 +25,9 @@ interface Deck {
 
 import { Profile } from "@/hooks/useProfile";
 import UserDisplay from "@/components/UserDisplay";
+import { Database } from "@/integrations/supabase/types"; // Import Database type
+
+type UserTournamentBanner = Database['public']['Tables']['user_tournament_banners']['Row'];
 
 interface ProfileProps {
   user: User | null;
@@ -45,6 +50,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isBannerUploadDialogOpen, setIsBannerUploadDialogOpen] = useState(false); // State for banner upload dialog
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -76,6 +82,20 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         .eq("user_id", id)
         .single();
       return data?.clans;
+    },
+    enabled: !!id,
+  });
+
+  const { data: userBanners, isLoading: bannersLoading } = useQuery<UserTournamentBanner[]>({
+    queryKey: ["user-tournament-banners", id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from("user_tournament_banners")
+        .select("*")
+        .eq("user_id", id);
+      if (error) throw error;
+      return data;
     },
     enabled: !!id,
   });
@@ -147,7 +167,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
     }
   };
 
-  const isLoading = profileLoading || decksLoading || clanLoading;
+  const isLoading = profileLoading || decksLoading || clanLoading || bannersLoading;
 
   const publicDecks = decks?.filter((deck: any) => !deck.is_private) || [];
   const privateDecks = decks?.filter((deck: any) => deck.is_private) || [];
@@ -299,6 +319,40 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                   )}
                 </div>
               )}
+
+              {/* Trophy Shelf Section */}
+              <div className="mt-12">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-3xl font-bold tracking-tight">
+                    Banners de Torneio
+                  </h2>
+                  {isProfileOwner && user && ( // Ensure user is not null before accessing user.id
+                    <Dialog open={isBannerUploadDialogOpen} onOpenChange={setIsBannerUploadDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button><Plus className="mr-2 h-4 w-4" /> Adicionar Banner</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Adicionar Novo Banner de Torneio</DialogTitle></DialogHeader>
+                        <BannerUploadForm
+                          userId={user.id}
+                          onUploadSuccess={() => {
+                            queryClient.invalidateQueries({ queryKey: ["user-tournament-banners", id] });
+                            setIsBannerUploadDialogOpen(false);
+                          }}
+                          onClose={() => setIsBannerUploadDialogOpen(false)}
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
+                {bannersLoading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <TrophyShelf banners={userBanners || []} />
+                )}
+              </div>
             </div>
           </div>
         </main>
