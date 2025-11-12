@@ -1,26 +1,31 @@
-import { useParams, Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import UserDisplay from "@/components/UserDisplay";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
-  TableCell,
+TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import UserDisplay from "@/components/UserDisplay";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { supabase } from '../../integrations/supabase/client';
 
 interface Participant {
   id: number;
@@ -53,11 +58,21 @@ const TournamentManagementPage = () => {
   const { data: participants, isLoading: isLoadingParticipants } = useQuery({
     queryKey: ["tournamentParticipantsManagement", id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_tournament_participants", {
-        p_tournament_id: Number(id),
-      });
-      if (error) throw error;
-      return data as Participant[];
+      try {
+        const { data, error } = await supabase.rpc("get_tournament_participants", {
+          p_tournament_id: Number(id),
+        });
+
+        if (error) {
+          console.error("Supabase RPC error caught in try-catch:", error);
+          throw error;
+        }
+        console.log("Supabase RPC data received successfully:", data);
+        return data as Participant[];
+      } catch (e) {
+        console.error("Unexpected error during Supabase RPC call:", e);
+        throw e;
+      }
     },
     enabled: !!id,
   });
@@ -83,10 +98,35 @@ const TournamentManagementPage = () => {
     },
   });
 
+  const removeParticipantMutation = useMutation({
+    mutationFn: async (participantId: number) => {
+      const { error } = await supabase
+        .from("tournament_participants")
+        .delete()
+        .eq("id", participantId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Sucesso", description: "Participante removido do torneio." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: `Não foi possível remover o participante: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleUpdateWins = (participant: Participant, change: 1 | -1) => {
     const newWins = participant.total_wins_in_tournament + change;
     if (newWins < 0) return;
     updateWinsMutation.mutate({ participantId: participant.id, newWins });
+  };
+
+  const handleRemoveParticipant = (participantId: number) => {
+    removeParticipantMutation.mutate(participantId);
   };
 
   const isLoading = isLoadingTournament || isLoadingParticipants;
@@ -171,6 +211,27 @@ const TournamentManagementPage = () => {
                           >
                             <MinusCircle className="h-5 w-5 text-red-500" />
                           </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="icon" disabled={removeParticipantMutation.isPending}>
+                                <UserX className="h-5 w-5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação removerá o participante {p.profile_username} do torneio.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleRemoveParticipant(p.id)}>
+                                  Remover
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">

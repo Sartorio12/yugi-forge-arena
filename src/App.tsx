@@ -27,6 +27,7 @@ import { UpdatePasswordPage } from './pages/UpdatePasswordPage';
 import CreateClanPage from "./pages/CreateClanPage";
 import ClanProfilePage from "./pages/ClanProfilePage";
 import ClanManagementPage from "./pages/ClanManagementPage";
+import { Footer } from "./components/Footer"; // Import the Footer component
 
 const queryClient = new QueryClient();
 
@@ -146,6 +147,7 @@ const App = () => {
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <Footer /> {/* Add the Footer component here */}
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
