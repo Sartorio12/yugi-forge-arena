@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { AspectRatio } from "@/components/ui/aspect-ratio"; // Import AspectRatio
 import { Database } from '@/integrations/supabase/types';
 
 type UserTournamentBanner = Database['public']['Tables']['user_tournament_banners']['Row'];
@@ -22,15 +23,14 @@ const TrophyShelf: React.FC<TrophyShelfProps> = ({ banners }) => {
       {banners.map((banner) => (
         <Card key={banner.id} className="overflow-hidden">
           <CardContent className="p-0">
-            <img
-              src={banner.banner_url}
-              alt={banner.title}
-              className="w-full h-48 object-cover"
-            />
+            <AspectRatio ratio={1 / 1}> {/* Use AspectRatio for 1:1 */}
+              <img
+                src={banner.banner_url}
+                alt={banner.title || "Tournament Banner"} // Fallback alt text
+                className="w-full h-full object-cover" // h-full now, as AspectRatio handles dimensions
+              />
+            </AspectRatio>
           </CardContent>
-          <CardHeader>
-            <CardTitle className="text-lg">{banner.title}</CardTitle>
-          </CardHeader>
         </Card>
       ))}
     </div>

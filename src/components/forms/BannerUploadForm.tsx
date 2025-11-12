@@ -12,7 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 
 const formSchema = z.object({
-  title: z.string().min(1, { message: "O título do banner é obrigatório." }),
+  title: z.string().optional(), // Make title optional
   bannerFile: z.any()
     .refine((file) => file?.length > 0, "A imagem do banner é obrigatória.")
     .refine((file) => file?.[0]?.size <= 5 * 1024 * 1024, "O tamanho máximo do banner é 5MB.")
@@ -62,7 +62,7 @@ const BannerUploadForm: React.FC<BannerUploadFormProps> = ({ userId, onUploadSuc
         .from('user_tournament_banners')
         .insert({
           user_id: userId,
-          title: values.title,
+          title: values.title || null, // Set to null if title is empty
           banner_url: banner_url,
         } as Database['public']['Tables']['user_tournament_banners']['Insert']); // Cast to Insert type
 
@@ -91,19 +91,6 @@ const BannerUploadForm: React.FC<BannerUploadFormProps> = ({ userId, onUploadSuc
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Título do Banner</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Campeão do Torneio XYZ" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <FormField
           control={form.control}
           name="bannerFile"
