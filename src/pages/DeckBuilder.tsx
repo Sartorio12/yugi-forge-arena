@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle } from "lucide-react";
+import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 // Interfaces
@@ -72,6 +72,34 @@ const BanlistIcon = ({ banStatus }: { banStatus: string | undefined | null }) =>
   return null;
 };
 
+const getCardTypeRank = (type: string): number => {
+  if (type.includes('Fusion') || type.includes('Synchro') || type.includes('XYZ') || type.includes('Link')) return 0; // Extra Deck Monsters
+  if (type.includes('Monster')) return 1; // Main Deck Monsters
+  if (type.includes('Spell')) return 2;
+  if (type.includes('Trap')) return 3;
+  return 4; // Other types
+};
+
+const sortCards = (cards: CardData[]): CardData[] => {
+  const sorted = [...cards].sort((a, b) => {
+    // Primary sort: by card type (Monster, Spell, Trap)
+    const rankA = getCardTypeRank(a.type);
+    const rankB = getCardTypeRank(b.type);
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
+
+    // Secondary sort: group by identical cards
+    if (a.id !== b.id) {
+      return a.id.localeCompare(b.id);
+    }
+
+    // Tertiary sort: alphabetical by name
+    return a.name.localeCompare(b.name);
+  });
+
+  return sorted;
+};
 
 
 const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
@@ -265,6 +293,13 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
     navigate("/deck-builder");
   };
 
+  const handleSortDeck = () => {
+    setMainDeck(sortCards(mainDeck));
+    setExtraDeck(sortCards(extraDeck));
+    setSideDeck(sortCards(sideDeck));
+    toast({ title: "Deck Reordenado", description: "As cartas foram reordenadas por tipo e nome." });
+  };
+
   const exportDeck = () => {
     if (mainDeck.length === 0 && extraDeck.length === 0 && sideDeck.length === 0) {
       toast({ title: "Deck Vazio", description: "Não há nada para exportar.", variant: "destructive" });
@@ -440,6 +475,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleImportClick}><FileUp className="h-4 w-4 mr-2" /> Importar</Button>
             <Button variant="outline" onClick={exportDeck}><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
+            <Button variant="outline" onClick={handleSortDeck}><ArrowDown className="h-4 w-4 mr-2" /> Re-ordenar Cartas</Button>
             <Button variant="destructive" onClick={clearDeck}><Trash2 className="h-4 w-4 mr-2" /> Limpar Deck</Button>
             <div className="flex-grow"></div>
             <Button onClick={saveDeck} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700">

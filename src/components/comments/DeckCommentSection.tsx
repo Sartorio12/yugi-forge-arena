@@ -10,29 +10,34 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { Comment, CommentType } from './Comment';
 
-interface NewsCommentSectionProps {
-  postId: number;
+interface DeckCommentSectionProps {
+  deckId: number;
   user: User | null;
-  postAuthorId: string;
-  postTitle: string;
+  deckOwnerId: string;
+  deckName: string;
 }
 
-const fetchComments = async (postId) => {
-  const { data, error } = await supabase.rpc('get_news_comments', { p_post_id: postId });
+const fetchComments = async (deckId) => {
+
+  const { data, error } = await supabase.rpc('get_deck_comments', { p_deck_id: deckId });
+
+
 
   if (error) throw error;
+
   return data || [];
+
 };
 
-export const NewsCommentSection = ({ postId, user, postAuthorId, postTitle }: NewsCommentSectionProps) => {
+export const DeckCommentSection = ({ deckId, user, deckOwnerId, deckName }: DeckCommentSectionProps) => {
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState('');
   const { profile } = useProfile(user?.id);
-  const queryKey = ['newsComments', postId];
+  const queryKey = ['deckComments', deckId];
 
   const { data: flatComments, isLoading } = useQuery({
     queryKey,
-    queryFn: () => fetchComments(postId)
+    queryFn: () => fetchComments(deckId)
   });
 
   const commentsTree = useMemo(() => {
@@ -58,7 +63,7 @@ export const NewsCommentSection = ({ postId, user, postAuthorId, postTitle }: Ne
   const addCommentMutation = useMutation({
     mutationFn: async (commentText: string) => {
       if (!user) throw new Error('Você precisa estar logado para comentar.');
-      const { data: commentData, error } = await supabase.from('news_comments').insert({ post_id: postId, user_id: user.id, comment_text: commentText, parent_comment_id: null }).select().single();
+      const { data: commentData, error } = await supabase.from('deck_comments').insert({ deck_id: deckId, user_id: user.id, comment_text: commentText, parent_comment_id: null }).select().single();
       if (error) throw error;
       return commentData;
     },
@@ -67,15 +72,15 @@ export const NewsCommentSection = ({ postId, user, postAuthorId, postTitle }: Ne
       queryClient.invalidateQueries({ queryKey });
 
       // Create notification
-      if (user && user.id !== postAuthorId) {
+      if (user && user.id !== deckOwnerId) {
         supabase.rpc('create_notification', {
-            p_recipient_id: postAuthorId,
-            p_type: 'new_news_comment',
+            p_recipient_id: deckOwnerId,
+            p_type: 'new_deck_comment',
             p_data: {
-                post_title: postTitle,
+                deck_name: deckName,
                 comment_text: newComment,
             },
-            p_link: `/news/${postId}#comment-${commentData.id}`
+            p_link: `/deck/${deckId}#comment-${commentData.id}`
         }).then(({ error }) => {
             if (error) {
                 console.error('Error creating notification:', error);
@@ -107,12 +112,12 @@ export const NewsCommentSection = ({ postId, user, postAuthorId, postTitle }: Ne
             <Comment
                 key={comment.id}
                 comment={comment}
-                contentId={postId}
+                contentId={deckId}
                 user={user}
                 queryKey={queryKey}
-                commentTable="news_comments"
-                likeTable="news_comment_likes"
-                contentColumn="post_id"
+                commentTable="deck_comments"
+                likeTable="deck_comment_likes"
+                contentColumn="deck_id"
             />
           ))}
           {commentsTree.length === 0 && <p className="text-muted-foreground text-center">Seja o primeiro a comentar!</p>}

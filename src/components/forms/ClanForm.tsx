@@ -22,7 +22,7 @@ export const clanFormSchema = z.object({
   description: z.string().min(10, "A descrição deve ter pelo menos 10 caracteres.").max(500, "A descrição não pode ter mais de 500 caracteres."),
 });
 
-export interface ClanFormValues extends z.infer<typeof clanFormSchema> {}
+export type ClanFormValues = z.infer<typeof clanFormSchema>;
 
 interface ClanFormProps {
   formId: string;

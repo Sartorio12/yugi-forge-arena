@@ -191,6 +191,25 @@ const ClanManagementPage = ({ user, onLogout }: ClanManagementPageProps) => {
     }
   };
 
+  if (isLoadingClan || isLoadingMembers || isLoadingApplications) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!clan) {
+    return (
+      <div className="min-h-screen bg-background text-center py-20">
+        <p className="text-2xl text-destructive">Clã não encontrado ou você não tem permissão para vê-lo.</p>
+        <Button asChild variant="link" className="mt-4">
+          <Link to="/clans">Voltar para a lista de clãs</Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={user} onLogout={onLogout} />

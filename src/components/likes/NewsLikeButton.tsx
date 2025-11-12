@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 interface NewsLikeButtonProps {
   postId: number;
   user: User | null;
+  postAuthorId: string;
+  postTitle: string;
 }
 
 const fetchLikes = async (postId, userId) => {
@@ -17,7 +19,7 @@ const fetchLikes = async (postId, userId) => {
   return { likeCount: likes.length, userHasLiked };
 };
 
-export const NewsLikeButton = ({ postId, user }: NewsLikeButtonProps) => {
+export const NewsLikeButton = ({ postId, user, postAuthorId, postTitle }: NewsLikeButtonProps) => {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ['newsLikes', postId, user?.id], queryFn: () => fetchLikes(postId, user?.id) });
 
@@ -27,7 +29,23 @@ export const NewsLikeButton = ({ postId, user }: NewsLikeButtonProps) => {
       const { error } = await supabase.from('news_likes').insert({ post_id: postId, user_id: user.id });
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['newsLikes', postId] }); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['newsLikes', postId] });
+      if (user && user.id !== postAuthorId) {
+        supabase.rpc('create_notification', {
+          p_recipient_id: postAuthorId,
+          p_type: 'new_news_like',
+          p_data: {
+            post_title: postTitle,
+          },
+          p_link: `/news/${postId}`
+        }).then(({ error }) => {
+          if (error) {
+            console.error('Error creating notification:', error);
+          }
+        });
+      }
+    },
   });
 
   const unlikeMutation = useMutation({

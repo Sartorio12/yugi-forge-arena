@@ -2,6 +2,44 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import fetch from 'node-fetch';
 
+interface YgoProDeckCard {
+  id: number;
+  name: string;
+  type: string;
+  desc: string;
+  race: string;
+  attribute?: string;
+  atk?: number;
+  def?: number;
+  level?: number;
+  card_images?: {
+    image_url: string;
+    image_url_small: string;
+  }[];
+  banlist_info?: {
+    ban_tcg?: string;
+    ban_ocg?: string;
+  };
+}
+
+interface CardInsert {
+    id: string;
+    name: string;
+    pt_name: string | null;
+    type: string;
+    description: string;
+    race: string;
+    attribute: string | null;
+    atk: number | null;
+    def: number | null;
+    level: number | null;
+    image_url: string;
+    image_url_small: string;
+    ban_tcg: string | null;
+    ban_ocg: string | null;
+    ban_master_duel: string | null;
+}
+
 // Initialize Supabase client
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -26,7 +64,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
     if (!allCardsResponse.ok) {
       throw new Error(`YGOPRODeck API (English) responded with status ${allCardsResponse.status}`);
     }
-    const { data: allEnglishCards } = await allCardsResponse.json();
+    const { data: allEnglishCards }: { data: YgoProDeckCard[] } = await allCardsResponse.json() as { data: YgoProDeckCard[] };
     console.log(`Total English cards fetched: ${allEnglishCards.length}`);
 
     // Step 2: Fetch all cards in Portuguese
@@ -36,7 +74,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
       console.warn(`YGOPRODeck API (Portuguese) responded with status ${allPtCardsResponse.status}. Portuguese names might be incomplete.`);
       // Continue even if Portuguese fetch fails, just pt_name will be null
     }
-    const { data: allPortugueseCards } = allPtCardsResponse.ok ? await allPtCardsResponse.json() : { data: [] };
+    const { data: allPortugueseCards }: { data: YgoProDeckCard[] } = allPtCardsResponse.ok ? await allPtCardsResponse.json() as { data: YgoProDeckCard[] } : { data: [] };
     console.log(`Total Portuguese cards fetched: ${allPortugueseCards.length}`);
 
     // Create a map for quick lookup of Portuguese names by card ID
@@ -48,12 +86,12 @@ export default async function (request: VercelRequest, response: VercelResponse)
     }
     console.log(`Portuguese name map created with ${ptNameMap.size} entries.`);
 
-    const cardsToUpsert: any[] = [];
+    const cardsToUpsert: CardInsert[] = [];
     const batchSize = 50; // Process in batches for Supabase upsert
 
     for (let i = 0; i < allEnglishCards.length; i += batchSize) {
       const batch = allEnglishCards.slice(i, i + batchSize);
-      const processedBatch = batch.map((card: any) => {
+      const processedBatch = batch.map((card: YgoProDeckCard) => {
         let ptName: string | null = null;
         const fetchedPtName = ptNameMap.get(String(card.id));
         if (fetchedPtName && fetchedPtName.toLowerCase() !== card.name.toLowerCase()) {

@@ -20,18 +20,17 @@ import {
 import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import UserDisplay from "@/components/UserDisplay";
 
 interface Participant {
   id: number;
   total_wins_in_tournament: number;
-  profiles: {
-    username: string;
-    avatar_url: string;
-  } | null;
-  decks: {
-    id: number;
-    deck_name: string;
-  } | null;
+  deck_id: number | null;
+  deck_name: string | null;
+  profile_id: string | null;
+  profile_username: string | null;
+  profile_avatar_url: string | null;
+  clan_tag: string | null;
 }
 
 const TournamentManagementPage = () => {
@@ -54,10 +53,9 @@ const TournamentManagementPage = () => {
   const { data: participants, isLoading: isLoadingParticipants } = useQuery({
     queryKey: ["tournamentParticipantsManagement", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tournament_participants")
-        .select("id, total_wins_in_tournament, profiles(username, avatar_url), decks(id, deck_name)")
-        .eq("tournament_id", Number(id));
+      const { data, error } = await supabase.rpc("get_tournament_participants", {
+        p_tournament_id: Number(id),
+      });
       if (error) throw error;
       return data as Participant[];
     },
@@ -135,16 +133,18 @@ const TournamentManagementPage = () => {
                       <TableCell>
                         <div className="flex items-center gap-4">
                           <Avatar>
-                            <AvatarImage src={p.profiles?.avatar_url} alt={p.profiles?.username} />
-                            <AvatarFallback>{p.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                            <AvatarImage src={p.profile_avatar_url || undefined} alt={p.profile_username || "Usuário desconhecido"} />
+                            <AvatarFallback>{p.profile_username?.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{p.profiles?.username || "Usuário desconhecido"}</span>
+                          <span className="font-medium">
+                            <UserDisplay profile={{id: p.profile_id || "", username: p.profile_username || "Usuário desconhecido"}} clan={p.clan_tag ? { tag: p.clan_tag } : null} />
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        {p.decks ? (
-                          <Link to={`/deck/${p.decks.id}`} className="text-primary hover:underline">
-                            {p.decks.deck_name}
+                        {p.deck_id ? (
+                          <Link to={`/deck/${p.deck_id}`} className="text-primary hover:underline">
+                            {p.deck_name}
                           </Link>
                         ) : (
                           <span className="text-muted-foreground">Pendente</span>

@@ -18,9 +18,7 @@ interface NewsPostPageProps {
 }
 
 const fetchNewsPost = async (postId) => {
-  const { data, error } = await supabase.from("news_posts").select(`id, title, content, created_at, profiles ( username, avatar_url, clans(tag) )`).eq("id", postId).single();
-  console.log("fetchNewsPost data:", data);
-  console.log("fetchNewsPost error:", error);
+  const { data, error } = await supabase.from("news_posts").select(`id, title, content, created_at, author_id, profiles (id, username, avatar_url)`).eq("id", postId).single();
   if (error) throw error;
   return data;
 };
@@ -28,6 +26,20 @@ const fetchNewsPost = async (postId) => {
 const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
   const { id } = useParams<{ id: string }>();
   const { data: post, isLoading, isError } = useQuery({ queryKey: ["newsPost", id], queryFn: () => fetchNewsPost(id) });
+
+  const { data: authorClan } = useQuery({
+    queryKey: ["user-clan", post?.author_id],
+    queryFn: async () => {
+      if (!post?.author_id) return null;
+      const { data } = await supabase
+        .from("clan_members")
+        .select("clans(*)")
+        .eq("user_id", post.author_id)
+        .single();
+      return data?.clans;
+    },
+    enabled: !!post?.author_id,
+  });
 
   if (isLoading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (isError || !post) return <div className="min-h-screen bg-background flex items-center justify-center"><p>Post não encontrado.</p></div>;
@@ -44,18 +56,18 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
                 <>
                   <Avatar className="h-8 w-8"><AvatarImage src={post.profiles.avatar_url} /><AvatarFallback>{post.profiles.username?.substring(0, 2)}</AvatarFallback></Avatar>
                   <span>
-                    <UserDisplay profile={post.profiles} clan={post.profiles.clans && post.profiles.clans.length > 0 ? post.profiles.clans[0] : null} />
+                    <UserDisplay profile={post.profiles} clan={authorClan} />
                   </span>
                   <span>•</span>
                 </>
               )}
               <span>{format(new Date(post.created_at), "dd/MM/yyyy")}</span>
             </div>
-            <NewsLikeButton postId={post.id} user={user} />
+            <NewsLikeButton postId={post.id} user={user} postAuthorId={post.author_id} postTitle={post.title} />
           </div>
         </header>
         <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content || "") }} />
-        <NewsCommentSection postId={post.id} user={user} />
+        {post && <NewsCommentSection postId={post.id} user={user} postAuthorId={post.author_id} postTitle={post.title} />}
       </div>
     </div>
   );

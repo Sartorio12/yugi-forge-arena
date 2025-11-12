@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GlobalSearch } from "./GlobalSearch";
 import UserDisplay from "./UserDisplay";
+import { NotificationBell } from "./notifications/NotificationBell";
 
 interface NavbarProps {
   user: User | null;
@@ -52,6 +53,7 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
           <GlobalSearch />
 
           <div className="flex items-center gap-2">
+            {user && <NotificationBell user={user} />}
             {user && <UserDropdown user={user} onLogout={onLogout} profile={profile} clan={clan} />}
             <NavMenu user={user} profile={profile} />
           </div>
