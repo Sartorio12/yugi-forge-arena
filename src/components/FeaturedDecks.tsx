@@ -21,7 +21,7 @@ export const FeaturedDecks = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("decks")
-        .select("id, deck_name, profiles ( username, avatar_url, clans(tag) )")
+        .select("id, deck_name, profiles ( username, avatar_url, clan_members(clans(tag)) )")
         .eq("is_private", false) // <<< ADIÇÃO CRUCIAL
         .order("created_at", { ascending: false })
         .limit(4);
@@ -58,7 +58,7 @@ export const FeaturedDecks = () => {
                           <AvatarImage src={deck.profiles.avatar_url} alt={deck.profiles.username} />
                           <AvatarFallback>{deck.profiles.username?.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <UserDisplay profile={deck.profiles} clan={deck.profiles.clans && deck.profiles.clans.length > 0 ? deck.profiles.clans[0] : null} />
+                        <UserDisplay profile={deck.profiles} clan={deck.profiles.clan_members?.clans?.tag ? { tag: deck.profiles.clan_members.clans.tag } : null} />
                       </div>
                     ) : (
                       <span className="text-sm text-muted-foreground">por Usuário Desconhecido</span>
