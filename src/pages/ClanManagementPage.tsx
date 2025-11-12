@@ -83,6 +83,23 @@ const ClanManagementPage = ({ user, onLogout }: ClanManagementPageProps) => {
   const currentUserMembership = members ? members.find(member => member.profiles?.id === user?.id) : undefined;
   const hasManagementPrivileges = currentUserMembership?.role === 'LEADER' || currentUserMembership?.role === 'STRATEGIST';
 
+  // Frontend deduplication and role prioritization
+  const uniqueMembers = members ? Array.from(
+    members.reduce((map, member) => {
+      if (member.profiles) {
+        const existing = map.get(member.profiles.id);
+        if (!existing || (member.role === 'LEADER' && existing.role !== 'LEADER') || (member.role === 'STRATEGIST' && existing.role === 'MEMBER')) {
+          map.set(member.profiles.id, member);
+        }
+      }
+      return map;
+    }, new Map<string, typeof members[number]>()).values()
+  ).sort((a, b) => {
+    // Sort by role: LEADER first, then STRATEGIST, then MEMBER
+    const roleOrder = { 'LEADER': 1, 'STRATEGIST': 2, 'MEMBER': 3 };
+    return roleOrder[a.role] - roleOrder[b.role];
+  }) : [];
+
   const handleUpdateClan = async (values: ClanFormValues, iconFile: File | null, bannerFile: File | null) => {
     if (!user || !clan) return;
 
@@ -262,10 +279,11 @@ const ClanManagementPage = ({ user, onLogout }: ClanManagementPageProps) => {
           <Card className="mb-8">
             <CardHeader><CardTitle>Gerenciar Membros</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {members?.filter(m => m.profiles && m.profiles.id !== user?.id).map(member => (
+              {uniqueMembers?.filter(m => m.profiles && m.profiles.id !== user?.id).map(member => (
                 <div key={member.profiles.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
                   <Link to={`/profile/${member.profiles?.id}`} className="flex items-center gap-4 group">
                     <UserDisplay profile={member.profiles} clan={clan} />
+                    <span className="text-xs text-muted-foreground">({member.profiles.id} - {member.role})</span>
                   </Link>
                   <div className="flex items-center gap-2">
                     <AlertDialog>

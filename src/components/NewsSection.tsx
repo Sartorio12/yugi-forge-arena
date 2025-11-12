@@ -17,6 +17,9 @@ interface NewsPost {
   profiles: {
     username: string;
     avatar_url: string;
+    clan_members: {
+      clans: { tag: string } | null;
+    } | null; // clan_members is a single object or null
   } | null;
 }
 
@@ -32,7 +35,13 @@ export const NewsSection = () => {
           content,
           created_at,
           banner_url,
-          profiles ( username, avatar_url, clans(tag) )
+          profiles (
+            username,
+            avatar_url,
+            clan_members (
+              clans ( tag )
+            )
+          )
         `)
         .order('created_at', { ascending: false })
         .limit(3);
@@ -74,7 +83,7 @@ export const NewsSection = () => {
                       <AvatarImage src={post.profiles?.avatar_url || undefined} />
                       <AvatarFallback>{post.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <UserDisplay profile={post.profiles} clan={post.profiles.clans && post.profiles.clans.length > 0 ? post.profiles.clans[0] : null} />
+                    <UserDisplay profile={post.profiles} clan={post.profiles.clan_members?.clans || null} />
                     <span>•</span>
                     <span>{format(new Date(post.created_at), "dd/MM/yy", { locale: ptBR })}</span>
                   </div>
