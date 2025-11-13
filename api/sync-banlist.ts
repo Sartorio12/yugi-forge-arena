@@ -5,7 +5,6 @@ import fetch from 'node-fetch';
 // Define interfaces for the API responses
 interface YgoProDeckCardInfo {
   id: number;
-  konami_id: number;
   name: string;
 }
 
@@ -32,25 +31,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
   try {
     console.log('Starting Master Duel Banlist sync process...');
 
-    // Step 1: Fetch the entire card database from YGOPRODeck to create a reliable mapping.
-    console.log('Fetching all cards from YGOPRODeck to build konami_id map...');
-    const allCardsResponse = await fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php');
-    if (!allCardsResponse.ok) {
-      throw new Error(`YGOPRODeck API (all cards) responded with status ${allCardsResponse.status}`);
-    }
-    const { data: allCardsData }: { data: YgoProDeckCardInfo[] } = await allCardsResponse.json() as { data: YgoProDeckCardInfo[] };
-    console.log(`Fetched ${allCardsData.length} cards from YGOPRODeck.`);
-
-    // Step 2: Create a map from konami_id to our primary key (YGOPRODeck id)
-    const konamiIdToPrimaryKeyMap = new Map<string, string>();
-    for (const card of allCardsData) {
-      if (card.konami_id) {
-        konamiIdToPrimaryKeyMap.set(String(card.konami_id), String(card.id));
-      }
-    }
-    console.log(`Created konami_id -> primary_key map with ${konamiIdToPrimaryKeyMap.size} entries.`);
-
-    // Step 3: Fetch the Master Duel banlist
+    // Step 1: Fetch the Master Duel banlist
     console.log('Fetching Master Duel banlist...');
     const masterDuelBanlistResponse = await fetch('https://dawnbrandbots.github.io/yaml-yugi-limit-regulation/master-duel/current.vector.json');
     if (!masterDuelBanlistResponse.ok) {
@@ -66,9 +47,30 @@ export default async function (request: VercelRequest, response: VercelResponse)
       return response.status(200).json({ message: 'No cards found in the banlist.' });
     }
 
-    // Step 4: Build the array of updates for Supabase using the map
+    // Step 2: Create the mapping by fetching each card individually.
+    console.log('Building konami_id -> primary_key map by fetching each card...');
+    const konamiIdToPrimaryKeyMap = new Map<string, string>();
+    let fetchCount = 0;
+    for (const konamiId of konamiIdsFromBanlist) {
+      try {
+        const cardInfoResponse = await fetch(`https://db.ygoprodeck.com/api/v7/cardinfo.php?konami_id=${konamiId}`);
+        if (cardInfoResponse.ok) {
+          const { data } = await cardInfoResponse.json() as { data: YgoProDeckCardInfo[] };
+          if (data && data.length > 0) {
+            const card = data[0];
+            konamiIdToPrimaryKeyMap.set(konamiId, String(card.id));
+            fetchCount++;
+          }
+        }
+      } catch (e) {
+        console.warn(`Failed to fetch info for konami_id ${konamiId}`, e);
+      }
+    }
+    console.log(`Map created. Successfully fetched and mapped ${fetchCount} / ${konamiIdsFromBanlist.length} cards.`);
+
+
+    // Step 3: Build the array of updates for Supabase
     const banlistUpdates: { id: string; ban_master_duel: string }[] = [];
-    let notFoundCount = 0;
     for (const konamiId in masterDuelRegulation) {
       const primaryKey = konamiIdToPrimaryKeyMap.get(konamiId);
       if (primaryKey) {
@@ -80,23 +82,20 @@ export default async function (request: VercelRequest, response: VercelResponse)
 
         if (banStatus) {
           banlistUpdates.push({
-            id: primaryKey, // Use the correct primary key for the update
+            id: primaryKey,
             ban_master_duel: banStatus,
           });
         }
-      } else {
-        notFoundCount++;
-        // console.log(`Warning: No YGOPRODeck primary key found for Konami ID: ${konamiId}`);
       }
     }
-    console.log(`Found matches for ${banlistUpdates.length} cards. Did not find ${notFoundCount} cards.`);
+    console.log(`Prepared ${banlistUpdates.length} banlist updates.`);
 
     if (banlistUpdates.length === 0) {
       console.log('No valid banlist updates to apply.');
       return response.status(200).json({ message: 'No valid banlist updates to apply after mapping.' });
     }
 
-    // Step 5: Upsert the updates into Supabase
+    // Step 4: Upsert the updates into Supabase
     console.log(`Attempting to update banlist status for ${banlistUpdates.length} cards in Supabase.`);
     const { error: upsertError } = await supabaseAdmin
       .from('cards')
