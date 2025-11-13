@@ -95,19 +95,26 @@ export default async function (request: VercelRequest, response: VercelResponse)
       return response.status(200).json({ message: 'No valid banlist updates to apply after mapping.' });
     }
 
-    // Step 4: Upsert the updates into Supabase
+    // Step 4: Update the statuses in Supabase one by one to avoid inserting new rows
     console.log(`Attempting to update banlist status for ${banlistUpdates.length} cards in Supabase.`);
-    const { error: upsertError } = await supabaseAdmin
-      .from('cards')
-      .upsert(banlistUpdates, { onConflict: 'id' });
+    let successCount = 0;
+    let errorCount = 0;
+    for (const update of banlistUpdates) {
+      const { error } = await supabaseAdmin
+        .from('cards')
+        .update({ ban_master_duel: update.ban_master_duel })
+        .eq('id', update.id);
 
-    if (upsertError) {
-      console.error('Supabase Banlist Upsert Error:', upsertError);
-      throw upsertError;
+      if (error) {
+        console.warn(`Failed to update card ${update.id}:`, error.message);
+        errorCount++;
+      } else {
+        successCount++;
+      }
     }
 
-    console.log(`Successfully synced banlist status for ${banlistUpdates.length} cards.`);
-    return response.status(200).json({ message: `Successfully synced banlist status for ${banlistUpdates.length} cards.` });
+    console.log(`Sync finished. Successfully updated ${successCount} cards. Failed to update ${errorCount} cards.`);
+    return response.status(200).json({ message: `Sync finished. Successfully updated ${successCount} cards. Failed to update ${errorCount} cards.` });
 
   } catch (error) {
     console.error('Error syncing banlist:', error);
