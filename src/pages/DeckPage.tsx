@@ -12,6 +12,7 @@ import UserDisplay from "@/components/UserDisplay";
 import { Tables } from "@/integrations/supabase/types";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 // Interfaces
 interface CardData {
@@ -38,6 +39,7 @@ interface Deck {
   id: number;
   deck_name: string;
   is_private: boolean;
+  is_genesys?: boolean;
   user_id: string;
   profiles: Profile | null;
 }
@@ -258,7 +260,12 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <h1 className="text-4xl font-bold">{deck.deck_name}</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-4xl font-bold">{deck.deck_name}</h1>
+              {deck.is_genesys && (
+                <Badge className="bg-violet-500 text-lg">Genesys</Badge>
+              )}
+            </div>
             {deck.profiles && (
               <p className="text-lg text-muted-foreground mb-4">
                 Criado por:{" "}

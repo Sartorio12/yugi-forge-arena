@@ -450,7 +450,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
 
       if (editingDeckId) {
         // UPDATE
-        const { error: updateError } = await supabase.from('decks').update({ deck_name: deckName.trim(), is_private: isPrivate }).eq('id', editingDeckId);
+        const { error: updateError } = await supabase.from('decks').update({ deck_name: deckName.trim(), is_private: isPrivate, is_genesys: isGenesysMode }).eq('id', editingDeckId);
         if (updateError) throw updateError;
 
         const { error: deleteError } = await supabase.from('deck_cards').delete().eq('deck_id', editingDeckId);
@@ -467,7 +467,7 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
         // CREATE
         const { data: deck, error: deckError } = await supabase
           .from("decks")
-          .insert({ user_id: user.id, deck_name: deckName.trim(), is_private: isPrivate })
+          .insert({ user_id: user.id, deck_name: deckName.trim(), is_private: isPrivate, is_genesys: isGenesysMode })
           .select()
           .single();
 

@@ -5,13 +5,20 @@ import { Loader2, Layers } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserDisplay from "./UserDisplay";
+import { Badge } from "@/components/ui/badge";
 
 interface Deck {
   id: number;
   deck_name: string;
+  is_genesys?: boolean;
   profiles: {
     username: string;
     avatar_url: string;
+    clan_members: {
+      clans: {
+        tag: string;
+      } | null;
+    } | null;
   } | null;
 }
 
@@ -21,13 +28,13 @@ export const FeaturedDecks = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("decks")
-        .select("id, deck_name, profiles ( username, avatar_url, clan_members(clans(tag)) )")
-        .eq("is_private", false) // <<< ADIÇÃO CRUCIAL
+        .select("id, deck_name, is_genesys, profiles ( username, avatar_url, clan_members(clans(tag)) )")
+        .eq("is_private", false) 
         .order("created_at", { ascending: false })
         .limit(4);
 
       if (error) throw error;
-      return data as Deck[];
+      return data as any[];
     },
   });
 
@@ -47,9 +54,14 @@ export const FeaturedDecks = () => {
               <Link to={`/deck/${deck.id}`} key={deck.id}>
                 <Card className="h-full flex flex-col justify-between overflow-hidden group cursor-pointer hover:shadow-glow transition-all duration-300 border-border bg-gradient-card">
                   <CardHeader className="pb-0">
-                    <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors">
-                      {deck.deck_name}
-                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors">
+                        {deck.deck_name}
+                      </CardTitle>
+                      {deck.is_genesys && (
+                        <Badge className="bg-violet-500">Genesys</Badge>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="pt-4">
                     {deck.profiles ? (

@@ -19,6 +19,7 @@ interface Deck {
   id: number;
   deck_name: string;
   is_private: boolean;
+  is_genesys?: boolean;
   user_id: string;
   deck_cards: { count: number }[];
 }
@@ -110,7 +111,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const { data: decks, isLoading: decksLoading } = useQuery<Deck[]>({
     queryKey: ["user-decks", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("decks").select(`id, deck_name, is_private, user_id, deck_cards (count)`).eq("user_id", id);
+      const { data, error } = await supabase.from("decks").select(`id, deck_name, is_private, is_genesys, user_id, deck_cards (count)`).eq("user_id", id);
       if (error) throw error;
       return data as Deck[];
     },
@@ -286,6 +287,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                       deckName={deck.deck_name}
                       cardCount={deck.deck_cards && deck.deck_cards.length > 0 ? deck.deck_cards[0].count : 0}
                       isPrivate={deck.is_private}
+                      is_genesys={deck.is_genesys}
                       onDelete={handleDeleteDeck}
                       isOwner={user?.id === deck.user_id} 
                     />
@@ -309,6 +311,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                           deckName={deck.deck_name}
                           cardCount={deck.deck_cards && deck.deck_cards.length > 0 ? deck.deck_cards[0].count : 0}
                           isPrivate={deck.is_private}
+                          is_genesys={deck.is_genesys}
                           onDelete={handleDeleteDeck}
                           isOwner={user?.id === deck.user_id} 
                         />

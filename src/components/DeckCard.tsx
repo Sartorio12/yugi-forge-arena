@@ -20,11 +20,12 @@ interface DeckCardProps {
   deckName: string;
   cardCount?: number;
   isPrivate?: boolean;
+  is_genesys?: boolean;
   onDelete: (id: number) => void;
   isOwner: boolean; // Added isOwner prop
 }
 
-const DeckCard = ({ id, deckName, cardCount = 0, isPrivate = false, onDelete, isOwner }: DeckCardProps) => {
+const DeckCard = ({ id, deckName, cardCount = 0, isPrivate = false, is_genesys = false, onDelete, isOwner }: DeckCardProps) => {
   return (
     <Card className="p-4 group transition-all duration-300 border-border bg-gradient-card flex flex-col">
       <Link to={`/deck/${id}`} className="flex-grow">
@@ -37,6 +38,9 @@ const DeckCard = ({ id, deckName, cardCount = 0, isPrivate = false, onDelete, is
               <h3 className="font-bold text-lg group-hover:text-primary transition-colors">
                 {deckName}
               </h3>
+              {is_genesys && (
+                <Badge className="bg-violet-500">Genesys</Badge>
+              )}
               {isPrivate ? (
                 <Badge variant="destructive">Privado</Badge>
               ) : (
