@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 
 interface YgoProDeckCard {
   id: number;
+  konami_id: string;
   name: string;
   type: string;
   desc: string;
@@ -24,6 +25,7 @@ interface YgoProDeckCard {
 
 interface CardInsert {
     id: string;
+    konami_id: string;
     name: string;
     pt_name: string | null;
     type: string;
@@ -37,7 +39,6 @@ interface CardInsert {
     image_url_small: string;
     ban_tcg: string | null;
     ban_ocg: string | null;
-    ban_master_duel: string | null;
 }
 
 // Initialize Supabase client
@@ -100,6 +101,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
 
         return {
           id: String(card.id),
+          konami_id: String(card.konami_id),
           name: card.name,
           pt_name: ptName,
           type: card.type,
@@ -113,8 +115,6 @@ export default async function (request: VercelRequest, response: VercelResponse)
           image_url_small: card.card_images?.[0]?.image_url_small || '',
           ban_tcg: card.banlist_info?.ban_tcg || null,
           ban_ocg: card.banlist_info?.ban_ocg || null,
-          // ban_master_duel will be handled by a separate sync function
-          ban_master_duel: null, 
         };
       });
       cardsToUpsert.push(...processedBatch);
