@@ -21,6 +21,9 @@ interface YgoProDeckCard {
     ban_tcg?: string;
     ban_ocg?: string;
   };
+  misc_info?: {
+    genesys_points?: number;
+  }[];
 }
 
 interface CardInsert {
@@ -39,6 +42,7 @@ interface CardInsert {
     image_url_small: string;
     ban_tcg: string | null;
     ban_ocg: string | null;
+    genesys_points?: number;
 }
 
 // Initialize Supabase client
@@ -61,7 +65,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
 
     // Step 1: Fetch all cards in English
     console.log('Fetching all cards from YGOPRODeck (English)...');
-    const allCardsResponse = await fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php');
+    const allCardsResponse = await fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes');
     if (!allCardsResponse.ok) {
       throw new Error(`YGOPRODeck API (English) responded with status ${allCardsResponse.status}`);
     }
@@ -115,6 +119,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
           image_url_small: card.card_images?.[0]?.image_url_small || '',
           ban_tcg: card.banlist_info?.ban_tcg || null,
           ban_ocg: card.banlist_info?.ban_ocg || null,
+          genesys_points: card.misc_info?.[0]?.genesys_points || 0,
         };
       });
       cardsToUpsert.push(...processedBatch);

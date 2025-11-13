@@ -29,6 +29,7 @@ interface CardData {
   ban_tcg?: string;
   ban_ocg?: string;
   ban_master_duel?: string | null; // New field for Master Duel banlist
+  genesys_points?: number;
 }
 
 interface DeckBuilderProps {
@@ -70,6 +71,26 @@ const BanlistIcon = ({ banStatus }: { banStatus: string | undefined | null }) =>
     return <div style={{ ...baseStyle, backgroundColor: "cyan" }}>2</div>;
   }
   return null;
+};
+
+const GenesysPointBadge = ({ points }: { points: number | undefined | null }) => {
+  if (!points || points === 0) return null;
+
+  const style: React.CSSProperties = {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    padding: "2px 5px",
+    borderRadius: "3px",
+    backgroundColor: "rgba(139, 92, 246, 0.9)", // A nice purple, similar to Genesys
+    color: "white",
+    fontWeight: "bold",
+    fontSize: "12px",
+    zIndex: 10,
+    border: "1px solid rgba(255, 255, 255, 0.5)",
+  };
+
+  return <div style={style}>{points}</div>;
 };
 
 const getCardTypeRank = (type: string): number => {
@@ -120,6 +141,8 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
   const [sideDeck, setSideDeck] = useState<CardData[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+  const [isGenesysMode, setIsGenesysMode] = useState(false);
+  const [totalGenesysPoints, setTotalGenesysPoints] = useState(0);
 
 
 
@@ -135,6 +158,21 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
       setIsLoadingDeck(false);
     }
   }, [searchParams, user]);
+
+  useEffect(() => {
+    if (!isGenesysMode) {
+      setTotalGenesysPoints(0);
+      return;
+    }
+
+    const calculateTotalPoints = () => {
+      const allCards = [...mainDeck, ...extraDeck, ...sideDeck];
+      const total = allCards.reduce((sum, card) => sum + (card.genesys_points || 0), 0);
+      setTotalGenesysPoints(total);
+    };
+
+    calculateTotalPoints();
+  }, [isGenesysMode, mainDeck, extraDeck, sideDeck]);
 
   const loadDeckForEditing = async (deckId: number) => {
     setIsLoadingDeck(true);
@@ -241,17 +279,20 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
   };
 
   const addCardToDeck = (card: CardData, section: 'main' | 'extra' | 'side') => {
-    const status = card.ban_master_duel; // Use Master Duel banlist
     let limit = 3;
-    if (status === "Forbidden") {
-      toast({ title: "Carta Banida", description: `"${card.name}" é proibida e não pode ser adicionada ao deck.`, variant: "destructive" });
-      return;
-    }
-    if (status === "Limited") {
-      limit = 1;
-    }
-    if (status === "Semi-Limited") {
-      limit = 2;
+
+    if (!isGenesysMode) {
+      const status = card.ban_master_duel; // Use Master Duel banlist
+      if (status === "Forbidden") {
+        toast({ title: "Carta Banida", description: `"${card.name}" é proibida e não pode ser adicionada ao deck.`, variant: "destructive" });
+        return;
+      }
+      if (status === "Limited") {
+        limit = 1;
+      }
+      if (status === "Semi-Limited") {
+        limit = 2;
+      }
     }
 
     const currentCopies = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.id === card.id).length;
@@ -493,9 +534,20 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
               onChange={(e) => setDeckName(e.target.value)}
             />
           </div>
-          <div className="flex items-center space-x-2 mt-2">
-            <Switch id="is-private" checked={isPrivate} onCheckedChange={setIsPrivate} />
-            <Label htmlFor="is-private">Tornar este deck privado?</Label>
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center space-x-2">
+              <Switch id="is-private" checked={isPrivate} onCheckedChange={setIsPrivate} />
+              <Label htmlFor="is-private">Tornar este deck privado?</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch id="genesys-mode" checked={isGenesysMode} onCheckedChange={setIsGenesysMode} />
+              <Label htmlFor="genesys-mode">Modo Genesys</Label>
+            </div>
+            {isGenesysMode && (
+              <div className="text-lg font-bold">
+                Total Genesys Points: <span className="text-violet-400">{totalGenesysPoints}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -514,7 +566,8 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                       <HoverCardTrigger asChild>
                         <div className="relative group">
                           <img src={card.image_url} alt={card.name} className="w-full" />
-                          <BanlistIcon banStatus={card.ban_master_duel} />
+                          {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+                          {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
                           <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "main")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -556,7 +609,8 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                       <HoverCardTrigger asChild>
                         <div className="relative group">
                           <img src={card.image_url} alt={card.name} className="w-full" />
-                          <BanlistIcon banStatus={card.ban_master_duel} />
+                          {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+                          {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
                           <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "extra")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -598,7 +652,8 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                       <HoverCardTrigger asChild>
                         <div className="relative group">
                           <img src={card.image_url} alt={card.name} className="w-full" />
-                          <BanlistIcon banStatus={card.ban_master_duel} />
+                          {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+                          {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
                           <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "side")}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -662,7 +717,8 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
                         <div className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-800 cursor-pointer">
                           <div className="relative">
                             <img src={card.image_url_small} alt={card.name} className="w-12" />
-                            <BanlistIcon banStatus={card.ban_master_duel} />
+                            {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+                            {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
                           </div>
                           <div className="text-sm flex-1 min-w-0">
                             <p className="font-bold truncate">{card.name}</p>
