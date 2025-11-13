@@ -65,7 +65,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
 
     // Step 1: Fetch all cards in English
     console.log('Fetching all cards from YGOPRODeck (English)...');
-    const allCardsResponse = await fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes');
+    const allCardsResponse = await fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?misc=yes&format=Genesys');
     if (!allCardsResponse.ok) {
       throw new Error(`YGOPRODeck API (English) responded with status ${allCardsResponse.status}`);
     }
