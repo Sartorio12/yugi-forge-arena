@@ -535,19 +535,28 @@ const DeckBuilder = ({ user, onLogout }: DeckBuilderProps) => {
             />
           </div>
           <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center space-x-2">
-              <Switch id="is-private" checked={isPrivate} onCheckedChange={setIsPrivate} />
-              <Label htmlFor="is-private">Tornar este deck privado?</Label>
+            {/* Left Slot */}
+            <div className="flex-1 flex justify-start">
+              <div className="flex items-center space-x-2">
+                <Switch id="is-private" checked={isPrivate} onCheckedChange={setIsPrivate} />
+                <Label htmlFor="is-private">Tornar este deck privado?</Label>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch id="genesys-mode" checked={isGenesysMode} onCheckedChange={setIsGenesysMode} />
-              <Label htmlFor="genesys-mode">Modo Genesys</Label>
+
+            {/* Center Slot */}
+            <div className="flex-1 flex justify-center">
+              <div className="flex items-center space-x-2">
+                <Switch id="genesys-mode" checked={isGenesysMode} onCheckedChange={setIsGenesysMode} />
+                <Label htmlFor="genesys-mode">Modo Genesys</Label>
+              </div>
             </div>
-            {isGenesysMode && (
-              <div className="text-lg font-bold">
+
+            {/* Right Slot */}
+            <div className="flex-1 flex justify-end">
+              <div className={`text-lg font-bold ${!isGenesysMode ? 'invisible' : ''}`}>
                 Total Genesys Points: <span className="text-violet-400">{totalGenesysPoints}</span>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
