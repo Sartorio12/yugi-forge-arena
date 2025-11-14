@@ -78,7 +78,7 @@ const NewsEditorFormPage = ({ user }) => {
   if (isLoadingPost) return <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 max-w-4xl">
       <Card>
         <CardHeader><CardTitle>{isEditMode ? 'Editar Postagem' : 'Criar Nova Postagem'}</CardTitle></CardHeader>
         <CardContent>

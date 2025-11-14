@@ -27,6 +27,8 @@ import { UpdatePasswordPage } from './pages/UpdatePasswordPage';
 import CreateClanPage from "./pages/CreateClanPage";
 import ClanProfilePage from "./pages/ClanProfilePage";
 import ClanManagementPage from "./pages/ClanManagementPage";
+import About from "./pages/About"; // Import the About component
+import Contact from "./pages/Contact"; // Import the Contact component
 import { Footer } from "./components/Footer"; // Import the Footer component
 import SearchPage from "./pages/SearchPage";
 
@@ -124,6 +126,8 @@ const App = () => {
             {/* Password Reset Routes */}
             <Route path="/esqueci-senha" element={<RequestPasswordResetPage />} />
             <Route path="/atualizar-senha" element={<UpdatePasswordPage />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
 
             {/* Admin Routes */}
             <Route element={<AdminRoute user={user} onLogout={handleLogout} />}>

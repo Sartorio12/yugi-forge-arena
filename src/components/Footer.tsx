@@ -8,47 +8,15 @@ export const Footer = () => {
   return (
     <footer className="bg-card text-card-foreground py-12 border-t border-border">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          {/* Coluna 1: Ajuda e Suporte */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Ajuda e Suporte</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/faq" className="hover:text-primary transition-colors">
-                  Dúvidas Frequentes
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="hover:text-primary transition-colors">
-                  Fale Conosco
-                </Link>
-              </li>
-              <li>
-                <Link to="/support" className="hover:text-primary transition-colors">
-                  Suporte
-                </Link>
-              </li>
-              <li>
-                <Link to="/how-it-works" className="hover:text-primary transition-colors">
-                  Como Funciona
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Coluna 2: Sobre o Projeto/Empresa */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {/* Coluna 1: Sobre o Projeto/Empresa */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Sobre o Projeto</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/about" className="hover:text-primary transition-colors">
+                <a href="https://staffygo.vercel.app/about" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
                   Sobre Nós
-                </Link>
-              </li>
-              <li>
-                <Link to="/team" className="hover:text-primary transition-colors">
-                  Nossa Equipe
-                </Link>
+                </a>
               </li>
               <li>
                 <Link to="/news" className="hover:text-primary transition-colors">
@@ -56,38 +24,16 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/careers" className="hover:text-primary transition-colors">
-                  Trabalhe Conosco
+                <Link to="/contact" className="hover:text-primary transition-colors">
+                  Contato
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Coluna 3: Parcerias */}
+          {/* Coluna 2: Legal */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Parcerias</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/sponsors" className="hover:text-primary transition-colors">
-                  Nossos Patrocinadores
-                </Link>
-              </li>
-              <li>
-                <Link to="/become-a-sponsor" className="hover:text-primary transition-colors">
-                  Seja um Patrocinador
-                </Link>
-              </li>
-              <li>
-                <Link to="/partners" className="hover:text-primary transition-colors">
-                  Parceiros
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Coluna 4: Legal e Redes Sociais */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Legal e Social</h3>
+            <h3 className="text-lg font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 mb-6">
               <li>
                 <Link to="/terms" className="hover:text-primary transition-colors">
@@ -100,6 +46,11 @@ export const Footer = () => {
                 </Link>
               </li>
             </ul>
+          </div>
+
+          {/* Coluna 3: Redes Sociais */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Redes Sociais</h3>
             <div className="flex space-x-4">
               <a href="https://discord.gg/MmXkHgST" target="_blank" rel="noopener noreferrer" className="text-card-foreground hover:text-primary transition-colors">
                 <FaDiscord className="h-6 w-6" />

@@ -25,17 +25,17 @@ const Index = ({ user, onLogout }: IndexProps) => {
       <HeroSection />
 
       {/* 2. NOVO CONTAINER GRID */}
-      <div className="container mx-auto max-w-7xl px-4 py-8 mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="container mx-auto max-w-7xl px-4 py-8 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* COLUNA DA ESQUERDA (PRINCIPAL) */}
-        <div className="lg:col-span-2 space-y-12">
+        <div className="lg:col-span-2 space-y-6">
           <UpcomingTournaments />
           <NewsSection />
           <FeaturedDecks />
         </div>
 
         {/* COLUNA DA DIREITA (BARRA LATERAL) */}
-        <div className="lg:col-span-1 space-y-12">
+        <div className="lg:col-span-1 space-y-6">
           <TopRankedPlayers />
           <ActivityTimeline /> {/* Add the new component here */}
         </div>

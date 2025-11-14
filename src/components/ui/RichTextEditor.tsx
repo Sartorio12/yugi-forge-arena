@@ -1,14 +1,32 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
-import { Bold, Italic, Strikethrough, Heading2, List, Image as ImageIcon } from 'lucide-react';
+import Link from '@tiptap/extension-link';
+import TextAlign from '@tiptap/extension-text-align';
+import { Bold, Italic, Strikethrough, Heading2, List, Image as ImageIcon, AlignCenter, Link as LinkIcon } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
-import { useRef } from 'react';
+import { useRef, useCallback } from 'react';
 
 const TiptapToolbar = ({ editor }) => {
   const fileInputRef = useRef(null);
+
+  const setLink = useCallback(() => {
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
+
+    if (url === null) {
+      return;
+    }
+
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  }, [editor]);
 
   if (!editor) {
     return null;
@@ -52,6 +70,8 @@ const TiptapToolbar = ({ editor }) => {
       <Toggle size="sm" pressed={editor.isActive('heading', { level: 2 })} onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 className="h-4 w-4" /></Toggle>
       <Toggle size="sm" pressed={editor.isActive('bulletList')} onPressedChange={() => editor.chain().focus().toggleBulletList().run()}><List className="h-4 w-4" /></Toggle>
       <Toggle size="sm" onPressedChange={handleImageClick}><ImageIcon className="h-4 w-4" /></Toggle>
+      <Toggle size="sm" pressed={editor.isActive('link')} onPressedChange={setLink}><LinkIcon className="h-4 w-4" /></Toggle>
+      <Toggle size="sm" pressed={editor.isActive({ textAlign: 'center' })} onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}><AlignCenter className="h-4 w-4" /></Toggle>
       <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
     </div>
   );
@@ -65,6 +85,13 @@ export const RichTextEditor = ({ value, onChange }) => {
         orderedList: { keepMarks: true, keepAttributes: false },
       }),
       Image.configure({ inline: true, allowBase64: false }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
     ],
     content: value,
     onUpdate: ({ editor }) => { onChange(editor.getHTML()); },
