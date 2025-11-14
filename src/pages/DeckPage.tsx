@@ -227,7 +227,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   if (!deck) {
     return (
       <div className="min-h-screen bg-background text-center py-20">
-        <p className="text-2xl text-destructive">Deck não encontrado.</p>
+        <p className="text-2xl text-destructive">Esse deck é privado</p>
         <Button asChild variant="link" className="mt-4">
           <Link to="/">
             <Home className="mr-2 h-4 w-4" /> Voltar para a Home
