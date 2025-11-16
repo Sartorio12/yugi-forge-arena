@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -31,6 +31,7 @@ interface CardData {
   ban_tcg?: string;
   ban_ocg?: string;
   ban_master_duel?: string | null;
+  genesys_points?: number | null;
 }
 
 type Profile = Tables<"profiles">;
@@ -173,6 +174,17 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     },
   });
 
+  const mainDeck = useMemo(() => deckCards?.filter(c => c.deck_section === 'main' && c.cards).map(c => c.cards!) || [], [deckCards]);
+  const extraDeck = useMemo(() => deckCards?.filter(c => c.deck_section === 'extra' && c.cards).map(c => c.cards!) || [], [deckCards]);
+  const sideDeck = useMemo(() => deckCards?.filter(c => c.deck_section === 'side' && c.cards).map(c => c.cards!) || [], [deckCards]);
+
+  const genesysPoints = useMemo(() => {
+    if (!deck?.is_genesys) return 0;
+    const mainDeckPoints = mainDeck.reduce((acc, card) => acc + (card.genesys_points || 0), 0);
+    const extraDeckPoints = extraDeck.reduce((acc, card) => acc + (card.genesys_points || 0), 0);
+    return mainDeckPoints + extraDeckPoints;
+  }, [deck, mainDeck, extraDeck]);
+
   const isLoading = isLoadingDeck || isLoadingCards || isLoadingAuthorClan || isLoadingLikes || isLoadingComments || isLoadingUserHasLiked;
 
   const toggleLike = async () => {
@@ -250,10 +262,6 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     );
   }
 
-  const mainDeck = deckCards?.filter(c => c.deck_section === 'main' && c.cards).map(c => c.cards!) || [];
-  const extraDeck = deckCards?.filter(c => c.deck_section === 'extra' && c.cards).map(c => c.cards!) || [];
-  const sideDeck = deckCards?.filter(c => c.deck_section === 'side' && c.cards).map(c => c.cards!) || [];
-
   return (
     <div className="min-h-screen bg-background text-white">
       <Navbar user={user} onLogout={onLogout} />
@@ -263,7 +271,10 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
             <div className="flex items-center gap-4">
               <h1 className="text-4xl font-bold">{deck.deck_name}</h1>
               {deck.is_genesys && (
-                <Badge className="bg-violet-500 text-lg">Genesys</Badge>
+                <>
+                  <Badge className="bg-violet-500 text-lg">Genesys</Badge>
+                  <Badge className="bg-amber-500 text-lg">{genesysPoints} Pontos</Badge>
+                </>
               )}
             </div>
             {deck.profiles && (
