@@ -33,22 +33,23 @@ const About = () => {
       <section className="mb-12">
         <h2 className="text-3xl font-semibold text-center mb-8">Nossa Equipe</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Espaço para os ADMs */}
-          <div className="flex flex-col items-center text-center">
-            <img src="https://via.placeholder.com/150" alt="Nome do ADM 1" className="rounded-full w-32 h-32 object-cover mb-4" />
-            <h3 className="text-xl font-semibold">Nome do ADM 1</h3>
-            <p className="text-muted-foreground">Função/Descrição</p>
-          </div>
-          <div className="flex flex-col items-center text-center">
-            <img src="https://via.placeholder.com/150" alt="Nome do ADM 2" className="rounded-full w-32 h-32 object-cover mb-4" />
-            <h3 className="text-xl font-semibold">Nome do ADM 2</h3>
-            <p className="text-muted-foreground">Função/Descrição</p>
-          </div>
-          <div className="flex flex-col items-center text-center">
-            <img src="https://via.placeholder.com/150" alt="Nome do ADM 3" className="rounded-full w-32 h-32 object-cover mb-4" />
-            <h3 className="text-xl font-semibold">Nome do ADM 3</h3>
-            <p className="text-muted-foreground">Função/Descrição</p>
-          </div>
+          {[
+            { name: 'KSN YNUI', role: 'Fundador', image: '/KSN YNUI.jpg' },
+            { name: 'CDG MAVERICK', role: 'Moderador', image: '/CDG MAVERICK.jpg' },
+            { name: 'EUG CLENITOS', role: 'Moderador', image: '/EUG CLENITOS.jpg' },
+            { name: 'HDS ERYNW', role: 'Moderador', image: '/HDS ERYNW.jpg' },
+            { name: 'KSN DOKA', role: 'Moderador', image: '/KSN DOKA.jpg' },
+            { name: 'KSN LEVIATÃ', role: 'Moderador', image: '/KSN LEVIATÃ.jpg' },
+            { name: 'KSN PATO', role: 'Moderador', image: '/KSN PATO.jpg' },
+            { name: 'KSN SPOOKY', role: 'Moderador', image: '/KSN SPOOKY.png' },
+            { name: 'TDK LENDARIO', role: 'Moderador', image: '/TDK LENDARIO.png' },
+          ].map((admin) => (
+            <div key={admin.name} className="flex flex-col items-center text-center">
+              <img src={admin.image} alt={admin.name} className="rounded-full w-32 h-32 object-cover mb-4" />
+              <h3 className="text-xl font-semibold">{admin.name}</h3>
+              <p className="text-muted-foreground">{admin.role}</p>
+            </div>
+          ))}
         </div>
       </section>
 

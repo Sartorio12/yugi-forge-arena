@@ -262,6 +262,13 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     );
   }
 
+  const getBanlistIcon = (banStatus: string | null | undefined) => {
+    if (banStatus === "Banned") return "/ban.png";
+    if (banStatus === "Limited") return "/lim1.png";
+    if (banStatus === "Semi-Limited") return "/lim2.png";
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-background text-white">
       <Navbar user={user} onLogout={onLogout} />
@@ -300,53 +307,67 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-bold mb-2">Main Deck ({mainDeck.length})</h2>
-                <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-10 gap-2">
-                  {mainDeck.map((card) => (
-                    <HoverCard key={card.id} openDelay={200}>
-                        <HoverCardTrigger>
-                            <div className="relative">
-                                <img src={card.image_url_small} alt={card.name} className="w-full rounded-none transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg" />
-                                {deck.is_genesys && card.genesys_points > 0 && (
-                                    <Badge className="absolute top-1 right-1 bg-amber-500 text-xs p-1">
-                                        {card.genesys_points}
-                                    </Badge>
-                                )}
-                            </div>
-                        </HoverCardTrigger>
-                        <HoverCardContent side="top">
-                            <img src={card.image_url} alt={card.name} className="w-full rounded-none" />
-                        </HoverCardContent>
-                    </HoverCard>
-                  ))}
+                <div className="grid grid-cols-15 sm:grid-cols-18 md:grid-cols-20 gap-1">
+                  {mainDeck.map((card) => {
+                    const banlistIcon = getBanlistIcon(card.ban_master_duel);
+                    return (
+                      <HoverCard key={card.id} openDelay={200}>
+                          <HoverCardTrigger>
+                              <div className="relative">
+                                  <img src={card.image_url_small} alt={card.name} className="w-full rounded-none transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg" />
+                                  {deck.is_genesys && card.genesys_points > 0 && (
+                                      <Badge className="absolute top-1 right-1 bg-amber-500 text-xs p-1">
+                                          {card.genesys_points}
+                                      </Badge>
+                                  )}
+                                  {banlistIcon && (
+                                    <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-9 h-9" />
+                                  )}
+                              </div>
+                          </HoverCardTrigger>
+                          <HoverCardContent side="top">
+                              <img src={card.image_url} alt={card.name} className="w-full rounded-none" />
+                          </HoverCardContent>
+                      </HoverCard>
+                    );
+                  })}
                 </div>
               </div>
               <div>
                 <h2 className="text-2xl font-bold mb-2">Extra Deck ({extraDeck.length})</h2>
-                <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-10 gap-2">
-                  {extraDeck.map((card) => (
-                     <HoverCard key={card.id} openDelay={200}>
-                        <HoverCardTrigger>
-                            <div className="relative">
-                                <img src={card.image_url_small} alt={card.name} className="w-full rounded-none transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg" />
-                                {deck.is_genesys && card.genesys_points > 0 && (
-                                    <Badge className="absolute top-1 right-1 bg-amber-500 text-xs p-1">
-                                        {card.genesys_points}
-                                    </Badge>
-                                )}
-                            </div>
-                        </HoverCardTrigger>
-                        <HoverCardContent side="top">
-                            <img src={card.image_url} alt={card.name} className="w-full rounded-none" />
-                        </HoverCardContent>
-                    </HoverCard>
-                  ))}
+                <div className="grid grid-cols-15 sm:grid-cols-18 md:grid-cols-20 gap-1">
+                  {extraDeck.map((card) => {
+                    const banlistIcon = getBanlistIcon(card.ban_master_duel);
+                    return (
+                      <HoverCard key={card.id} openDelay={200}>
+                          <HoverCardTrigger>
+                              <div className="relative">
+                                  <img src={card.image_url_small} alt={card.name} className="w-full rounded-none transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg" />
+                                  {deck.is_genesys && card.genesys_points > 0 && (
+                                      <Badge className="absolute top-1 right-1 bg-amber-500 text-xs p-1">
+                                          {card.genesys_points}
+                                      </Badge>
+                                  )}
+                                  {banlistIcon && (
+                                    <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-9 h-9" />
+                                  )}
+                              </div>
+                          </HoverCardTrigger>
+                          <HoverCardContent side="top">
+                              <img src={card.image_url} alt={card.name} className="w-full rounded-none" />
+                          </HoverCardContent>
+                      </HoverCard>
+                    );
+                  })}
                 </div>
               </div>
               {sideDeck.length > 0 && (
                 <div>
                   <h2 className="text-2xl font-bold mb-2">Side Deck ({sideDeck.length})</h2>
-                  <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-10 gap-2">
-                    {sideDeck.map((card) => (
+                  <div className="grid grid-cols-15 sm:grid-cols-18 md:grid-cols-20 gap-1">
+                    {sideDeck.map((card) => {
+                      const banlistIcon = getBanlistIcon(card.ban_master_duel);
+                      return (
                         <HoverCard key={card.id} openDelay={200}>
                             <HoverCardTrigger>
                                 <div className="relative">
@@ -356,13 +377,17 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                                             {card.genesys_points}
                                         </Badge>
                                     )}
+                                    {banlistIcon && (
+                                      <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-9 h-9" />
+                                    )}
                                 </div>
                             </HoverCardTrigger>
                             <HoverCardContent side="top">
                                 <img src={card.image_url} alt={card.name} className="w-full rounded-none" />
                             </HoverCardContent>
                         </HoverCard>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
