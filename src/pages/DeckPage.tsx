@@ -304,7 +304,14 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                   {mainDeck.map((card) => (
                     <HoverCard key={card.id} openDelay={200}>
                         <HoverCardTrigger>
-                            <img src={card.image_url_small} alt={card.name} className="w-full rounded-none transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg" />
+                            <div className="relative">
+                                <img src={card.image_url_small} alt={card.name} className="w-full rounded-none transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg" />
+                                {deck.is_genesys && card.genesys_points > 0 && (
+                                    <Badge className="absolute top-1 right-1 bg-amber-500 text-xs p-1">
+                                        {card.genesys_points}
+                                    </Badge>
+                                )}
+                            </div>
                         </HoverCardTrigger>
                         <HoverCardContent side="top">
                             <img src={card.image_url} alt={card.name} className="w-full rounded-none" />
@@ -319,7 +326,14 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                   {extraDeck.map((card) => (
                      <HoverCard key={card.id} openDelay={200}>
                         <HoverCardTrigger>
-                            <img src={card.image_url_small} alt={card.name} className="w-full rounded-none transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg" />
+                            <div className="relative">
+                                <img src={card.image_url_small} alt={card.name} className="w-full rounded-none transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg" />
+                                {deck.is_genesys && card.genesys_points > 0 && (
+                                    <Badge className="absolute top-1 right-1 bg-amber-500 text-xs p-1">
+                                        {card.genesys_points}
+                                    </Badge>
+                                )}
+                            </div>
                         </HoverCardTrigger>
                         <HoverCardContent side="top">
                             <img src={card.image_url} alt={card.name} className="w-full rounded-none" />
@@ -335,7 +349,14 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                     {sideDeck.map((card) => (
                         <HoverCard key={card.id} openDelay={200}>
                             <HoverCardTrigger>
-                                <img src={card.image_url_small} alt={card.name} className="w-full rounded-none transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg" />
+                                <div className="relative">
+                                    <img src={card.image_url_small} alt={card.name} className="w-full rounded-none transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg" />
+                                    {deck.is_genesys && card.genesys_points > 0 && (
+                                        <Badge className="absolute top-1 right-1 bg-amber-500 text-xs p-1">
+                                            {card.genesys_points}
+                                        </Badge>
+                                    )}
+                                </div>
                             </HoverCardTrigger>
                             <HoverCardContent side="top">
                                 <img src={card.image_url} alt={card.name} className="w-full rounded-none" />
