@@ -306,8 +306,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
           <CardContent>
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold mb-2">Main Deck ({mainDeck.length})</h2>
-                <div className="grid grid-cols-15 sm:grid-cols-18 md:grid-cols-20 gap-1">
+                <div className="grid grid-cols-12 sm:grid-cols-14 md:grid-cols-16 gap-1">
                   {mainDeck.map((card) => {
                     const banlistIcon = getBanlistIcon(card.ban_master_duel);
                     return (
@@ -321,7 +320,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                                       </Badge>
                                   )}
                                   {banlistIcon && (
-                                    <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-9 h-9" />
+                                    <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-7 h-7" />
                                   )}
                               </div>
                           </HoverCardTrigger>
@@ -335,7 +334,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
               </div>
               <div>
                 <h2 className="text-2xl font-bold mb-2">Extra Deck ({extraDeck.length})</h2>
-                <div className="grid grid-cols-15 sm:grid-cols-18 md:grid-cols-20 gap-1">
+                <div className="grid grid-cols-12 sm:grid-cols-14 md:grid-cols-16 gap-1">
                   {extraDeck.map((card) => {
                     const banlistIcon = getBanlistIcon(card.ban_master_duel);
                     return (
@@ -349,7 +348,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                                       </Badge>
                                   )}
                                   {banlistIcon && (
-                                    <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-9 h-9" />
+                                    <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-7 h-7" />
                                   )}
                               </div>
                           </HoverCardTrigger>
@@ -364,7 +363,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
               {sideDeck.length > 0 && (
                 <div>
                   <h2 className="text-2xl font-bold mb-2">Side Deck ({sideDeck.length})</h2>
-                  <div className="grid grid-cols-15 sm:grid-cols-18 md:grid-cols-20 gap-1">
+                  <div className="grid grid-cols-12 sm:grid-cols-14 md:grid-cols-16 gap-1">
                     {sideDeck.map((card) => {
                       const banlistIcon = getBanlistIcon(card.ban_master_duel);
                       return (
@@ -378,7 +377,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                                         </Badge>
                                     )}
                                     {banlistIcon && (
-                                      <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-9 h-9" />
+                                      <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-7 h-7" />
                                     )}
                                 </div>
                             </HoverCardTrigger>
