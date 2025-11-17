@@ -81,16 +81,21 @@ const GenesysPointBadge = ({ points }: { points: number | undefined | null }) =>
 
   const style: React.CSSProperties = {
     position: "absolute",
-    bottom: 0,
-    right: 0,
-    padding: "2px 5px",
-    borderRadius: "3px",
-    backgroundColor: "rgba(139, 92, 246, 0.9)", // A nice purple, similar to Genesys
+    top: 1,
+    right: 1,
+    width: "30px", // Adjust based on image size
+    height: "30px", // Adjust based on image size
+    backgroundImage: `url('/genesys_1.png')`,
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "contain", // Use 'contain' to ensure the whole image is visible
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     color: "white",
     fontWeight: "bold",
-    fontSize: "12px",
+    fontSize: "10px", // Adjust font size to fit
     zIndex: 10,
-    border: "1px solid rgba(255, 255, 255, 0.5)",
+    textShadow: "1px 1px 2px rgba(0,0,0,0.7)",
   };
 
   return <div style={style}>{points}</div>;
@@ -295,6 +300,15 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [isGenesysMode, setIsGenesysMode] = useState(false);
   const [totalGenesysPoints, setTotalGenesysPoints] = useState(0);
   const [isExportingImage, setIsExportingImage] = useState(false);
+
+  useEffect(() => {
+    const calculatePoints = () => {
+      const allCards = [...mainDeck, ...extraDeck, ...sideDeck];
+      const total = allCards.reduce((sum, card) => sum + (card.genesys_points || 0), 0);
+      setTotalGenesysPoints(total);
+    };
+    calculatePoints();
+  }, [mainDeck, extraDeck, sideDeck]);
 
   const isExtraDeckCard = (type: string) => 
     type.includes("Fusion") || type.includes("Synchro") || type.includes("XYZ") || type.includes("Link");

@@ -57,6 +57,31 @@ interface DeckPageProps {
   onLogout: () => void;
 }
 
+const GenesysPointBadge = ({ points }: { points: number | undefined | null }) => {
+  if (!points || points === 0) return null;
+
+  const style: React.CSSProperties = {
+    position: "absolute",
+    top: 1, // Changed from bottom: 0
+    right: 1, // Changed from right: 0
+    width: "30px", // Adjust based on image size
+    height: "30px", // Adjust based on image size
+    backgroundImage: `url('/genesys_1.png')`,
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "contain",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "white",
+    fontWeight: "bold",
+    fontSize: "10px", // Adjust font size to fit
+    zIndex: 10,
+    textShadow: "1px 1px 2px rgba(0,0,0,0.7)", // Add text shadow for better readability
+  };
+
+  return <div style={style}>{points}</div>;
+};
+
 const CardStack = ({ card, count, isGenesys, banlistIcon }: { card: CardData; count: number; isGenesys?: boolean; banlistIcon: string | null }) => {
   return (
     <HoverCard openDelay={200}>
@@ -66,10 +91,8 @@ const CardStack = ({ card, count, isGenesys, banlistIcon }: { card: CardData; co
           {count > 1 && (
             <img src={`/${count}x.webp`} alt={`${count} copies`} className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[50%] h-auto" />
           )}
-          {isGenesys && card.genesys_points > 0 && (
-            <Badge className="absolute top-1 right-1 bg-amber-500 text-[0.5rem] p-0.5 sm:text-xs sm:p-1">
-              {card.genesys_points}
-            </Badge>
+          {isGenesys && card.genesys_points != null && card.genesys_points > 0 && (
+            <GenesysPointBadge points={card.genesys_points} />
           )}
           {banlistIcon && (
             <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7" />
