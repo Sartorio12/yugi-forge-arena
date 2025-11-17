@@ -13,10 +13,6 @@
     {
       "path": "/api/sync-banlist",
       "schedule": "0 1 * * *"
-    },
-    {
-      "path": "/api/sync-card-images",
-      "schedule": "0 2 * * *"
     }
   ]
 }
