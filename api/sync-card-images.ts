@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Request, Response } from 'express';
 
-const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
 // IMPORTANT: Use the Service Role Key to bypass RLS for admin tasks.
 const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY;
 
