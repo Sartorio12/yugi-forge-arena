@@ -39,7 +39,7 @@ export const FeaturedDecks = () => {
   });
 
   return (
-    <section className="py-16 md:py-24 bg-background">
+    <section className="py-4 md:py-6 bg-[url('/bg-main.png')] bg-cover border border-gray-800 rounded-lg p-4">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-center mb-12">
           Decks Recentes da Comunidade
@@ -52,7 +52,7 @@ export const FeaturedDecks = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {decks.map((deck) => (
               <Link to={`/deck/${deck.id}`} key={deck.id}>
-                <Card className="h-full flex flex-col justify-between overflow-hidden group cursor-pointer hover:shadow-glow transition-all duration-300 border-border bg-gradient-card">
+                <Card className="h-full flex flex-col justify-between overflow-hidden group cursor-pointer hover:shadow-glow transition-all duration-300 border-border bg-gray-800/50">
                   <CardHeader className="pb-0">
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-lg font-bold group-hover:text-primary transition-colors">

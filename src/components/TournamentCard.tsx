@@ -21,7 +21,7 @@ const TournamentCard = ({
 }: TournamentCardProps) => {
   return (
     <Link to={`/tournaments/${id}`}>
-      <Card className="overflow-hidden group cursor-pointer hover:shadow-glow transition-all duration-300 border-border bg-gradient-card">
+      <Card className="overflow-hidden group cursor-pointer hover:shadow-glow transition-all duration-300 border-border bg-gray-800/50">
         <div className="relative h-48 overflow-hidden">
           {bannerImageUrl ? (
             <img

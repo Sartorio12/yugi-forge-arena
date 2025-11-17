@@ -14,7 +14,7 @@ export const UpcomingTournaments = () => {
         .eq("status", "Aberto")
         .gt("event_date", new Date().toISOString())
         .order("event_date", { ascending: true })
-        .limit(3);
+        .limit(2);
 
       if (error) throw error;
       return data as Tables<"tournaments">[];
@@ -22,7 +22,7 @@ export const UpcomingTournaments = () => {
   });
 
   return (
-    <section className="py-16 md:py-24 bg-background">
+    <section className="py-4 md:py-6 bg-[url('/bg-main.png')] bg-cover border border-gray-800 rounded-lg p-4">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-center mb-12">
           Próximos Torneios

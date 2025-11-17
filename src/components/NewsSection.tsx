@@ -58,7 +58,7 @@ export const NewsSection = () => {
   };
 
   return (
-    <section className="py-16 md:py-24">
+    <section className="py-4 md:py-6 bg-[url('/bg-main.png')] bg-cover border border-gray-800 rounded-lg p-4">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-center mb-12">
           Últimas Notícias e Reports
@@ -70,7 +70,7 @@ export const NewsSection = () => {
         ) : posts && posts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post) => (
-              <Card key={post.id} className="h-full flex flex-col bg-gradient-card border-border">
+              <Card key={post.id} className="h-full flex flex-col bg-gray-800/50 border-border">
                 {post.banner_url && (
                   <div className="aspect-video w-full overflow-hidden rounded-t-lg">
                     <img src={post.banner_url} alt={post.title} className="w-full h-full object-cover" />

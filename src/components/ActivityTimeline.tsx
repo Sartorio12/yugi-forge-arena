@@ -421,7 +421,7 @@ export const ActivityTimeline = () => {
   }, []);
 
   return (
-    <Card className="bg-gradient-card border-border">
+    <Card className="bg-gray-800/50 border-border">
       <CardHeader>
         <CardTitle className="text-xl font-bold">Atividade Recente</CardTitle>
       </CardHeader>
