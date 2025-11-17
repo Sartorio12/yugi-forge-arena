@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -9,10 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown } from "lucide-react";
+import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import html2canvas from 'html2canvas';
 
 // Interfaces
 interface CardData {
@@ -41,6 +42,7 @@ interface DeckBuilderProps {
 
 const ItemTypes = {
   CARD: 'card',
+  DECK_CARD: 'deck_card',
 };
 
 const BanlistIcon = ({ banStatus }: { banStatus: string | undefined | null }) => {
@@ -128,56 +130,133 @@ const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtra
 
   // The main div is the drag source
   return (
-    <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }}>
-      <div className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-800">
-        {/* The image is the preview */}
-        <div className="relative" ref={preview}>
-          <img src={card.image_url_small} alt={card.name} className="w-12" />
-          {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
-          {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
-        </div>
-        <div className="text-sm flex-1 min-w-0">
-          <p className="font-bold truncate">{card.name}</p>
-          {card.pt_name && card.pt_name.toLowerCase() !== card.name.toLowerCase() && (
-            <p className="text-gray-400 truncate text-xs">{card.pt_name}</p>
-          )}
-          <p className="text-muted-foreground text-xs truncate">
-            {card.attribute ? `${card.attribute} / ` : ''}{card.race}{card.level ? ` / Level ${card.level}` : ''}
-          </p>
-          {card.type.includes('Monster') && (
-            <p className="text-muted-foreground text-xs truncate">ATK/{card.atk ?? '?'} / DEF/{card.def ?? '?'}</p>
-          )}
-        </div>
-        <div className="flex flex-col gap-1 ml-2">
-          <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}}>Add</Button>
-          <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, 'side')}}>Side</Button>
-        </div>
-      </div>
-    </div>
+    <HoverCard openDelay={200}>
+          <HoverCardTrigger asChild>
+            <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }}>
+              <div className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-800">
+                {/* The image is the preview */}
+                <div className="relative" ref={preview}>
+                  <img src={card.image_url_small} alt={card.name} className="w-12" />
+                  {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+                  {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
+                </div>
+                <div className="text-sm flex-1 min-w-0">
+                  <p className="font-bold truncate">{card.name}</p>
+                  {card.pt_name && card.pt_name.toLowerCase() !== card.name.toLowerCase() && (
+                    <p className="text-gray-400 truncate text-xs">{card.pt_name}</p>
+                  )}
+                  <p className="text-muted-foreground text-xs truncate">
+                    {card.attribute ? `${card.attribute} / ` : ''}{card.race}{card.level ? ` / Level ${card.level}` : ''}
+                  </p>
+                  {card.type.includes('Monster') && (
+                    <p className="text-xs truncate">ATK/{card.atk ?? '?'} / DEF/{card.def ?? '?'}</p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1 ml-2">
+                  <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}}>Add</Button>
+                  <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, 'side')}}>Side</Button>
+                </div>
+              </div>
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background z-[100]">
+            <div className="w-2/5"><img src={card.image_url} alt={card.name} className="w-full" /></div>
+            <div className="w-3/5 space-y-1">
+              <h3 className="font-bold text-md">{card.name}</h3>
+              {card.pt_name && <h4 className="text-sm text-gray-300 -mt-1">{card.pt_name}</h4>}
+              <p className="text-xs font-bold text-yellow-400">[{card.race} / {card.type}]</p>
+              <div className="flex justify-start gap-3 text-xs pt-1">
+                {card.level && <span>Level: {card.level}</span>}
+                {card.atk !== undefined && <span>ATK/{card.atk}</span>}
+                {card.def !== undefined && <span>DEF/{card.def}</span>}
+              </div>
+              <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.description}</p>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
   );
 };
 
-const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard }: { section: 'main' | 'extra' | 'side', children: React.ReactNode, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean }) => {
+const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode }: { card: CardData, index: number, section: "main" | "extra" | "side", removeCard: (index: number, section: "main" | "extra" | "side") => void, isGenesysMode: boolean }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: ItemTypes.CARD,
+    item: { card, index, section }, // Include index and section for removal
+    end: (item, monitor) => {
+      if (!monitor.didDrop()) {
+        // If dropped outside a valid drop target, remove the card
+        removeCard(item.index, item.section);
+      }
+    },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }), [card, index, section, removeCard]);
+
+  return (
+    <HoverCard key={`${card.id}-${index}`} openDelay={200}>
+      <HoverCardTrigger asChild>
+        <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }} className="relative group">
+          <img src={card.image_url} alt={card.name} className="w-full" />
+          {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+          {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
+          <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, section)}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </HoverCardTrigger>
+      <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background z-[100]">
+        <div className="w-2/5"><img src={card.image_url} alt={card.name} className="w-full" /></div>
+        <div className="w-3/5 space-y-1">
+          <h3 className="font-bold text-md">{card.name}</h3>
+          {card.pt_name && <h4 className="text-sm text-gray-300 -mt-1">{card.pt_name}</h4>}
+          <p className="text-xs font-bold text-yellow-400">[{card.race} / {card.type}]</p>
+          <div className="flex justify-start gap-3 text-xs pt-1">
+            {card.level && <span>Level: {card.level}</span>}
+            {card.atk !== undefined && <span>ATK/{card.atk}</span>}
+            {card.def !== undefined && <span>DEF/{card.def}</span>}
+          </div>
+          <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.description}</p>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
+
+const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard, removeCard }: { section: 'main' | 'extra' | 'side', children: React.ReactNode, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, removeCard: (index: number, section: 'main' | 'extra' | 'side') => void }) => {
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
-    accept: ItemTypes.CARD,
-    drop: (item: { card: CardData }) => {
+    accept: [ItemTypes.CARD, ItemTypes.DECK_CARD],
+    drop: (item: { card: CardData, index?: number, section?: 'main' | 'extra' | 'side' }) => {
         const targetSection = isExtraDeckCard(item.card.type) ? 'extra' : 'main';
-        if (section === 'side') {
-            addCardToDeck(item.card, 'side');
+        if (item.type === ItemTypes.DECK_CARD && item.section && item.index !== undefined) {
+            // Moving card from one deck section to another
+            removeCard(item.index, item.section);
+            addCardToDeck(item.card, section); // Add to the current drop zone's section
         } else {
-            addCardToDeck(item.card, targetSection);
+            // Adding card from search results
+            if (section === 'side') {
+                addCardToDeck(item.card, 'side');
+            } else {
+                addCardToDeck(item.card, targetSection);
+            }
         }
     },
-    canDrop: (item: { card: CardData }) => {
+    canDrop: (item: { card: CardData, index?: number, section?: 'main' | 'extra' | 'side' }) => {
+        // Prevent dropping a card onto its own section if it's already there
+        if (item.type === ItemTypes.DECK_CARD && item.section === section) {
+            return false;
+        }
+        // Logic for extra deck cards
         if (section === 'extra' && !isExtraDeckCard(item.card.type)) return false;
         if (section === 'main' && isExtraDeckCard(item.card.type)) return false;
+        if (section === 'side' && isExtraDeckCard(item.card.type) && item.type === ItemTypes.CARD) return true; // Allow extra deck cards to be added to side from search
+        if (section === 'side' && !isExtraDeckCard(item.card.type) && item.type === ItemTypes.CARD) return true; // Allow main deck cards to be added to side from search
         return true;
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
       canDrop: !!monitor.canDrop(),
     }),
-  }), [addCardToDeck, isExtraDeckCard, section]);
+  }), [addCardToDeck, isExtraDeckCard, section, removeCard]);
 
   const isActive = isOver && canDrop;
   let backgroundColor = 'transparent';
@@ -215,33 +294,12 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [isPrivate, setIsPrivate] = useState(false);
   const [isGenesysMode, setIsGenesysMode] = useState(false);
   const [totalGenesysPoints, setTotalGenesysPoints] = useState(0);
+  const [isExportingImage, setIsExportingImage] = useState(false);
 
   const isExtraDeckCard = (type: string) => 
     type.includes("Fusion") || type.includes("Synchro") || type.includes("XYZ") || type.includes("Link");
 
-  useEffect(() => {
-    const deckId = searchParams.get('edit');
-    if (deckId && user) {
-      loadDeckForEditing(Number(deckId));
-    } else {
-      setIsLoadingDeck(false);
-    }
-  }, [searchParams, user]);
-
-  useEffect(() => {
-    if (!isGenesysMode) {
-      setTotalGenesysPoints(0);
-      return;
-    }
-    const calculateTotalPoints = () => {
-      const allCards = [...mainDeck, ...extraDeck, ...sideDeck];
-      const total = allCards.reduce((sum, card) => sum + (card.genesys_points || 0), 0);
-      setTotalGenesysPoints(total);
-    };
-    calculateTotalPoints();
-  }, [isGenesysMode, mainDeck, extraDeck, sideDeck]);
-
-  const loadDeckForEditing = async (deckId: number) => {
+  const loadDeckForEditing = useCallback(async (deckId: number) => {
     setIsLoadingDeck(true);
     try {
       const { data: deckData, error: deckError } = await supabase.from('decks').select('deck_name, user_id, is_private').eq('id', deckId).single();
@@ -270,13 +328,23 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
       setMainDeck(newMain);
       setExtraDeck(newExtra);
       setSideDeck(newSide);
-    } catch (error: any) {
-      toast({ title: "Erro ao Carregar Deck", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast({ title: "Erro ao Carregar Deck", description: errorMessage, variant: "destructive" });
       navigate("/deck-builder");
     } finally {
       setIsLoadingDeck(false);
     }
-  };
+  }, [user, navigate, toast]);
+
+  useEffect(() => {
+    const deckId = searchParams.get('edit');
+    if (deckId && user) {
+      loadDeckForEditing(Number(deckId));
+    } else {
+      setIsLoadingDeck(false);
+    }
+  }, [searchParams, user, loadDeckForEditing]);
 
   const searchCards = async () => {
     const trimmedQuery = searchQuery.trim();
@@ -292,8 +360,9 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         return a.name.localeCompare(b.name);
       });
       setSearchResults(cards || []);
-    } catch (error: any) {
-      toast({ title: "Erro", description: error.message || "Erro ao buscar cartas", variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Erro ao buscar cartas";
+      toast({ title: "Erro", description: errorMessage, variant: "destructive" });
     } finally {
       setIsSearching(false);
     }
@@ -378,6 +447,55 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportAsImage = async () => {
+    const deckElement = document.getElementById('deck-for-export');
+    if (deckElement) {
+      setIsExportingImage(true);
+      const originalSrcs = new Map<HTMLImageElement, string>();
+      try {
+        const { data: { publicUrl } } = supabase.storage.from('card_images').getPublicUrl('dummy.jpg');
+        const baseUrl = publicUrl.replace('dummy.jpg', '');
+
+        const images = Array.from(deckElement.getElementsByTagName('img'));
+        await Promise.all(images.map(async (img) => {
+          originalSrcs.set(img, img.src);
+          // Extract card ID from the original src (assuming it's in the format like .../cards/{id}.jpg or .../cards/{id}_small.jpg)
+          const match = img.src.match(/(\d+)(?:_small)?\.jpg$/);
+          if (match && match[1]) {
+            const cardId = match[1];
+            img.src = `${baseUrl}${cardId}.jpg`;
+          }
+        }));
+
+        const canvas = await html2canvas(deckElement, {
+          backgroundColor: null,
+          useCORS: true,
+        });
+
+        const image = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        const sanitizedDeckName = deckName.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'deck';
+        link.download = `${sanitizedDeckName}.png`;
+        link.href = image;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error("Error exporting image:", error);
+        toast({
+          title: "Erro ao Exportar Imagem",
+          description: "Ocorreu um erro ao tentar exportar o deck como imagem.",
+          variant: "destructive",
+        });
+      } finally {
+        originalSrcs.forEach((src, img) => {
+          img.src = src;
+        });
+        setIsExportingImage(false);
+      }
+    }
+  };
+
   const handleImportClick = () => fileInputRef.current?.click();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -409,8 +527,9 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         setExtraDeck(extraIds.map(id => cardDataMap.get(id)).filter(Boolean) as CardData[]);
         setSideDeck(sideIds.map(id => cardDataMap.get(id)).filter(Boolean) as CardData[]);
         toast({ title: "Sucesso", description: "Deck importado." });
-      } catch (error: any) {
-        toast({ title: "Erro de Importação", description: error.message, variant: "destructive" });
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        toast({ title: "Erro de Importação", description: errorMessage, variant: "destructive" });
       }
     };
     reader.readAsText(file);
@@ -448,8 +567,9 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         toast({ title: "Sucesso!", description: `Deck "${deckName.trim()}" salvo!` });
         navigate(`/profile/${user.id}`);
       }
-    } catch (error: any) {
-      toast({ title: "Erro ao Salvar", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast({ title: "Erro ao Salvar", description: errorMessage, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -480,6 +600,10 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             <Button variant="outline" onClick={handleImportClick}><FileUp className="h-4 w-4 mr-2" /> Importar</Button>
             <Button variant="outline" onClick={exportDeck}><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
             <Button variant="outline" onClick={handleSortDeck}><ArrowDown className="h-4 w-4 mr-2" /> Re-ordenar</Button>
+            <Button variant="outline" onClick={handleExportAsImage} disabled={isExportingImage}>
+              {isExportingImage ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Image className="h-4 w-4 mr-2" />}
+              Exportar como Imagem
+            </Button>
             <Button variant="destructive" onClick={clearDeck}><Trash2 className="h-4 w-4 mr-2" /> Limpar</Button>
             <div className="flex-grow"></div>
             <Button onClick={saveDeck} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700">
@@ -513,8 +637,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         </div>
 
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-[65%] space-y-6">
-            <DeckDropZone section="main" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard}>
+          <div id="deck-for-export" className="w-full md:w-[65%] space-y-6">
+            <DeckDropZone section="main" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard}>
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-xl font-bold">Main Deck</h2>
@@ -523,114 +647,60 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 <div className="bg-stone-900 p-4 rounded-lg min-h-[200px]">
                   <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                     {mainDeck.map((card, index) => (
-                      <HoverCard key={`${card.id}-${index}`} openDelay={200}>
-                        <HoverCardTrigger asChild>
-                          <div className="relative group">
-                            <img src={card.image_url} alt={card.name} className="w-full" />
-                            {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
-                            {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
-                            <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "main")}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </HoverCardTrigger>
-                        <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
-                          <div className="w-2/5"><img src={card.image_url} alt={card.name} className="w-full" /></div>
-                          <div className="w-3/5 space-y-1">
-                            <h3 className="font-bold text-md">{card.name}</h3>
-                            {card.pt_name && <h4 className="text-sm text-gray-300 -mt-1">{card.pt_name}</h4>}
-                            <p className="text-xs font-bold text-yellow-400">[{card.race} / {card.type}]</p>
-                            <div className="flex justify-start gap-3 text-xs pt-1">
-                              {card.level && <span>Level: {card.level}</span>}
-                              {card.atk !== undefined && <span>ATK/{card.atk}</span>}
-                              {card.def !== undefined && <span>DEF/{card.def}</span>}
-                            </div>
-                            <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.description}</p>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
+                      <DraggableDeckCard
+                        key={`${card.id}-${index}`}
+                        card={card}
+                        index={index}
+                        section="main"
+                        removeCard={removeCard}
+                        isGenesysMode={isGenesysMode}
+                      />
                     ))}
                   </div>
                 </div>
               </div>
             </DeckDropZone>
 
-            <DeckDropZone section="extra" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard}>
+            <DeckDropZone section="extra" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard}>
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-xl font-bold">Extra Deck</h2>
                   <span className="text-muted-foreground">{extraDeck.length} Cartas</span>
                 </div>
                 <div className="bg-indigo-950 p-4 rounded-lg min-h-[100px]">
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-15 gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                     {extraDeck.map((card, index) => (
-                      <HoverCard key={`${card.id}-${index}`} openDelay={200}>
-                        <HoverCardTrigger asChild>
-                          <div className="relative group">
-                            <img src={card.image_url} alt={card.name} className="w-full" />
-                            {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
-                            {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
-                            <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "extra")}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </HoverCardTrigger>
-                        <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
-                           <div className="w-2/5"><img src={card.image_url} alt={card.name} className="w-full" /></div>
-                          <div className="w-3/5 space-y-1">
-                            <h3 className="font-bold text-md">{card.name}</h3>
-                            {card.pt_name && <h4 className="text-sm text-gray-300 -mt-1">{card.pt_name}</h4>}
-                            <p className="text-xs font-bold text-yellow-400">[{card.race} / {card.type}]</p>
-                            <div className="flex justify-start gap-3 text-xs pt-1">
-                              {card.level && <span>Level: {card.level}</span>}
-                              {card.atk !== undefined && <span>ATK/{card.atk}</span>}
-                              {card.def !== undefined && <span>DEF/{card.def}</span>}
-                            </div>
-                            <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.description}</p>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
+                      <DraggableDeckCard
+                        key={`${card.id}-${index}`}
+                        card={card}
+                        index={index}
+                        section="extra"
+                        removeCard={removeCard}
+                        isGenesysMode={isGenesysMode}
+                      />
                     ))}
                   </div>
                 </div>
               </div>
             </DeckDropZone>
 
-            <DeckDropZone section="side" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard}>
+            <DeckDropZone section="side" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard}>
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-xl font-bold">Side Deck</h2>
                   <span className="text-muted-foreground">{sideDeck.length} Cartas</span>
                 </div>
                 <div className="bg-emerald-950 p-4 rounded-lg min-h-[100px]">
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-15 gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                     {sideDeck.map((card, index) => (
-                      <HoverCard key={`${card.id}-${index}`} openDelay={200}>
-                        <HoverCardTrigger asChild>
-                          <div className="relative group">
-                            <img src={card.image_url} alt={card.name} className="w-full" />
-                            {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
-                            {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
-                            <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, "side")}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </HoverCardTrigger>
-                        <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background">
-                           <div className="w-2/5"><img src={card.image_url} alt={card.name} className="w-full" /></div>
-                          <div className="w-3/5 space-y-1">
-                            <h3 className="font-bold text-md">{card.name}</h3>
-                            {card.pt_name && <h4 className="text-sm text-gray-300 -mt-1">{card.pt_name}</h4>}
-                            <p className="text-xs font-bold text-yellow-400">[{card.race} / {card.type}]</p>
-                            <div className="flex justify-start gap-3 text-xs pt-1">
-                              {card.level && <span>Level: {card.level}</span>}
-                              {card.atk !== undefined && <span>ATK/{card.atk}</span>}
-                              {card.def !== undefined && <span>DEF/{card.def}</span>}
-                            </div>
-                            <p className="text-xs border-t border-border pt-2 mt-2 whitespace-pre-wrap h-48 overflow-y-auto">{card.description}</p>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
+                      <DraggableDeckCard
+                        key={`${card.id}-${index}`}
+                        card={card}
+                        index={index}
+                        section="side"
+                        removeCard={removeCard}
+                        isGenesysMode={isGenesysMode}
+                      />
                     ))}
                   </div>
                 </div>
@@ -639,7 +709,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
           </div>
 
           <div className="w-full md:w-[35%]">
-            <div className="sticky top-24 space-y-4">
+            <div className="sticky top-24 space-y-4 z-0">
               <div className="flex gap-2">
                 <Input id="search" placeholder="Buscar pelo nome da carta..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchCards()} />
                 <Button onClick={searchCards} disabled={isSearching}>
