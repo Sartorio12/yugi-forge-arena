@@ -1,14 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import { Request, Response } from 'express';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL;
+// IMPORTANT: Use the Service Role Key to bypass RLS for admin tasks.
+const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase URL or anon key is missing.");
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error("Supabase URL or Service Role Key is missing.");
 }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Initialize the Supabase client with the service role key
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export default async function handler(req: Request, res: Response) {
   try {
