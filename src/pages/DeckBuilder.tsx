@@ -3,13 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image } from "lucide-react";
+import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image, ChevronDown } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -510,7 +516,60 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     }
   };
 
-  const handleImportClick = () => fileInputRef.current?.click();
+  const handleImportYdkClick = () => fileInputRef.current?.click();
+
+  const handleYdkeImport = async () => {
+    try {
+      let ydkeString = await navigator.clipboard.readText();
+      ydkeString = ydkeString.trim();
+
+      if (!ydkeString.startsWith("ydke://")) {
+        toast({ title: "Código YDKE Inválido", description: "O conteúdo da área de transferência não é um código YDKE válido.", variant: "destructive" });
+        return;
+      }
+
+      const [mainB64, extraB64, sideB64] = ydkeString.substring(7).split('!');
+
+      const decodeB64 = (b64: string | undefined) => {
+          if (!b64) return [];
+          const decoded = atob(b64);
+          const bytes = new Uint8Array(decoded.length);
+          for (let i = 0; i < decoded.length; i++) {
+              bytes[i] = decoded.charCodeAt(i);
+          }
+          const dataView = new DataView(bytes.buffer);
+          const cardIds = [];
+          for (let i = 0; i < bytes.length; i += 4) {
+              cardIds.push(dataView.getUint32(i, true));
+          }
+          return cardIds;
+      }
+
+      const mainIds = decodeB64(mainB64);
+      const extraIds = decodeB64(extraB64);
+      const sideIds = decodeB64(sideB64);
+
+      const allIds = [...new Set([...mainIds, ...extraIds, ...sideIds])];
+
+      if (allIds.length === 0) return;
+
+      const { data: apiData, error: fetchCardsError } = await supabase.from('cards').select('*').in('id', allIds);
+      if (fetchCardsError || !apiData) throw new Error("Nenhuma carta encontrada para os IDs importados do YDKE.");
+
+      const cardDataMap = new Map(apiData.map((c: CardData) => [String(c.id), c]));
+      
+      setMainDeck(mainIds.map(id => cardDataMap.get(String(id))).filter(Boolean) as CardData[]);
+      setExtraDeck(extraIds.map(id => cardDataMap.get(String(id))).filter(Boolean) as CardData[]);
+      setSideDeck(sideIds.map(id => cardDataMap.get(String(id))).filter(Boolean) as CardData[]);
+      
+      toast({ title: "Sucesso", description: "Deck importado a partir do código YDKE." });
+
+    } catch (error) {
+      console.error("Failed to read clipboard or parse YDKE:", error);
+      const errorMessage = error instanceof Error ? error.message : "Falha ao importar do YDKE. Verifique o console para mais detalhes.";
+      toast({ title: "Erro de Importação YDKE", description: errorMessage, variant: "destructive" });
+    }
+  };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -611,7 +670,19 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             </div>
           )}
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleImportClick}><FileUp className="h-4 w-4 mr-2" /> Importar</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <FileUp className="h-4 w-4 mr-2" />
+                  Importar
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={handleImportYdkClick}>Importar YDK</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleYdkeImport}>Importar YDKE</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" onClick={exportDeck}><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
             <Button variant="outline" onClick={handleSortDeck}><ArrowDown className="h-4 w-4 mr-2" /> Re-ordenar</Button>
             <Button variant="outline" onClick={handleExportAsImage} disabled={isExportingImage}>
