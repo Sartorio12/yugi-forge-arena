@@ -17,7 +17,6 @@ import { toast } from "@/components/ui/use-toast";
 interface ManageDecklistProps {
   user: User;
   tournamentId: number;
-  currentDeckId: number | null;
   tournamentStatus: string;
   tournamentEventDate: string;
 }
@@ -25,22 +24,53 @@ interface ManageDecklistProps {
 export const ManageDecklist = ({ 
   user, 
   tournamentId, 
-  currentDeckId, 
   tournamentStatus, 
   tournamentEventDate 
 }: ManageDecklistProps) => {
   const queryClient = useQueryClient();
-  const [selectedDeckId, setSelectedDeckId] = useState<string | undefined>(
-    currentDeckId?.toString()
-  );
+  const [selectedDeckId, setSelectedDeckId] = useState<string | undefined>();
 
-  // --- LÓGICA DE TRAVA ---
   const tournamentDate = new Date(tournamentEventDate);
   const now = new Date();
   const isTournamentLocked = tournamentStatus !== 'Aberto' || tournamentDate <= now;
-  // -----------------------
 
-  const { data: userDecks, isLoading: isLoadingDecks } = useQuery({
+  const { data: participant, isLoading: isLoadingParticipant } = useQuery({
+    queryKey: ["tournamentParticipant", tournamentId, user.id],
+    queryFn: async () => {
+        const { data, error } = await supabase
+            .from('tournament_participants')
+            .select('id')
+            .eq('tournament_id', tournamentId)
+            .eq('user_id', user.id)
+            .single();
+        if (error) {
+            // It's okay if not found, means not a participant.
+            if (error.code === 'PGRST116') return null;
+            throw error;
+        };
+        return data;
+    },
+  });
+
+  const { data: submittedDeck, isLoading: isLoadingSubmittedDeck } = useQuery({
+    queryKey: ["submittedDeck", participant?.id],
+    queryFn: async () => {
+        if (!participant) return null;
+        const { data, error } = await supabase
+            .from('tournament_decklists')
+            .select('id, deck_id')
+            .eq('participant_id', participant.id)
+            .single(); // Since it's for single decklist
+        if (error) {
+            if (error.code === 'PGRST116') return null; // Not found is okay
+            throw error;
+        }
+        return data;
+    },
+    enabled: !!participant,
+  });
+
+  const { data: userDecks, isLoading: isLoadingUserDecks } = useQuery({
     queryKey: ["userDecks", user.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -52,21 +82,36 @@ export const ManageDecklist = ({
     },
   });
 
-  const updateDecklistMutation = useMutation({
-    mutationFn: async (deckId: number | null) => {
-      const { error } = await supabase
-        .from("tournament_participants")
-        .update({ deck_id: deckId })
-        .eq("user_id", user.id)
-        .eq("tournament_id", tournamentId);
-      if (error) throw error;
+  const upsertDecklistMutation = useMutation({
+    mutationFn: async (deckId: number) => {
+      if (!participant) throw new Error("Participante não encontrado.");
+      
+      const decklistData = {
+        participant_id: participant.id,
+        deck_id: deckId,
+      };
+
+      if (submittedDeck) {
+        // Update existing decklist
+        const { error } = await supabase
+          .from("tournament_decklists")
+          .update(decklistData)
+          .eq("id", submittedDeck.id);
+        if (error) throw error;
+      } else {
+        // Insert new decklist
+        const { error } = await supabase
+          .from("tournament_decklists")
+          .insert(decklistData);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast({
         title: "Sucesso!",
         description: "Sua decklist foi enviada/atualizada.",
       });
-      queryClient.invalidateQueries({ queryKey: ["tournamentParticipants", tournamentId] });
+      queryClient.invalidateQueries({ queryKey: ["submittedDeck", participant?.id] });
     },
     onError: (error: Error) => {
       toast({
@@ -86,12 +131,14 @@ export const ManageDecklist = ({
         });
         return;
     }
-    updateDecklistMutation.mutate(parseInt(selectedDeckId, 10));
+    upsertDecklistMutation.mutate(parseInt(selectedDeckId, 10));
   };
   
   useEffect(() => {
-    setSelectedDeckId(currentDeckId?.toString());
-  }, [currentDeckId]);
+    setSelectedDeckId(submittedDeck?.deck_id?.toString());
+  }, [submittedDeck]);
+
+  const isLoading = isLoadingParticipant || isLoadingSubmittedDeck || isLoadingUserDecks;
 
   return (
     <Card className="mt-8 bg-card/50">
@@ -105,7 +152,7 @@ export const ManageDecklist = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoadingDecks ? (
+        {isLoading ? (
           <Loader2 className="h-6 w-6 animate-spin" />
         ) : (
           <div className="space-y-4">
@@ -113,7 +160,7 @@ export const ManageDecklist = ({
               <Select
                 value={selectedDeckId}
                 onValueChange={setSelectedDeckId}
-                disabled={isTournamentLocked || isLoadingDecks}
+                disabled={isTournamentLocked || isLoading}
               >
                 <SelectTrigger className="flex-grow">
                   <SelectValue placeholder="Selecione seu deck..." />
@@ -134,13 +181,13 @@ export const ManageDecklist = ({
               </Select>
               <Button 
                 onClick={handleSubmit} 
-                disabled={isTournamentLocked || !selectedDeckId || updateDecklistMutation.isPending}
+                disabled={isTournamentLocked || !selectedDeckId || upsertDecklistMutation.isPending}
                 className="w-full sm:w-auto"
               >
-                {updateDecklistMutation.isPending ? (
+                {upsertDecklistMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
-                {isTournamentLocked ? "Decklist Travada" : (currentDeckId ? "Atualizar Deck" : "Enviar Deck")}
+                {isTournamentLocked ? "Decklist Travada" : (submittedDeck ? "Atualizar Deck" : "Enviar Deck")}
               </Button>
             </div>
             {isTournamentLocked && (

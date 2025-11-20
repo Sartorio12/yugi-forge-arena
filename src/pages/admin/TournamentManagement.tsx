@@ -7,6 +7,12 @@ import UserDisplay from "@/components/UserDisplay";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Table,
   TableBody,
 TableCell,
@@ -30,10 +36,13 @@ import { supabase } from '../../integrations/supabase/client';
 interface Participant {
   id: number;
   total_wins_in_tournament: number;
-  decks: {
+  tournament_decklists: {
     id: number;
-    deck_name: string;
-  } | null;
+    decks: {
+      id: number;
+      deck_name: string;
+    } | null;
+  }[];
   profiles: {
     id: string;
     username: string;
@@ -71,9 +80,12 @@ const TournamentManagementPage = () => {
         .select(`
           id,
           total_wins_in_tournament,
-          decks (
+          tournament_decklists (
             id,
-            deck_name
+            decks (
+              id,
+              deck_name
+            )
           ),
           profiles (
             id,
@@ -92,7 +104,7 @@ const TournamentManagementPage = () => {
         throw error;
       }
 
-      return data as Participant[];
+      return data as unknown as Participant[];
     },
     enabled: !!id,
   });
@@ -202,10 +214,23 @@ const TournamentManagementPage = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {p.decks?.id ? (
-                          <Link to={`/deck/${p.decks.id}`} className="text-primary hover:underline">
-                            {p.decks.deck_name}
-                          </Link>
+                        {p.tournament_decklists && p.tournament_decklists.length > 0 ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                        Ver Decks ({p.tournament_decklists.length})
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    {p.tournament_decklists.map(dl => (
+                                        <DropdownMenuItem key={dl.id} asChild>
+                                            <Link to={`/deck/${dl.decks?.id}`} target="_blank" rel="noopener noreferrer">
+                                                {dl.decks?.deck_name || 'Deck sem nome'}
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         ) : (
                           <span className="text-muted-foreground">Pendente</span>
                         )}
@@ -255,16 +280,23 @@ const TournamentManagementPage = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        {p.decks?.id ? (
-                          <Button asChild variant="outline" size="sm">
-                            <Link 
-                              to={`/deck/${p.decks.id}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                            >
-                              Ver Decklist
-                            </Link>
-                          </Button>
+                        {p.tournament_decklists && p.tournament_decklists.length > 0 ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                    Ver Decklists
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                {p.tournament_decklists.map(dl => (
+                                    <DropdownMenuItem key={dl.id} asChild>
+                                        <Link to={`/deck/${dl.decks?.id}`} target="_blank" rel="noopener noreferrer">
+                                            {dl.decks?.deck_name || 'Deck sem nome'}
+                                        </Link>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         ) : (
                           <Button variant="outline" size="sm" disabled>
                             Ver Decklist

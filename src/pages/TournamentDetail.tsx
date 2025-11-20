@@ -6,12 +6,13 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
-import { Calendar, ExternalLink, Loader2, ArrowLeft, CheckCircle } from "lucide-react";
+import { Calendar, ExternalLink, Loader2, ArrowLeft, CheckCircle, Layers } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { ManageDecklist } from "@/components/ManageDecklist";
+import { ManageMultipleDecklists } from "@/components/ManageMultipleDecklists";
 
 interface TournamentDetailProps {
   user: User | null;
@@ -23,7 +24,6 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isRegistered, setIsRegistered] = useState(false);
-  const [currentDeckId, setCurrentDeckId] = useState<number | null>(null);
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
@@ -44,7 +44,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournament_participants")
-        .select("user_id, deck_id")
+        .select("user_id")
         .eq("tournament_id", Number(id));
       if (error) throw error;
       return data;
@@ -55,13 +55,9 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
   useEffect(() => {
     if (user && participants) {
       const userParticipation = participants.find((p) => p.user_id === user.id);
-      if (userParticipation) {
-        setIsRegistered(true);
-        setCurrentDeckId(userParticipation.deck_id);
-      } else {
-        setIsRegistered(false);
-        setCurrentDeckId(null);
-      }
+      setIsRegistered(!!userParticipation);
+    } else {
+      setIsRegistered(false);
     }
   }, [user, participants]);
 
@@ -155,6 +151,12 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                         })}
                       </span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-5 w-5" />
+                      <span>
+                        {tournament.num_decks_allowed} deck{tournament.num_decks_allowed > 1 ? 's' : ''} por jogador
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <span
@@ -176,13 +178,24 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
 
               {/* Decklist Management for registered users */}
               {user && isRegistered && tournament.is_decklist_required && (
-                <ManageDecklist 
-                  user={user} 
-                  tournamentId={tournament.id} 
-                  currentDeckId={currentDeckId}
-                  tournamentStatus={tournament.status}
-                  tournamentEventDate={tournament.event_date}
-                />
+                <>
+                  {tournament.num_decks_allowed > 1 ? (
+                    <ManageMultipleDecklists
+                      user={user}
+                      tournamentId={tournament.id}
+                      tournamentStatus={tournament.status}
+                      tournamentEventDate={tournament.event_date}
+                      numDecksAllowed={tournament.num_decks_allowed}
+                    />
+                  ) : (
+                    <ManageDecklist 
+                      user={user} 
+                      tournamentId={tournament.id}
+                      tournamentStatus={tournament.status}
+                      tournamentEventDate={tournament.event_date}
+                    />
+                  )}
+                </>
               )}
 
               {/* Action Buttons */}

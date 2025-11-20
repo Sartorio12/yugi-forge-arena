@@ -48,6 +48,10 @@ const tournamentFormSchema = z.object({
     (val) => (val === "" ? null : Number(val)),
     z.number().int().positive({ message: "O número máximo de participantes deve ser um inteiro positivo." }).nullable().optional()
   ),
+  num_decks_allowed: z.preprocess(
+    (val) => (val === "" ? 1 : Number(val)),
+    z.number().int().min(1, { message: "O número de decks deve ser no mínimo 1." }).default(1)
+  ),
 });
 
 interface TournamentFormProps {
@@ -79,6 +83,7 @@ export const TournamentForm = ({
       registration_link: initialData?.registration_link || "",
       is_decklist_required: initialData?.is_decklist_required ?? true,
       max_participants: initialData?.max_participants || undefined,
+      num_decks_allowed: initialData?.num_decks_allowed || 1,
     },
   });
 
@@ -155,6 +160,7 @@ export const TournamentForm = ({
       banner_image_url: finalBannerImageUrl,
       event_date: values.event_date.toISOString(),
       max_participants: values.max_participants || null,
+      num_decks_allowed: values.num_decks_allowed,
     };
     onSubmit(dataToSubmit);
   };
@@ -186,6 +192,22 @@ export const TournamentForm = ({
               </FormControl>
               <FormDescription>
                 Deixe em branco para não definir um limite.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="num_decks_allowed"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Número de Decks por Jogador</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="Ex: 1" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+              </FormControl>
+              <FormDescription>
+                Quantos decks cada jogador pode registrar no torneio.
               </FormDescription>
               <FormMessage />
             </FormItem>
