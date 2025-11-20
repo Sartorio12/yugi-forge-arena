@@ -139,11 +139,16 @@ const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtra
     }),
   }), [card]);
 
+  const handleRightClick = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    addCardToDeck(card, 'main');
+  }, [card, addCardToDeck]);
+
   // The main div is the drag source
   return (
     <HoverCard openDelay={200}>
           <HoverCardTrigger asChild>
-            <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }}>
+            <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }} onContextMenu={handleRightClick}>
               <div className="flex items-center gap-3 p-2 rounded-md hover:bg-stone-800">
                 {/* The image is the preview */}
                 <div className="relative" ref={preview}>
@@ -669,7 +674,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               Você deve estar logado para salvar um deck.
             </div>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
@@ -690,8 +695,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               Exportar como Imagem
             </Button>
             <Button variant="destructive" onClick={clearDeck}><Trash2 className="h-4 w-4 mr-2" /> Limpar</Button>
-            <div className="flex-grow"></div>
-            <Button onClick={saveDeck} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700">
+            <div className="flex-grow md:flex-grow-0"></div>
+            <Button onClick={saveDeck} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 md:ml-auto mt-2 md:mt-0">
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
               {editingDeckId ? 'Atualizar Deck' : 'Salvar Deck'}
             </Button>
@@ -722,7 +727,33 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         </div>
 
         <div className="flex flex-col md:flex-row gap-6">
-          <div id="deck-for-export" className="w-full md:w-[65%] space-y-6">
+          <div className="w-full md:w-[35%] order-1 md:order-2">
+            <div className="sticky top-24 space-y-4 z-0">
+              <div className="flex gap-2">
+                <Input id="search" placeholder="Buscar pelo nome da carta..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchCards()} />
+                <Button onClick={searchCards} disabled={isSearching}>
+                  {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <Button variant="outline" className="bg-blue-600 hover:bg-blue-700 border-0">Filtrar</Button>
+                <select className="bg-background border border-border rounded-md p-2">
+                  <option>Nome</option>
+                  <option>Nível</option>
+                  <option>ATK</option>
+                </select>
+                <span className="text-muted-foreground">
+                  Resultados: {searchResults.length}
+                </span>
+              </div>
+              <div className="h-[60vh] overflow-y-auto bg-stone-900/50 p-2 rounded-lg">
+                {searchResults.map((card, index) => (
+                  <DraggableSearchResultCard key={`${card.id}-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} />
+                ))}
+              </div>
+            </div>
+          </div>
+          <div id="deck-for-export" className="w-full md:w-[65%] space-y-6 order-2 md:order-1">
             <DeckDropZone section="main" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard}>
               <div>
                 <div className="flex justify-between items-center mb-2">
@@ -791,33 +822,6 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 </div>
               </div>
             </DeckDropZone>
-          </div>
-
-          <div className="w-full md:w-[35%]">
-            <div className="sticky top-24 space-y-4 z-0">
-              <div className="flex gap-2">
-                <Input id="search" placeholder="Buscar pelo nome da carta..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchCards()} />
-                <Button onClick={searchCards} disabled={isSearching}>
-                  {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                </Button>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <Button variant="outline" className="bg-blue-600 hover:bg-blue-700 border-0">Filtrar</Button>
-                <select className="bg-background border border-border rounded-md p-2">
-                  <option>Nome</option>
-                  <option>Nível</option>
-                  <option>ATK</option>
-                </select>
-                <span className="text-muted-foreground">
-                  Resultados: {searchResults.length}
-                </span>
-              </div>
-              <div className="h-[60vh] overflow-y-auto bg-stone-900/50 p-2 rounded-lg">
-                {searchResults.map((card, index) => (
-                  <DraggableSearchResultCard key={`${card.id}-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} />
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </main>
