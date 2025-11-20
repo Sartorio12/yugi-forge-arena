@@ -124,17 +124,18 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
     <div className="min-h-screen bg-background">
       <Navbar user={user} onLogout={onLogout} />
       <main className="pb-12">
-        <div className="relative h-48 bg-muted">
-          {clan.banner_url && (
-            <img
-              src={clan.banner_url}
-              alt={`${clan.name} banner`}
-              className="w-full h-full object-cover"
-            />
-          )}
-          {!clan.banner_url && (
-            <div className="w-full h-full bg-gradient-to-r from-primary to-accent" />
-          )}
+        <div className="w-full h-48 bg-muted">
+          <div className="container mx-auto h-full">
+            {clan.banner_url ? (
+              <img
+                src={clan.banner_url}
+                alt={`${clan.name} banner`}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-r from-primary to-accent rounded-lg" />
+            )}
+          </div>
         </div>
         <div className="container mx-auto px-4">
           <div className="relative pt-8 mb-8">

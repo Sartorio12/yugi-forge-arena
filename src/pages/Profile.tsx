@@ -181,8 +181,10 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       ) : profile ? (
         <main className="pb-12">
-          <div className="relative h-64 bg-gradient-primary">
-            {profile.banner_url && <img src={profile.banner_url} alt="Banner" className="w-full h-full object-cover" />}
+          <div className="w-full h-64 bg-gradient-primary">
+            <div className="container mx-auto h-full">
+              {profile.banner_url && <img src={profile.banner_url} alt="Banner" className="w-full h-full object-cover rounded-lg" />}
+            </div>
           </div>
           <div className="container mx-auto px-4">
             <div className="relative -mt-8 mb-8">
