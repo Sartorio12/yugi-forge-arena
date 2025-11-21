@@ -338,21 +338,16 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
       // Check for tournament lock first
       const { data: tournamentDecks, error: tournamentError } = await supabase
         .from('tournament_decks')
-        .select('tournaments(start_date)')
+        .select('tournaments(event_date)')
         .eq('deck_id', deckId);
 
-      if (tournamentError) throw tournamentError;
+      if (tournamentError) throw new Error(tournamentError.message);
 
       const now = new Date();
       for (const entry of tournamentDecks) {
-        if (entry.tournaments && new Date(entry.tournaments.start_date) <= now) {
+        if (entry.tournaments && new Date(entry.tournaments.event_date) <= now) {
           setIsDeckLocked(true);
-          toast({
-            title: "Deck Travado",
-            description: "Este deck está vinculado a um torneio que já começou e não pode ser editado.",
-            variant: "destructive",
-            duration: 9000,
-          });
+          // Removed toast notification as requested
           break;
         }
       }
@@ -366,7 +361,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
       setEditingDeckId(deckId);
 
       const { data: deckCards, error: cardsError } = await supabase.from('deck_cards').select('card_api_id, deck_section').eq('deck_id', deckId);
-      if (cardsError) throw cardsError;
+      if (cardsError) throw new Error(cardsError.message);
       if (!deckCards) { setIsLoadingDeck(false); return; }
 
       const allIds = [...new Set(deckCards.map(c => c.card_api_id))].filter(Boolean);
