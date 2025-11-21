@@ -146,9 +146,9 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-5 w-5" />
                       <span>
-                        {format(new Date(tournament.event_date), "dd 'de' MMMM, yyyy 'às' HH:mm", {
+                        {tournament.event_date ? format(new Date(tournament.event_date), "dd 'de' MMMM, yyyy 'às' HH:mm", {
                           locale: ptBR,
-                        })}
+                        }) : 'Data não definida'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
