@@ -130,14 +130,15 @@ const sortCards = (cards: CardData[]): CardData[] => {
   return sorted;
 };
 
-const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCard }: { card: CardData, isGenesysMode: boolean, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean }) => {
+const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCard, isDeckLocked }: { card: CardData, isGenesysMode: boolean, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, isDeckLocked: boolean }) => {
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: ItemTypes.CARD,
     item: { card },
+    canDrag: !isDeckLocked,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-  }), [card]);
+  }), [card, isDeckLocked]);
 
   const handleRightClick = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
@@ -193,31 +194,35 @@ const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtra
   );
 };
 
-const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode }: { card: CardData, index: number, section: "main" | "extra" | "side", removeCard: (index: number, section: "main" | "extra" | "side") => void, isGenesysMode: boolean }) => {
+const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode, isDeckLocked }: { card: CardData, index: number, section: "main" | "extra" | "side", removeCard: (index: number, section: "main" | "extra" | "side") => void, isGenesysMode: boolean, isDeckLocked: boolean }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
-    type: ItemTypes.CARD,
-    item: { card, index, section }, // Include index and section for removal
+    type: ItemTypes.DECK_CARD, // Changed to DECK_CARD to avoid conflicts
+    item: { card, index, section },
+    canDrag: !isDeckLocked,
     end: (item, monitor) => {
       if (!monitor.didDrop()) {
-        // If dropped outside a valid drop target, remove the card
-        removeCard(item.index, item.section);
+        if (!isDeckLocked) {
+          removeCard(item.index, item.section);
+        }
       }
     },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-  }), [card, index, section, removeCard]);
+  }), [card, index, section, removeCard, isDeckLocked]);
 
   return (
     <HoverCard key={`${card.id}-${index}`} openDelay={200}>
       <HoverCardTrigger asChild>
-        <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1, cursor: 'move' }} className="relative group">
+        <div ref={drag} style={{ opacity: isDragging ? 0.5 : 1, cursor: isDeckLocked ? 'not-allowed' : 'move' }} className="relative group">
           <img src={card.image_url} alt={card.name} className="w-full" />
           {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
           {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
-          <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, section)}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {!isDeckLocked && (
+            <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, section)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </HoverCardTrigger>
       <HoverCardContent side="right" className="w-[500px] flex gap-4 p-3 border-2 border-primary/50 bg-background z-[100]">
@@ -238,10 +243,11 @@ const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode }: 
   );
 };
 
-const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard, removeCard }: { section: 'main' | 'extra' | 'side', children: React.ReactNode, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, removeCard: (index: number, section: 'main' | 'extra' | 'side') => void }) => {
+const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard, removeCard, isDeckLocked }: { section: 'main' | 'extra' | 'side', children: React.ReactNode, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, removeCard: (index: number, section: 'main' | 'extra' | 'side') => void, isDeckLocked: boolean }) => {
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: [ItemTypes.CARD, ItemTypes.DECK_CARD],
     drop: (item: { card: CardData, index?: number, section?: 'main' | 'extra' | 'side' }) => {
+        if (isDeckLocked) return;
         const targetSection = isExtraDeckCard(item.card.type) ? 'extra' : 'main';
         if (item.type === ItemTypes.DECK_CARD && item.section && item.index !== undefined) {
             // Moving card from one deck section to another
@@ -257,6 +263,7 @@ const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard, remov
         }
     },
     canDrop: (item: { card: CardData, index?: number, section?: 'main' | 'extra' | 'side' }) => {
+        if (isDeckLocked) return false;
         // Prevent dropping a card onto its own section if it's already there
         if (item.type === ItemTypes.DECK_CARD && item.section === section) {
             return false;
@@ -272,7 +279,7 @@ const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard, remov
       isOver: !!monitor.isOver(),
       canDrop: !!monitor.canDrop(),
     }),
-  }), [addCardToDeck, isExtraDeckCard, section, removeCard]);
+  }), [addCardToDeck, isExtraDeckCard, section, removeCard, isDeckLocked]);
 
   const isActive = isOver && canDrop;
   let backgroundColor = 'transparent';
@@ -311,6 +318,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [isGenesysMode, setIsGenesysMode] = useState(false);
   const [totalGenesysPoints, setTotalGenesysPoints] = useState(0);
   const [isExportingImage, setIsExportingImage] = useState(false);
+  const [isDeckLocked, setIsDeckLocked] = useState(false);
 
   useEffect(() => {
     const calculatePoints = () => {
@@ -327,7 +335,29 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const loadDeckForEditing = useCallback(async (deckId: number) => {
     setIsLoadingDeck(true);
     try {
-      const { data: deckData, error: deckError } = await supabase.from('decks').select('deck_name, user_id, is_private').eq('id', deckId).single();
+      // Check for tournament lock first
+      const { data: tournamentDecks, error: tournamentError } = await supabase
+        .from('tournament_decks')
+        .select('tournaments(start_date)')
+        .eq('deck_id', deckId);
+
+      if (tournamentError) throw tournamentError;
+
+      const now = new Date();
+      for (const entry of tournamentDecks) {
+        if (entry.tournaments && new Date(entry.tournaments.start_date) <= now) {
+          setIsDeckLocked(true);
+          toast({
+            title: "Deck Travado",
+            description: "Este deck está vinculado a um torneio que já começou e não pode ser editado.",
+            variant: "destructive",
+            duration: 9000,
+          });
+          break;
+        }
+      }
+
+      const { data: deckData, error: deckError } = await supabase.from('decks').select('*, profiles(*)').eq('id', deckId).single();
       if (deckError || !deckData) throw new Error("Deck para edição não encontrado.");
       if (deckData.user_id !== user?.id) throw new Error("Você não tem permissão para editar este deck.");
 
@@ -674,36 +704,42 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               Você deve estar logado para salvar um deck.
             </div>
           )}
+          {isDeckLocked && (
+            <div className="flex items-center gap-2 text-sm text-red-500 bg-red-900/30 p-3 rounded-md mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              Este deck está travado e não pode ser editado pois está vinculado a um torneio que já começou.
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" disabled={isDeckLocked}>
                   <FileUp className="h-4 w-4 mr-2" />
                   Importar
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={handleImportYdkClick}>Importar YDK</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleYdkeImport}>Importar YDKE</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleImportYdkClick} disabled={isDeckLocked}>Importar YDK</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleYdkeImport} disabled={isDeckLocked}>Importar YDKE</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button variant="outline" onClick={exportDeck}><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
-            <Button variant="outline" onClick={handleSortDeck}><ArrowDown className="h-4 w-4 mr-2" /> Re-ordenar</Button>
+            <Button variant="outline" onClick={handleSortDeck} disabled={isDeckLocked}><ArrowDown className="h-4 w-4 mr-2" /> Re-ordenar</Button>
             <Button variant="outline" onClick={handleExportAsImage} disabled={isExportingImage}>
               {isExportingImage ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Image className="h-4 w-4 mr-2" />}
               Exportar como Imagem
             </Button>
-            <Button variant="destructive" onClick={clearDeck}><Trash2 className="h-4 w-4 mr-2" /> Limpar</Button>
+            <Button variant="destructive" onClick={clearDeck} disabled={isDeckLocked}><Trash2 className="h-4 w-4 mr-2" /> Limpar</Button>
             <div className="flex-grow md:flex-grow-0"></div>
-            <Button onClick={saveDeck} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 md:ml-auto mt-2 md:mt-0">
+            <Button onClick={saveDeck} disabled={isSaving || isDeckLocked} className="bg-blue-600 hover:bg-blue-700 md:ml-auto mt-2 md:mt-0">
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-              {editingDeckId ? 'Atualizar Deck' : 'Salvar Deck'}
+              {isDeckLocked ? "Deck Travado" : (editingDeckId ? 'Atualizar Deck' : 'Salvar Deck')}
             </Button>
           </div>
           <div>
             <Label htmlFor="deck-name" className="text-sm font-bold mb-2 block">Deck Name</Label>
-            <Input id="deck-name" placeholder="Dê um nome ao seu Deck" className="text-lg" value={deckName} onChange={(e) => setDeckName(e.target.value)} />
+            <Input id="deck-name" placeholder="Dê um nome ao seu Deck" className="text-lg" value={deckName} onChange={(e) => setDeckName(e.target.value)} disabled={isDeckLocked} />
           </div>
           <div className="flex items-center justify-between mt-2">
             <div className="flex-1 flex justify-start">
@@ -730,8 +766,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
           <div className="w-full md:w-[35%] order-1 md:order-2">
             <div className="sticky top-24 space-y-4 z-0">
               <div className="flex gap-2">
-                <Input id="search" placeholder="Buscar pelo nome da carta..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchCards()} />
-                <Button onClick={searchCards} disabled={isSearching}>
+                <Input id="search" placeholder="Buscar pelo nome da carta..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchCards()} disabled={isDeckLocked} />
+                <Button onClick={searchCards} disabled={isSearching || isDeckLocked}>
                   {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 </Button>
               </div>
@@ -748,13 +784,13 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               </div>
               <div className="h-[60vh] overflow-y-auto bg-stone-900/50 p-2 rounded-lg">
                 {searchResults.map((card, index) => (
-                  <DraggableSearchResultCard key={`${card.id}-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} />
+                  <DraggableSearchResultCard key={`${card.id}-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} isDeckLocked={isDeckLocked} />
                 ))}
               </div>
             </div>
           </div>
           <div id="deck-for-export" className="w-full md:w-[65%] space-y-6 order-2 md:order-1">
-            <DeckDropZone section="main" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard}>
+            <DeckDropZone section="main" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-xl font-bold">Main Deck</h2>
@@ -770,6 +806,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                         section="main"
                         removeCard={removeCard}
                         isGenesysMode={isGenesysMode}
+                        isDeckLocked={isDeckLocked}
                       />
                     ))}
                   </div>
@@ -777,7 +814,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               </div>
             </DeckDropZone>
 
-            <DeckDropZone section="extra" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard}>
+            <DeckDropZone section="extra" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-xl font-bold">Extra Deck</h2>
@@ -793,6 +830,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                         section="extra"
                         removeCard={removeCard}
                         isGenesysMode={isGenesysMode}
+                        isDeckLocked={isDeckLocked}
                       />
                     ))}
                   </div>
@@ -800,7 +838,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               </div>
             </DeckDropZone>
 
-            <DeckDropZone section="side" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard}>
+            <DeckDropZone section="side" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-xl font-bold">Side Deck</h2>
@@ -816,6 +854,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                         section="side"
                         removeCard={removeCard}
                         isGenesysMode={isGenesysMode}
+                        isDeckLocked={isDeckLocked}
                       />
                     ))}
                   </div>

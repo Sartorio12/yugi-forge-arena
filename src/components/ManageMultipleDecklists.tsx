@@ -13,7 +13,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { Tables } from "@/integrations/supabase/types";
 import { Link } from "react-router-dom";
 
 interface ManageMultipleDecklistsProps {
@@ -24,8 +23,12 @@ interface ManageMultipleDecklistsProps {
   numDecksAllowed: number;
 }
 
-interface SubmittedDeck extends Tables<'tournament_decklists'> {
-  decks: Tables<'decks'> | null;
+interface SubmittedDeckInfo {
+  deck_id: number;
+  deck_snapshot_id: number;
+  tournament_deck_snapshots: {
+    deck_name: string;
+  } | null;
 }
 
 export const ManageMultipleDecklists = ({
@@ -57,56 +60,33 @@ export const ManageMultipleDecklists = ({
   const { data: submittedDecks, isLoading: isLoadingSubmittedDecks } = useQuery({
     queryKey: ["submittedDecks", tournamentId, user.id],
     queryFn: async () => {
-        const { data: participantData, error: participantError } = await supabase
-            .from('tournament_participants')
-            .select('id')
-            .eq('tournament_id', tournamentId)
-            .eq('user_id', user.id)
-            .single();
-
-        if (participantError || !participantData) {
-            // Not a participant yet, so no submitted decks.
-            return [];
-        }
-
         const { data, error } = await supabase
-            .from('tournament_decklists')
+            .from('tournament_decks')
             .select(`
-                *,
-                decks (
-                    id,
+                deck_id,
+                deck_snapshot_id,
+                tournament_deck_snapshots (
                     deck_name
                 )
             `)
-            .eq('participant_id', participantData.id);
+            .eq('tournament_id', tournamentId)
+            .eq('user_id', user.id);
         
         if (error) throw error;
-        return data as SubmittedDeck[];
+        return data as SubmittedDeckInfo[];
     }
   });
   
-  const addDecklistMutation = useMutation({
+  const submitDecklistMutation = useMutation({
     mutationFn: async (deckId: number) => {
-        const { data: participantData, error: participantError } = await supabase
-            .from('tournament_participants')
-            .select('id')
-            .eq('tournament_id', tournamentId)
-            .eq('user_id', user.id)
-            .single();
-        
-        if(participantError || !participantData) throw new Error("Participante não encontrado.");
+      const { error } = await supabase.rpc('submit_deck_to_tournament', {
+        p_tournament_id: tournamentId,
+        p_deck_id: deckId,
+      });
 
-        const { error } = await supabase.from("tournament_decklists").insert({
-            participant_id: participantData.id,
-            deck_id: deckId,
-        });
-
-        if (error) {
-            if (error.code === '23505') { // Unique constraint violation
-                throw new Error("Este deck já foi enviado.");
-            }
-            throw error;
-        }
+      if (error) {
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({ title: "Sucesso!", description: "Sua decklist foi enviada." });
@@ -119,8 +99,15 @@ export const ManageMultipleDecklists = ({
   });
 
   const removeDecklistMutation = useMutation({
-    mutationFn: async (decklistId: number) => {
-      const { error } = await supabase.from('tournament_decklists').delete().eq('id', decklistId);
+    mutationFn: async (deckIdToRemove: number) => {
+      // We now delete the entry from tournament_decks, which should cascade if set up correctly.
+      // Or handle deletion logic inside a dedicated RPC function. For now, let's delete from tournament_decks.
+      const { error } = await supabase.from('tournament_decks')
+        .delete()
+        .eq('tournament_id', tournamentId)
+        .eq('user_id', user.id)
+        .eq('deck_id', deckIdToRemove);
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -132,6 +119,7 @@ export const ManageMultipleDecklists = ({
     },
   });
 
+
   const handleSubmit = () => {
     if (!selectedDeckId) {
         toast({ title: "Nenhum deck selecionado", description: "Por favor, selecione um deck para enviar.", variant: "destructive"});
@@ -141,7 +129,7 @@ export const ManageMultipleDecklists = ({
         toast({ title: "Limite de decks atingido", description: `Você já enviou o número máximo de ${numDecksAllowed} decks.`, variant: "destructive"});
         return;
     }
-    addDecklistMutation.mutate(parseInt(selectedDeckId, 10));
+    submitDecklistMutation.mutate(parseInt(selectedDeckId, 10));
   };
   
   const isLoading = isLoadingUserDecks || isLoadingSubmittedDecks;
@@ -168,15 +156,15 @@ export const ManageMultipleDecklists = ({
                 {submittedDecks && submittedDecks.length > 0 ? (
                     <ul className="list-disc list-inside space-y-2">
                         {submittedDecks.map(decklist => (
-                           <li key={decklist.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
-                               <Link to={`/deck/${decklist.decks?.id}`} className="text-primary hover:underline">
-                                 {decklist.decks?.deck_name || 'Deck sem nome'}
+                           <li key={decklist.deck_id} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                               <Link to={`/deck/${decklist.deck_id}?snapshot_id=${decklist.deck_snapshot_id}`} className="text-primary hover:underline">
+                                 {decklist.tournament_deck_snapshots?.deck_name || 'Deck sem nome'}
                                </Link>
                                {!isTournamentLocked && (
                                  <Button
                                    variant="ghost"
                                    size="icon"
-                                   onClick={() => removeDecklistMutation.mutate(decklist.id)}
+                                   onClick={() => removeDecklistMutation.mutate(decklist.deck_id)}
                                    disabled={removeDecklistMutation.isPending}
                                    className="text-red-500 hover:text-red-400"
                                  >
@@ -222,10 +210,10 @@ export const ManageMultipleDecklists = ({
                   </Select>
                   <Button 
                     onClick={handleSubmit} 
-                    disabled={isTournamentLocked || !selectedDeckId || addDecklistMutation.isPending}
+                    disabled={isTournamentLocked || !selectedDeckId || submitDecklistMutation.isPending}
                     className="w-full sm:w-auto"
                   >
-                    {addDecklistMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Enviar Deck"}
+                    {submitDecklistMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Enviar Deck"}
                   </Button>
                 </div>
               </div>
@@ -241,3 +229,4 @@ export const ManageMultipleDecklists = ({
     </Card>
   );
 };
+

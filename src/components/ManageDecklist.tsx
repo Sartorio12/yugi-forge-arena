@@ -34,40 +34,21 @@ export const ManageDecklist = ({
   const now = new Date();
   const isTournamentLocked = tournamentStatus !== 'Aberto' || tournamentDate <= now;
 
-  const { data: participant, isLoading: isLoadingParticipant } = useQuery({
-    queryKey: ["tournamentParticipant", tournamentId, user.id],
+  const { data: submittedDeck, isLoading: isLoadingSubmittedDeck } = useQuery({
+    queryKey: ["submittedDeck", tournamentId, user.id],
     queryFn: async () => {
         const { data, error } = await supabase
-            .from('tournament_participants')
-            .select('id')
+            .from('tournament_decks')
+            .select('deck_id, deck_snapshot_id')
             .eq('tournament_id', tournamentId)
             .eq('user_id', user.id)
             .single();
-        if (error) {
-            // It's okay if not found, means not a participant.
-            if (error.code === 'PGRST116') return null;
-            throw error;
-        };
-        return data;
-    },
-  });
-
-  const { data: submittedDeck, isLoading: isLoadingSubmittedDeck } = useQuery({
-    queryKey: ["submittedDeck", participant?.id],
-    queryFn: async () => {
-        if (!participant) return null;
-        const { data, error } = await supabase
-            .from('tournament_decklists')
-            .select('id, deck_id')
-            .eq('participant_id', participant.id)
-            .single(); // Since it's for single decklist
         if (error) {
             if (error.code === 'PGRST116') return null; // Not found is okay
             throw error;
         }
         return data;
     },
-    enabled: !!participant,
   });
 
   const { data: userDecks, isLoading: isLoadingUserDecks } = useQuery({
@@ -82,28 +63,15 @@ export const ManageDecklist = ({
     },
   });
 
-  const upsertDecklistMutation = useMutation({
+  const submitDecklistMutation = useMutation({
     mutationFn: async (deckId: number) => {
-      if (!participant) throw new Error("Participante não encontrado.");
-      
-      const decklistData = {
-        participant_id: participant.id,
-        deck_id: deckId,
-      };
+      const { error } = await supabase.rpc('submit_deck_to_tournament', {
+        p_tournament_id: tournamentId,
+        p_deck_id: deckId,
+      });
 
-      if (submittedDeck) {
-        // Update existing decklist
-        const { error } = await supabase
-          .from("tournament_decklists")
-          .update(decklistData)
-          .eq("id", submittedDeck.id);
-        if (error) throw error;
-      } else {
-        // Insert new decklist
-        const { error } = await supabase
-          .from("tournament_decklists")
-          .insert(decklistData);
-        if (error) throw error;
+      if (error) {
+        throw error;
       }
     },
     onSuccess: () => {
@@ -111,7 +79,7 @@ export const ManageDecklist = ({
         title: "Sucesso!",
         description: "Sua decklist foi enviada/atualizada.",
       });
-      queryClient.invalidateQueries({ queryKey: ["submittedDeck", participant?.id] });
+      queryClient.invalidateQueries({ queryKey: ["submittedDeck", tournamentId, user.id] });
     },
     onError: (error: Error) => {
       toast({
@@ -131,14 +99,14 @@ export const ManageDecklist = ({
         });
         return;
     }
-    upsertDecklistMutation.mutate(parseInt(selectedDeckId, 10));
+    submitDecklistMutation.mutate(parseInt(selectedDeckId, 10));
   };
   
   useEffect(() => {
     setSelectedDeckId(submittedDeck?.deck_id?.toString());
   }, [submittedDeck]);
 
-  const isLoading = isLoadingParticipant || isLoadingSubmittedDeck || isLoadingUserDecks;
+  const isLoading = isLoadingSubmittedDeck || isLoadingUserDecks;
 
   return (
     <Card className="mt-8 bg-card/50">
@@ -181,16 +149,16 @@ export const ManageDecklist = ({
               </Select>
               <Button 
                 onClick={handleSubmit} 
-                disabled={isTournamentLocked || !selectedDeckId || upsertDecklistMutation.isPending}
+                disabled={isTournamentLocked || !selectedDeckId || submitDecklistMutation.isPending}
                 className="w-full sm:w-auto"
               >
-                {upsertDecklistMutation.isPending ? (
+                {submitDecklistMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
                 {isTournamentLocked ? "Decklist Travada" : (submittedDeck ? "Atualizar Deck" : "Enviar Deck")}
               </Button>
             </div>
-            {isTournamentLocked && (
+            {isTournamentLocked && submittedDeck && (
               <p className="text-sm text-muted-foreground pt-2">
                 As decklists não podem ser alteradas após o início do torneio.
               </p>

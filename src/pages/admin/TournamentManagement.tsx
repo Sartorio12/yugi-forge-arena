@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX } from "lucide-react";
+import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserDisplay from "@/components/UserDisplay";
@@ -15,7 +15,7 @@ import {
 import {
   Table,
   TableBody,
-TableCell,
+  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -33,16 +33,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from '../../integrations/supabase/client';
 
+// Updated to match the RPC return type
+interface ParticipantDeck {
+  user_id: string;
+  deck_id: number;
+  deck_snapshot_id: number;
+  deck_name: string | null;
+}
+
 interface Participant {
   id: number;
+  user_id: string;
   total_wins_in_tournament: number;
-  tournament_decklists: {
-    id: number;
-    decks: {
-      id: number;
-      deck_name: string;
-    } | null;
-  }[];
   profiles: {
     id: string;
     username: string;
@@ -54,6 +56,7 @@ interface Participant {
     }[] | null;
   } | null;
 }
+
 
 const TournamentManagementPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -79,14 +82,8 @@ const TournamentManagementPage = () => {
         .from("tournament_participants")
         .select(`
           id,
+          user_id,
           total_wins_in_tournament,
-          tournament_decklists (
-            id,
-            decks (
-              id,
-              deck_name
-            )
-          ),
           profiles (
             id,
             username,
@@ -104,10 +101,39 @@ const TournamentManagementPage = () => {
         throw error;
       }
 
-      return data as unknown as Participant[];
+      return data as Participant[];
     },
     enabled: !!id,
   });
+
+  const { data: allDecks, isLoading: isLoadingDecks } = useQuery({
+    queryKey: ["tournamentDecksForAdmin", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_tournament_decks_for_admin', { 
+        p_tournament_id: Number(id) 
+      });
+      
+      if (error) {
+          console.error("Error fetching tournament decks via RPC:", error);
+          throw error;
+      }
+      console.log("All tournament decks data (RPC):", data);
+      return data as ParticipantDeck[];
+    },
+    enabled: !!id,
+  });
+
+  const decksByUserId = new Map<string, ParticipantDeck[]>();
+  if (allDecks) {
+    for (const deck of allDecks) {
+      if (deck.user_id && !decksByUserId.has(deck.user_id)) {
+        decksByUserId.set(deck.user_id, []);
+      }
+      if (deck.user_id) {
+        decksByUserId.get(deck.user_id)!.push(deck);
+      }
+    }
+  }
 
   const updateWinsMutation = useMutation({
     mutationFn: async ({ participantId, newWins }: { participantId: number; newWins: number }) => {
@@ -161,7 +187,7 @@ const TournamentManagementPage = () => {
     removeParticipantMutation.mutate(participantId);
   };
 
-  const isLoading = isLoadingTournament || isLoadingParticipants;
+  const isLoading = isLoadingTournament || isLoadingParticipants || isLoadingDecks;
 
   return (
     <>
@@ -195,116 +221,99 @@ const TournamentManagementPage = () => {
                     <TableHead>Jogador</TableHead>
                     <TableHead>Decklist</TableHead>
                     <TableHead className="text-center w-[150px]">Vitórias</TableHead>
-                    <TableHead className="w-[200px]">Ações</TableHead>
-                    <TableHead className="text-right">Deck Check</TableHead>
+                    <TableHead className="w-[250px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {participants.sort((a, b) => a.id - b.id).map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-4">
-                          <Avatar>
-                            <AvatarImage src={p.profiles?.avatar_url || undefined} alt={p.profiles?.username || "Usuário desconhecido"} />
-                            <AvatarFallback>{p.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">
-                            <UserDisplay profile={{id: p.profiles?.id || "", username: p.profiles?.username || "Usuário desconhecido"}} clan={p.profiles?.clan_members?.[0]?.clans?.tag ? { tag: p.profiles.clan_members[0].clans.tag } : null} />
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {p.tournament_decklists && p.tournament_decklists.length > 0 ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm">
-                                        Ver Decks ({p.tournament_decklists.length})
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                    {p.tournament_decklists.map(dl => (
-                                        <DropdownMenuItem key={dl.id} asChild>
-                                            <Link to={`/deck/${dl.decks?.id}`} target="_blank" rel="noopener noreferrer">
-                                                {dl.decks?.deck_name || 'Deck sem nome'}
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        ) : (
-                          <span className="text-muted-foreground">Pendente</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center font-bold text-xl">
-                        {p.total_wins_in_tournament}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-start gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleUpdateWins(p, 1)}
-                            disabled={updateWinsMutation.isPending}
-                          >
-                            <PlusCircle className="h-5 w-5 text-green-500" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleUpdateWins(p, -1)}
-                            disabled={updateWinsMutation.isPending || p.total_wins_in_tournament === 0}
-                          >
-                            <MinusCircle className="h-5 w-5 text-red-500" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="icon" disabled={removeParticipantMutation.isPending}>
-                                <UserX className="h-5 w-5" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta ação removerá o participante {p.profiles?.username} do torneio.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleRemoveParticipant(p.id)}>
-                                  Remover
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {p.tournament_decklists && p.tournament_decklists.length > 0 ? (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    Ver Decklists
+                  {participants.sort((a, b) => a.id - b.id).map((p) => {
+                    const userDecks = decksByUserId.get(p.user_id);
+                    const hasDecks = userDecks && userDecks.length > 0;
+
+                    return (
+                      <TableRow key={p.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-4">
+                            <Avatar>
+                              <AvatarImage src={p.profiles?.avatar_url || undefined} alt={p.profiles?.username || "Usuário desconhecido"} />
+                              <AvatarFallback>{p.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">
+                              <UserDisplay profile={{id: p.profiles?.id || "", username: p.profiles?.username || "Usuário desconhecido"}} clan={p.profiles?.clan_members?.[0]?.clans?.tag ? { tag: p.profiles.clan_members[0].clans.tag } : null} />
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {hasDecks ? (
+                              <span className="text-green-500 font-semibold">Enviada</span>
+                          ) : (
+                              <span className="text-muted-foreground">Pendente</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center font-bold text-xl">
+                          {p.total_wins_in_tournament}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-start gap-2">
+                            {hasDecks && userDecks && (
+                               <DropdownMenu>
+                               <DropdownMenuTrigger asChild>
+                                 <Button variant="outline" size="icon">
+                                   <FileSearch className="h-5 w-5" />
+                                 </Button>
+                               </DropdownMenuTrigger>
+                               <DropdownMenuContent>
+                                 {userDecks.map(dl => (
+                                   <DropdownMenuItem key={dl.deck_id} asChild>
+                                     <Link to={`/deck/${dl.deck_id}?snapshot_id=${dl.deck_snapshot_id}`} target="_blank" rel="noopener noreferrer">
+                                       {dl.deck_name || 'Deck sem nome'}
+                                     </Link>
+                                   </DropdownMenuItem>
+                                 ))}
+                               </DropdownMenuContent>
+                             </DropdownMenu>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleUpdateWins(p, 1)}
+                              disabled={updateWinsMutation.isPending}
+                            >
+                              <PlusCircle className="h-5 w-5 text-green-500" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleUpdateWins(p, -1)}
+                              disabled={updateWinsMutation.isPending || p.total_wins_in_tournament === 0}
+                            >
+                              <MinusCircle className="h-5 w-5 text-red-500" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon" disabled={removeParticipantMutation.isPending}>
+                                  <UserX className="h-5 w-5" />
                                 </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                {p.tournament_decklists.map(dl => (
-                                    <DropdownMenuItem key={dl.id} asChild>
-                                        <Link to={`/deck/${dl.decks?.id}`} target="_blank" rel="noopener noreferrer">
-                                            {dl.decks?.deck_name || 'Deck sem nome'}
-                                        </Link>
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        ) : (
-                          <Button variant="outline" size="sm" disabled>
-                            Ver Decklist
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação removerá o participante {p.profiles?.username} do torneio.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleRemoveParticipant(p.id)}>
+                                    Remover
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             ) : (

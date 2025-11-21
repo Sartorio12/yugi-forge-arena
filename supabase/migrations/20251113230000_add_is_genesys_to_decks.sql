@@ -1,2 +1,0 @@
-ALTER TABLE public.decks
-ADD COLUMN is_genesys BOOLEAN DEFAULT FALSE;

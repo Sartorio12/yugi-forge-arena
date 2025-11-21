@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -120,6 +120,8 @@ const groupCards = (cards: CardData[]) => {
 
 const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const snapshotId = searchParams.get('snapshot_id');
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const commentsRef = useRef<HTMLDivElement>(null);
@@ -138,7 +140,8 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     enabled: !!user,
   });
 
-  const { data: deck, isLoading: isLoadingDeck } = useQuery<Deck | null>({
+  // Fetch live deck data
+  const { data: liveDeck, isLoading: isLoadingLiveDeck } = useQuery<Deck | null>({
     queryKey: ["deck", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -152,7 +155,30 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
       }
       return data as Deck;
     },
+    enabled: !snapshotId, // Only run if not a snapshot
   });
+
+  // Fetch snapshot deck data
+  const { data: snapshotDeck, isLoading: isLoadingSnapshotDeck } = useQuery<Deck | null>({
+      queryKey: ["deck-snapshot", snapshotId],
+      queryFn: async () => {
+          const { data, error } = await supabase
+              .from("tournament_deck_snapshots")
+              .select("*, profiles(*)")
+              .eq("id", snapshotId)
+              .single();
+          if (error) {
+              console.error("Error fetching deck snapshot:", error);
+              return null;
+          }
+          // The snapshot table has a similar structure to the decks table
+          return data as Deck;
+      },
+      enabled: !!snapshotId, // Only run if it is a snapshot
+  });
+
+  const deck = snapshotId ? snapshotDeck : liveDeck;
+  const isLoadingDeck = snapshotId ? isLoadingSnapshotDeck : isLoadingLiveDeck;
 
   const { data: authorClan, isLoading: isLoadingAuthorClan } = useQuery({
     queryKey: ["user-clan", deck?.user_id],
@@ -169,12 +195,21 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   });
 
   const { data: deckCards, isLoading: isLoadingCards } = useQuery<DeckCard[]>({
-    queryKey: ["deck-cards", id],
+    queryKey: ["deck-cards", id, snapshotId],
     queryFn: async () => {
-      const { data: deckCardsData, error: deckCardsError } = await supabase
-        .from("deck_cards")
-        .select("card_api_id, deck_section")
-        .eq("deck_id", id);
+      let deckCardsData, deckCardsError;
+
+      if (snapshotId) {
+        ({ data: deckCardsData, error: deckCardsError } = await supabase
+          .from("tournament_deck_snapshot_cards")
+          .select("card_api_id, deck_section")
+          .eq("snapshot_id", snapshotId));
+      } else {
+        ({ data: deckCardsData, error: deckCardsError } = await supabase
+          .from("deck_cards")
+          .select("card_api_id, deck_section")
+          .eq("deck_id", id));
+      }
 
       if (deckCardsError) throw deckCardsError;
       if (!deckCardsData) return [];
@@ -205,6 +240,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
       if (error) return 0;
       return count || 0;
     },
+    enabled: !snapshotId, // Likes are for live decks, not snapshots
   });
 
   const { data: userHasLiked, isLoading: isLoadingUserHasLiked } = useQuery<boolean>({
@@ -220,7 +256,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
       if (error || !data) return false;
       return true;
     },
-    enabled: !!user,
+    enabled: !!user && !snapshotId,
   });
 
   const { data: commentCount, isLoading: isLoadingComments } = useQuery<number>({
@@ -233,6 +269,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
       if (error) return 0;
       return count || 0;
     },
+    enabled: !snapshotId,
   });
 
   const mainDeck = useMemo(() => deckCards?.filter(c => c.deck_section === 'main' && c.cards).map(c => c.cards!) || [], [deckCards]);
@@ -253,10 +290,10 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   const isLoading = isLoadingDeck || isLoadingCards || isLoadingAuthorClan || isLoadingLikes || isLoadingComments || isLoadingUserHasLiked;
 
   const toggleLike = async () => {
-    if (!user) {
+    if (!user || snapshotId) {
       toast({
-        title: "Ação necessária",
-        description: "Você precisa estar logado para curtir um deck.",
+        title: "Ação não permitida",
+        description: snapshotId ? "Não é possível curtir um snapshot de deck." : "Você precisa estar logado para curtir um deck.",
         variant: "destructive",
       });
       return;
@@ -305,7 +342,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   if (!deck) {
     return (
       <div className="min-h-screen bg-background text-center py-20">
-        <p className="text-2xl text-destructive">Esse deck é privado</p>
+        <p className="text-2xl text-destructive">{snapshotId ? "Snapshot de deck não encontrado." : "Esse deck é privado ou não existe."}</p>
         <Button asChild variant="link" className="mt-4">
           <Link to="/">
             <Home className="mr-2 h-4 w-4" /> Voltar para a Home
@@ -358,16 +395,18 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                 </Link>
               </p>
             )}
-            <div className="flex items-center gap-4 text-muted-foreground">
-                <Button variant="ghost" size="sm" onClick={toggleLike} disabled={!user}>
-                    <Heart className={`h-5 w-5 mr-2 ${userHasLiked ? 'text-red-500 fill-current' : ''}`} />
-                    <span>{likeCount} Likes</span>
-                </Button>
-                <Button variant="ghost" size="sm" onClick={scrollToComments}>
-                    <MessageSquare className="h-5 w-5 mr-2" />
-                    <span>{commentCount} Comentários</span>
-                </Button>
-            </div>
+            {!snapshotId && (
+              <div className="flex items-center gap-4 text-muted-foreground">
+                  <Button variant="ghost" size="sm" onClick={toggleLike} disabled={!user}>
+                      <Heart className={`h-5 w-5 mr-2 ${userHasLiked ? 'text-red-500 fill-current' : ''}`} />
+                      <span>{likeCount} Likes</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={scrollToComments}>
+                      <MessageSquare className="h-5 w-5 mr-2" />
+                      <span>{commentCount} Comentários</span>
+                  </Button>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -410,9 +449,11 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
           </CardContent>
         </Card>
 
-        <div className="mt-8" ref={commentsRef}>
-            <DeckCommentSection deckId={deck.id} user={user} />
-        </div>
+        {!snapshotId && (
+            <div className="mt-8" ref={commentsRef}>
+                <DeckCommentSection deckId={deck.id} user={user} />
+            </div>
+        )}
       </main>
     </div>
   );
