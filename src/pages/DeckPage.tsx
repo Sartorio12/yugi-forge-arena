@@ -376,8 +376,8 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     <div className="min-h-screen bg-background text-white">
       <Navbar user={user} onLogout={onLogout} />
       <main className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
+        <Card className="bg-transparent border-none bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')"}}>
+          <CardHeader className="bg-card/50 rounded-t-lg">
             <div className="flex items-center gap-4">
               <h1 className="text-4xl font-bold">{deck.deck_name}</h1>
               {deck.is_genesys && (
@@ -408,7 +408,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
               </div>
             )}
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-card/50 rounded-b-lg">
             <div className="space-y-2">
               <div>
                 <h2 className="text-2xl font-bold mb-2">Main Deck ({mainDeck.length})</h2>

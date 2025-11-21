@@ -4,6 +4,13 @@ import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -15,11 +22,13 @@ import { Switch } from "@/components/ui/switch";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image, ChevronDown } from "lucide-react";
+import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image, ChevronDown, Info } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import html2canvas from 'html2canvas';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 
 // Interfaces
 interface CardData {
@@ -296,6 +305,64 @@ const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard, remov
   );
 };
 
+
+const instructions = `# 📥 Como Exportar e Enviar seu Deck
+
+Para enviar seus decks do **Master Duel** ou **Neuron** para o nosso site, você precisará do código do deck (formato YDKE) ou do arquivo \`.ydk\`.
+
+Siga o guia abaixo dependendo do seu dispositivo.
+
+---
+
+## 🖥️ Método 1: Computador (PC)
+
+A maneira mais fácil de extrair o deck é utilizando o navegador Google Chrome e uma extensão específica.
+
+### Passo 1: Instale a Extensão
+Primeiro, adicione a extensão **Deck Transfer for Yu-Gi-Oh!** ao seu navegador:
+
+🔗 **[Clique aqui para baixar a extensão na Chrome Web Store](https://chromewebstore.google.com/detail/deck-transfer-for-yu-gi-o/lgcpomfflpfipndmldmgblhpbnnfidgk)**
+
+### Passo 2: Sincronize sua conta
+1. Abra o seu jogo **Yu-Gi-Oh! Master Duel** ou o app **Neuron**.
+2. Certifique-se de que sua conta está vinculada a uma **Konami ID** (No Master Duel: *Submenu > Customer Support > Data Transfer*).
+
+### Passo 3: Exporte o Deck
+1. Acesse o site oficial do **[Yu-Gi-Oh! Card Database](https://www.db.yugioh-card.com/yugiohdb/)** e faça login com sua Konami ID.
+2. Vá até a aba **"My Decks"** (Meus Decks). Você verá os decks que criou no Master Duel ou no Neuron.
+3. Abra o deck que deseja exportar.
+4. Com a extensão instalada, você verá novos botões na página do deck:
+   * **Export YDKE:** Copia um código de texto para sua área de transferência.
+   * **Download YDK:** Baixa o arquivo do deck para seu computador.
+5. **Copie o código YDKE** ou faça o upload do arquivo aqui no site.
+
+---
+
+## 📱 Método 2: Celular (Android e iOS)
+
+Os navegadores padrão de celular (Chrome Mobile, Safari) não suportam extensões de PC. Para contornar isso, recomendamos o uso do **Kiwi Browser** no Android.
+
+### Opção A: Android (Via Kiwi Browser)
+O navegador **Kiwi Browser** permite instalar extensões do Chrome no celular.
+
+1. Baixe o app **Kiwi Browser** na Play Store.
+2. Abra o Kiwi e acesse o link da extensão: **[Deck Transfer for Yu-Gi-Oh!](https://chromewebstore.google.com/detail/deck-transfer-for-yu-gi-o/lgcpomfflpfipndmldmgblhpbnnfidgk)**.
+3. Clique em **"Usar no Chrome"** para instalar.
+4. Pelo Kiwi, acesse o site **[Yu-Gi-Oh! Card Database](https://www.db.yugioh-card.com/yugiohdb/)** e faça login.
+5. Vá em **My Decks**, abra o deck desejado e use os botões da extensão que aparecerão na tela para copiar o **YDKE** ou baixar o **YDK**.
+
+### Opção B: Apenas App Neuron (iOS/Android)
+Se você não conseguir usar o Kiwi Browser:
+
+1. Abra o app **Yu-Gi-Oh! Neuron**.
+2. Vincule o app à sua **Konami ID** (Menu Dados > Konami ID).
+3. Acesse o site **[Yu-Gi-Oh! Card Database](https://www.db.yugioh-card.com/yugiohdb/)** pelo navegador do seu celular.
+4. Vá em **My Decks**.
+5. Infelizmente, sem a extensão, você não terá o botão de exportação direta, mas poderá visualizar a lista completa para conferência. Para obter o arquivo, recomendamos acessar o site pelo PC posteriormente.
+
+---
+
+> **💡 Dica:** O formato **YDKE** é uma sequência de texto (ex: \`ydke://...\`). É o método mais rápido para colar diretamente no nosso formulário de envio!`;
 
 const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const navigate = useNavigate();
@@ -719,6 +786,9 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 <DropdownMenuItem onClick={handleYdkeImport} disabled={isDeckLocked}>Importar YDKE</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Button variant="outline" onClick={exportDeck}><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
+
             <Button variant="outline" onClick={exportDeck}><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
             <Button variant="outline" onClick={handleSortDeck} disabled={isDeckLocked}><ArrowDown className="h-4 w-4 mr-2" /> Re-ordenar</Button>
             <Button variant="outline" onClick={handleExportAsImage} disabled={isExportingImage}>
@@ -740,7 +810,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             <div className="flex-1 flex justify-start">
               <div className="flex items-center space-x-2">
                 <Switch id="is-private" checked={isPrivate} onCheckedChange={setIsPrivate} />
-                <Label htmlFor="is-private">Privado?</Label>
+                <Label htmlFor="is-private">Tornar Deck Privado</Label>
               </div>
             </div>
             <div className="flex-1 flex justify-center">
@@ -777,33 +847,52 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                   Resultados: {searchResults.length}
                 </span>
               </div>
-              <div className="h-[60vh] overflow-y-auto bg-stone-900/50 p-2 rounded-lg">
-                {searchResults.map((card, index) => (
-                  <DraggableSearchResultCard key={`${card.id}-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} isDeckLocked={isDeckLocked} />
-                ))}
+              <div className="h-[60vh] rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
+                <div className="h-full overflow-y-auto bg-stone-900/50 p-2 rounded-lg">
+                  {searchResults.map((card, index) => (
+                    <DraggableSearchResultCard key={`${card.id}-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} isDeckLocked={isDeckLocked} />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
           <div id="deck-for-export" className="w-full md:w-[65%] space-y-6 order-2 md:order-1">
             <DeckDropZone section="main" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-xl font-bold">Main Deck</h2>
-                  <span className="text-muted-foreground">{mainDeck.length} Cartas</span>
-                </div>
-                <div className="bg-stone-900 p-4 rounded-lg min-h-[200px]">
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                    {mainDeck.map((card, index) => (
-                      <DraggableDeckCard
-                        key={`${card.id}-${index}`}
-                        card={card}
-                        index={index}
-                        section="main"
-                        removeCard={removeCard}
-                        isGenesysMode={isGenesysMode}
-                        isDeckLocked={isDeckLocked}
-                      />
-                    ))}
+                                                <div className="flex justify-between items-center mb-2">
+                                                  <h2 className="text-xl font-bold">Main Deck</h2>
+                                                  <Dialog>
+                                                    <DialogTrigger asChild>
+                                                      <span className="text-sm text-blue-400 hover:underline cursor-pointer">
+                                                        Como exportar meu deck do Master Duel?
+                                                      </span>
+                                                    </DialogTrigger>
+                                                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                                      <DialogHeader>
+                                                        <DialogTitle>Como Exportar e Enviar seu Deck</DialogTitle>
+                                                      </DialogHeader>
+                                                                                                  <div className="prose prose-invert max-w-none prose-a:text-blue-400 hover:prose-a:text-blue-500">
+                                                                                                    <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                                                                                                      {instructions}
+                                                                                                    </ReactMarkdown>
+                                                                                                  </div>                                                      </DialogContent>
+                                                    </Dialog>
+                                                  <span className="text-muted-foreground">{mainDeck.length} Cartas</span>
+                                                </div>                <div className="rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
+                  <div className="bg-stone-900/50 p-4 rounded-lg min-h-[200px]">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                      {mainDeck.map((card, index) => (
+                        <DraggableDeckCard
+                          key={`${card.id}-${index}`}
+                          card={card}
+                          index={index}
+                          section="main"
+                          removeCard={removeCard}
+                          isGenesysMode={isGenesysMode}
+                          isDeckLocked={isDeckLocked}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -815,19 +904,21 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                   <h2 className="text-xl font-bold">Extra Deck</h2>
                   <span className="text-muted-foreground">{extraDeck.length} Cartas</span>
                 </div>
-                <div className="bg-indigo-950 p-4 rounded-lg min-h-[100px]">
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                    {extraDeck.map((card, index) => (
-                      <DraggableDeckCard
-                        key={`${card.id}-${index}`}
-                        card={card}
-                        index={index}
-                        section="extra"
-                        removeCard={removeCard}
-                        isGenesysMode={isGenesysMode}
-                        isDeckLocked={isDeckLocked}
-                      />
-                    ))}
+                <div className="rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
+                  <div className="bg-indigo-950/50 p-4 rounded-lg min-h-[100px]">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                      {extraDeck.map((card, index) => (
+                        <DraggableDeckCard
+                          key={`${card.id}-${index}`}
+                          card={card}
+                          index={index}
+                          section="extra"
+                          removeCard={removeCard}
+                          isGenesysMode={isGenesysMode}
+                          isDeckLocked={isDeckLocked}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -839,19 +930,21 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                   <h2 className="text-xl font-bold">Side Deck</h2>
                   <span className="text-muted-foreground">{sideDeck.length} Cartas</span>
                 </div>
-                <div className="bg-emerald-950 p-4 rounded-lg min-h-[100px]">
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                    {sideDeck.map((card, index) => (
-                      <DraggableDeckCard
-                        key={`${card.id}-${index}`}
-                        card={card}
-                        index={index}
-                        section="side"
-                        removeCard={removeCard}
-                        isGenesysMode={isGenesysMode}
-                        isDeckLocked={isDeckLocked}
-                      />
-                    ))}
+                <div className="rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
+                  <div className="bg-emerald-950/50 p-4 rounded-lg min-h-[100px]">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                      {sideDeck.map((card, index) => (
+                        <DraggableDeckCard
+                          key={`${card.id}-${index}`}
+                          card={card}
+                          index={index}
+                          section="side"
+                          removeCard={removeCard}
+                          isGenesysMode={isGenesysMode}
+                          isDeckLocked={isDeckLocked}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
