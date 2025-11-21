@@ -23,6 +23,7 @@ interface YgoProDeckCard {
   };
   misc_info?: {
     genesys_points?: number;
+    md_rarity?: string;
   }[];
 }
 
@@ -43,6 +44,7 @@ interface CardInsert {
     ban_tcg: string | null;
     ban_ocg: string | null;
     genesys_points?: number;
+    md_rarity: string | null;
 }
 
 // Initialize Supabase client
@@ -120,7 +122,7 @@ export default async function (request: VercelRequest, response: VercelResponse)
           ban_tcg: card.banlist_info?.ban_tcg || null,
           ban_ocg: card.banlist_info?.ban_ocg || null,
           genesys_points: card.misc_info?.[0]?.genesys_points || 0,
-        };
+          md_rarity: card.misc_info?.[0]?.md_rarity || null,        };
       });
       cardsToUpsert.push(...processedBatch);
       // No need for delay here, as individual API calls are removed

@@ -32,6 +32,7 @@ interface CardData {
   ban_ocg?: string;
   ban_master_duel?: string | null;
   genesys_points?: number | null;
+  md_rarity?: string | null;
 }
 
 type Profile = Tables<"profiles">;
@@ -56,6 +57,39 @@ interface DeckPageProps {
   user: User | null;
   onLogout: () => void;
 }
+
+const RarityIcon = ({ rarity }: { rarity: string | undefined | null }) => {
+  if (!rarity) {
+    return null;
+  }
+
+  let imageUrl: string | undefined;
+  if (rarity === "Normal") {
+    imageUrl = "/normal.png";
+  } else if (rarity === "Rare") {
+    imageUrl = "/rare.png";
+  } else if (rarity === "Super Rare") {
+    imageUrl = "/super_rare.png";
+  } else if (rarity === "Ultra Rare") {
+    imageUrl = "/ultra_rare.png";
+  } else {
+    return null;
+  }
+
+  const style: React.CSSProperties = {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    width: "25px",
+    height: "25px",
+    backgroundImage: `url('${imageUrl}')`,
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "contain",
+    zIndex: 10,
+  };
+
+  return <div style={style} />;
+};
 
 const GenesysPointBadge = ({ points }: { points: number | undefined | null }) => {
   if (!points || points === 0) return null;
@@ -97,6 +131,7 @@ const CardStack = ({ card, count, isGenesys, banlistIcon }: { card: CardData; co
           {banlistIcon && (
             <img src={banlistIcon} alt="Banlist Status" className="absolute top-1 left-1 w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7" />
           )}
+          <RarityIcon rarity={card.md_rarity} />
         </div>
       </HoverCardTrigger>
       <HoverCardContent side="top">

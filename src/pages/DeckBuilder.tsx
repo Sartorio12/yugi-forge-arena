@@ -48,6 +48,7 @@ interface CardData {
   ban_ocg?: string;
   ban_master_duel?: string | null; // New field for Master Duel banlist
   genesys_points?: number;
+  md_rarity?: string | null;
 }
 
 interface DeckBuilderProps {
@@ -58,6 +59,39 @@ interface DeckBuilderProps {
 const ItemTypes = {
   CARD: 'card',
   DECK_CARD: 'deck_card',
+};
+
+const RarityIcon = ({ rarity }: { rarity: string | undefined | null }) => {
+  if (!rarity) {
+    return null;
+  }
+
+  let imageUrl: string | undefined;
+  if (rarity === "Normal") {
+    imageUrl = "/normal.png";
+  } else if (rarity === "Rare") {
+    imageUrl = "/rare.png";
+  } else if (rarity === "Super Rare") {
+    imageUrl = "/super_rare.png";
+  } else if (rarity === "Ultra Rare") {
+    imageUrl = "/ultra_rare.png";
+  } else {
+    return null;
+  }
+
+  const style: React.CSSProperties = {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    width: "25px",
+    height: "25px",
+    backgroundImage: `url('${imageUrl}')`,
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "contain",
+    zIndex: 10,
+  };
+
+  return <div style={style} />;
 };
 
 const BanlistIcon = ({ banStatus }: { banStatus: string | undefined | null }) => {
@@ -165,6 +199,7 @@ const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtra
                   <img src={card.image_url_small} alt={card.name} className="w-12" />
                   {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
                   {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
+                  <RarityIcon rarity={card.md_rarity} />
                 </div>
                 <div className="text-sm flex-1 min-w-0">
                   <p className="font-bold truncate">{card.name}</p>
@@ -227,6 +262,7 @@ const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode, is
           <img src={card.image_url} alt={card.name} className="w-full" />
           {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
           {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
+          <RarityIcon rarity={card.md_rarity} />
           {!isDeckLocked && (
             <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, section)}>
               <Trash2 className="h-4 w-4" />
