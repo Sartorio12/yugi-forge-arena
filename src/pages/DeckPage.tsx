@@ -78,10 +78,10 @@ const RarityIcon = ({ rarity }: { rarity: string | undefined | null }) => {
 
   const style: React.CSSProperties = {
     position: "absolute",
-    top: -5,
-    right: -5,
-    width: "25px",
-    height: "25px",
+    top: -10,
+    right: 0,
+    width: "35px",
+    height: "35px",
     backgroundImage: `url('${imageUrl}')`,
     backgroundRepeat: "no-repeat",
     backgroundSize: "contain",
@@ -446,8 +446,8 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
           <CardContent className="bg-card/50 rounded-b-lg">
             <div className="space-y-2">
               <div>
-                <h2 className="text-2xl font-bold mb-2">Main Deck ({mainDeck.length})</h2>
-                <div className="grid grid-cols-7 md:grid-cols-15 gap-1">
+                <h2 className="text-2xl font-bold mb-4">Main Deck ({mainDeck.length})</h2>
+                <div className="grid grid-cols-7 md:grid-cols-15 gap-x-1 gap-y-5">
                   {groupedMainDeck.map(({ card, count }) => {
                     const banlistIcon = getBanlistIcon(card.ban_master_duel);
                     return (
@@ -457,8 +457,8 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                 </div>
               </div>
               <div>
-                <h2 className="text-2xl font-bold mb-2">Extra Deck ({extraDeck.length})</h2>
-                <div className="grid grid-cols-7 md:grid-cols-15 gap-1">
+                <h2 className="text-2xl font-bold mb-4">Extra Deck ({extraDeck.length})</h2>
+                <div className="grid grid-cols-7 md:grid-cols-15 gap-x-1 gap-y-5">
                   {groupedExtraDeck.map(({ card, count }) => {
                     const banlistIcon = getBanlistIcon(card.ban_master_duel);
                     return (
@@ -469,8 +469,8 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
               </div>
               {sideDeck.length > 0 && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">Side Deck ({sideDeck.length})</h2>
-                  <div className="grid grid-cols-7 md:grid-cols-15 gap-1">
+                  <h2 className="text-2xl font-bold mb-4">Side Deck ({sideDeck.length})</h2>
+                  <div className="grid grid-cols-7 md:grid-cols-15 gap-x-1 gap-y-5">
                     {groupedSideDeck.map(({ card, count }) => {
                       const banlistIcon = getBanlistIcon(card.ban_master_duel);
                       return (

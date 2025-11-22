@@ -81,10 +81,10 @@ const RarityIcon = ({ rarity }: { rarity: string | undefined | null }) => {
 
   const style: React.CSSProperties = {
     position: "absolute",
-    top: -5,
-    right: -5,
-    width: "25px",
-    height: "25px",
+    top: -10,
+    right: 0,
+    width: "35px",
+    height: "35px",
     backgroundImage: `url('${imageUrl}')`,
     backgroundRepeat: "no-repeat",
     backgroundSize: "contain",
@@ -896,28 +896,27 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             <DeckDropZone section="main" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
               <div>
                                                 <div className="flex justify-between items-center mb-2">
-                                                  <h2 className="text-xl font-bold">Main Deck</h2>
-                                                  <Dialog>
-                                                    <DialogTrigger asChild>
-                                                      <span className="text-sm text-blue-400 hover:underline cursor-pointer">
-                                                        Como exportar meu deck do Master Duel?
-                                                      </span>
-                                                    </DialogTrigger>
-                                                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                                                      <DialogHeader>
-                                                        <DialogTitle>Como Exportar e Enviar seu Deck</DialogTitle>
-                                                      </DialogHeader>
-                                                                                                  <div className="prose prose-invert max-w-none prose-a:text-blue-400 hover:prose-a:text-blue-500">
-                                                                                                    <ReactMarkdown rehypePlugins={[rehypeRaw]}>
-                                                                                                      {instructions}
-                                                                                                    </ReactMarkdown>
-                                                                                                  </div>                                                      </DialogContent>
-                                                    </Dialog>
-                                                  <span className="text-muted-foreground">{mainDeck.length} Cartas</span>
-                                                </div>                <div className="rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
-                  <div className="bg-stone-900/50 p-4 rounded-lg min-h-[200px]">
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                      {mainDeck.map((card, index) => (
+                                                                                                    <h2 className="text-xl font-bold">Main Deck</h2>
+                                                                                                    <Dialog>
+                                                                                                      <DialogTrigger asChild>
+                                                                                                        <span className="text-sm text-blue-400 hover:underline cursor-pointer">
+                                                                                                          Como exportar meu deck do Master Duel?
+                                                                                                        </span>
+                                                                                                      </DialogTrigger>
+                                                                                                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                                                                                                        <DialogHeader>
+                                                                                                          <DialogTitle>Como Exportar e Enviar seu Deck</DialogTitle>
+                                                                                                        </DialogHeader>
+                                                                                                                                                    <div className="prose prose-invert max-w-none prose-a:text-blue-400 hover:prose-a:text-blue-500">
+                                                                                                                                                      <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                                                                                                                                                        {instructions}
+                                                                                                                                                      </ReactMarkdown>
+                                                                                                                                                    </div>                                                      </DialogContent>
+                                                                                                    </Dialog>
+                                                                                                  <span className="text-muted-foreground">{mainDeck.length} Cartas</span>
+                                                                                                  </div>                <div className="rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
+                                                                    <div className="bg-stone-900/50 p-4 rounded-lg min-h-[200px]">
+                                                                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-x-2 gap-y-4">                      {mainDeck.map((card, index) => (
                         <DraggableDeckCard
                           key={`${card.id}-${index}`}
                           card={card}
@@ -942,7 +941,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 </div>
                 <div className="rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
                   <div className="bg-indigo-950/50 p-4 rounded-lg min-h-[100px]">
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-x-2 gap-y-4">
                       {extraDeck.map((card, index) => (
                         <DraggableDeckCard
                           key={`${card.id}-${index}`}
@@ -968,7 +967,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 </div>
                 <div className="rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
                   <div className="bg-emerald-950/50 p-4 rounded-lg min-h-[100px]">
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-x-2 gap-y-4">
                       {sideDeck.map((card, index) => (
                         <DraggableDeckCard
                           key={`${card.id}-${index}`}
