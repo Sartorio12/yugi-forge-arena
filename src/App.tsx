@@ -31,8 +31,8 @@ import About from "./pages/About"; // Import the About component
 import Contact from "./pages/Contact"; // Import the Contact component
 import { Footer } from "./components/Footer"; // Import the Footer component
 import SearchPage from "./pages/SearchPage";
-import { SpeedInsights } from "@vercel/speed-insights/react";
-import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 const queryClient = new QueryClient();
 
