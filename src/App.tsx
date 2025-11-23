@@ -31,6 +31,8 @@ import About from "./pages/About"; // Import the About component
 import Contact from "./pages/Contact"; // Import the Contact component
 import { Footer } from "./components/Footer"; // Import the Footer component
 import SearchPage from "./pages/SearchPage";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
 
@@ -157,6 +159,8 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Footer /> {/* Add the Footer component here */}
+          <SpeedInsights />
+          <Analytics />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
