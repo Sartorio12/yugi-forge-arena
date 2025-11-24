@@ -97,4 +97,10 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Custom styles for links within prose content */
+  .prose a {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+  }
 }

@@ -51,7 +51,7 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
         <header className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">{post.title}</h1>
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center space-x-2 text-muted-foreground">
+            <div className="flex items-center space-x-2 text-secondary-foreground">
               {post.profiles && (
                 <>
                   <Avatar className="h-8 w-8"><AvatarImage src={post.profiles.avatar_url} /><AvatarFallback>{post.profiles.username?.substring(0, 2)}</AvatarFallback></Avatar>
@@ -66,7 +66,7 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
             <NewsLikeButton postId={post.id} user={user} postAuthorId={post.author_id} postTitle={post.title} />
           </div>
         </header>
-        <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content || "") }} />
+        <div className="prose dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content || "") }} />
         {post && <NewsCommentSection postId={post.id} user={user} postAuthorId={post.author_id} postTitle={post.title} />}
       </div>
     </div>

@@ -38,12 +38,12 @@ const NewsListPage = ({ user, onLogout }: NewsListPageProps) => {
                   <CardTitle className="text-xl">{post.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <p className="text-sm text-muted-foreground">Por {post.profiles?.username || 'Anônimo'} em {format(new Date(post.created_at), 'dd/MM/yyyy')}</p>
+                  <p className="text-sm text-secondary-foreground">Por {post.profiles?.username || 'Anônimo'} em {format(new Date(post.created_at), 'dd/MM/yyyy')}</p>
                 </CardContent>
               </Card>
             </Link>
           ))}
-          {posts.length === 0 && <p className="col-span-full text-center text-muted-foreground">Nenhuma notícia encontrada.</p>}
+          {posts.length === 0 && <p className="col-span-full text-center text-secondary-foreground">Nenhuma notícia encontrada.</p>}
         </div>
       </div>
     </div>
