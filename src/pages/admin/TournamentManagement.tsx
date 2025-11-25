@@ -240,7 +240,9 @@ const TournamentManagementPage = () => {
                               <AvatarFallback>{p.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <span className="font-medium">
-                              <UserDisplay profile={{id: p.profiles?.id || "", username: p.profiles?.username || "Usuário desconhecido"}} clan={p.profiles?.clan_members?.clans} />
+                              <Link to={`/profile/${p.profiles.id}`}>
+                                <UserDisplay profile={{id: p.profiles?.id || "", username: p.profiles?.username || "Usuário desconhecido"}} clan={p.profiles?.clan_members?.clans} />
+                              </Link>
                             </span>
                           </div>
                         </TableCell>

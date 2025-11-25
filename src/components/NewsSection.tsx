@@ -32,7 +32,6 @@ export const NewsSection = () => {
         .select(`
           id,
           title,
-          content,
           created_at,
           banner_url,
           profiles (
@@ -51,11 +50,7 @@ export const NewsSection = () => {
     },
   });
 
-  const truncateText = (text: string, length: number) => {
-    if (!text) return "";
-    if (text.length <= length) return text;
-    return text.substring(0, length) + "...";
-  };
+
 
   return (
     <section className="py-4 md:py-6 bg-[url('/bg-main.png')] bg-cover border border-gray-800 rounded-lg p-4">
@@ -70,35 +65,30 @@ export const NewsSection = () => {
         ) : posts && posts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post) => (
-              <Card key={post.id} className="h-full flex flex-col bg-gray-800/50 border-border">
-                {post.banner_url && (
-                  <div className="aspect-video w-full overflow-hidden rounded-t-lg">
-                    <img src={post.banner_url} alt={post.title} className="w-full h-full object-cover" />
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold">{post.title}</CardTitle>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={post.profiles?.avatar_url || undefined} />
-                      <AvatarFallback>{post.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <UserDisplay profile={post.profiles} clan={post.profiles.clan_members?.clans || null} />
-                    <span>•</span>
-                    <span>{format(new Date(post.created_at), "dd/MM/yy", { locale: ptBR })}</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <p className="text-muted-foreground">
-                    {truncateText(post.content?.replace(/<[^>]+>/g, '') || "", 120)}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex justify-between mt-auto">
-                  <Link to={`/news/${post.id}`} className="text-primary hover:underline">
-                    Ler Mais
-                  </Link>
-                </CardFooter>
-              </Card>
+              <Card key={post.id} className="h-full flex flex-col bg-gray-800/50 border-border text-center">
+                              {post.banner_url && (
+                                <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                                  <img src={post.banner_url} alt={post.title} className="w-full h-full object-cover" />
+                                </div>
+                              )}
+                              <CardHeader>
+                                <CardTitle className="text-lg font-bold">{post.title}</CardTitle>
+                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pt-2">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarImage src={post.profiles?.avatar_url || undefined} />
+                                    <AvatarFallback>{post.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                  <UserDisplay profile={post.profiles} clan={post.profiles.clan_members?.clans || null} />
+                                  <span>•</span>
+                                  <span>{format(new Date(post.created_at), "dd/MM/yy", { locale: ptBR })}</span>
+                                </div>
+                              </CardHeader>
+                              <CardFooter className="flex justify-center mt-auto">
+                                <Link to={`/news/${post.id}`} className="text-primary hover:underline">
+                                  Ler Mais
+                                </Link>
+                              </CardFooter>
+                            </Card>
             ))}
           </div>
         ) : (
