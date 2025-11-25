@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Profile } from "@/hooks/useProfile";
 import { supabase } from '../../integrations/supabase/client';
 
 // Updated to match the RPC return type
@@ -53,9 +54,10 @@ interface Participant {
       clans: {
         tag: string;
       } | null;
-    }[] | null;
+    } | null;
   } | null;
 }
+
 
 
 const TournamentManagementPage = () => {
@@ -100,7 +102,7 @@ const TournamentManagementPage = () => {
       if (error) {
         throw error;
       }
-
+      console.log('Participants Data:', data?.[0]?.profiles);
       return data as Participant[];
     },
     enabled: !!id,
@@ -238,7 +240,7 @@ const TournamentManagementPage = () => {
                               <AvatarFallback>{p.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <span className="font-medium">
-                              <UserDisplay profile={{id: p.profiles?.id || "", username: p.profiles?.username || "Usuário desconhecido"}} clan={p.profiles?.clan_members?.[0]?.clans?.tag ? { tag: p.profiles.clan_members[0].clans.tag } : null} />
+                              <UserDisplay profile={{id: p.profiles?.id || "", username: p.profiles?.username || "Usuário desconhecido"}} clan={p.profiles?.clan_members?.clans} />
                             </span>
                           </div>
                         </TableCell>
