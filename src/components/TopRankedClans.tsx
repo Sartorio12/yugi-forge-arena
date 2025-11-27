@@ -60,8 +60,8 @@ export const TopRankedClans = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px] text-center px-1">Rank</TableHead>
-                    <TableHead>Clã</TableHead>
-                    <TableHead className="w-[100px] text-right px-1">Pontos</TableHead>
+                    <TableHead className="text-center">Clã</TableHead>
+                    <TableHead className="w-[100px] text-center px-1">Pontos</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -71,7 +71,7 @@ export const TopRankedClans = () => {
                         #{index + 1}
                       </TableCell>
                       <TableCell className="py-1 px-1">
-                        <Link to={`/clans/${clan.clan_id}`} className="flex items-center gap-2 hover:text-primary transition-colors">
+                        <Link to={`/clans/${clan.clan_id}`} className="flex items-center justify-center gap-2 hover:text-primary transition-colors">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={clan.clan_image_url} alt={clan.clan_name} />
                             <AvatarFallback>{clan.clan_tag}</AvatarFallback>
@@ -81,7 +81,7 @@ export const TopRankedClans = () => {
                           </span>
                         </Link>
                       </TableCell>
-                      <TableCell className="text-right font-semibold text-primary text-base px-1">{clan.total_clan_points}</TableCell>
+                      <TableCell className="text-center font-semibold text-primary text-base px-1">{clan.total_clan_points}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
