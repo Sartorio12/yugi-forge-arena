@@ -11,6 +11,7 @@ import { FeaturedDecks } from "@/components/FeaturedDecks";
 import { NewsSection } from "@/components/NewsSection";
 import { ActivityTimeline } from "@/components/ActivityTimeline"; // Import the new component
 import { CardOfTheDay } from "@/components/CardOfTheDay";
+import { TopRankedClans } from "@/components/TopRankedClans"; // Import the new component
 
 interface IndexProps {
   user: User | null;
@@ -38,6 +39,7 @@ const Index = ({ user, onLogout }: IndexProps) => {
         {/* COLUNA DA DIREITA (BARRA LATERAL) */}
         <div className="lg:col-span-1 space-y-3">
           <TopRankedPlayers />
+          <TopRankedClans /> {/* Add the new component here */}
           <ActivityTimeline />
           <CardOfTheDay />
         </div>
