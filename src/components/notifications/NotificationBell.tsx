@@ -53,17 +53,17 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+        },
+        onError: (error: Error) => {
+            console.error("Failed to mark notifications as read:", error);
         }
     });
 
     useEffect(() => {
         if (isOpen && unreadCount > 0) {
-            const timer = setTimeout(() => {
-                markAsReadMutation.mutate();
-            }, 3000);
-            return () => clearTimeout(timer);
+            markAsReadMutation.mutate();
         }
-    }, [isOpen, unreadCount, markAsReadMutation]);
+    }, [isOpen, unreadCount]);
     
     useEffect(() => {
         if (!user) return; // Only subscribe if user is defined
