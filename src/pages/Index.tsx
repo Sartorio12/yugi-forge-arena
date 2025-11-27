@@ -33,14 +33,14 @@ const Index = ({ user, onLogout }: IndexProps) => {
         <div className="lg:col-span-2 space-y-3">
           <UpcomingTournaments />
           <NewsSection />
+          <ActivityTimeline />
           <FeaturedDecks />
         </div>
 
         {/* COLUNA DA DIREITA (BARRA LATERAL) */}
         <div className="lg:col-span-1 space-y-3">
           <TopRankedPlayers />
-          <TopRankedClans /> {/* Add the new component here */}
-          <ActivityTimeline />
+          <TopRankedClans />
           <CardOfTheDay />
         </div>
         
