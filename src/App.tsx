@@ -29,10 +29,14 @@ import ClanProfilePage from "./pages/ClanProfilePage";
 import ClanManagementPage from "./pages/ClanManagementPage";
 import About from "./pages/About"; // Import the About component
 import Contact from "./pages/Contact"; // Import the Contact component
+import MessagesPage from "./pages/MessagesPage"; // Import the new page
 import { Footer } from "./components/Footer"; // Import the Footer component
 import SearchPage from "./pages/SearchPage";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
+import { PresenceProvider } from "./components/PresenceProvider";
+import { ChatProvider } from "./components/chat/ChatProvider";
+import { ChatDock } from "./components/chat/ChatDock";
 
 const queryClient = new QueryClient();
 
@@ -76,89 +80,97 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index user={user} onLogout={handleLogout} />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/tournaments"
-              element={<Tournaments user={user} onLogout={handleLogout} />}
-            />
-            <Route
-              path="/tournaments/:id"
-              element={<TournamentDetail user={user} onLogout={handleLogout} />}
-            />
-            <Route
-              path="/profile/:id"
-              element={<Profile user={user} onLogout={handleLogout} />}
-            />
-            <Route
-              path="/deck-builder"
-              element={<DeckBuilder user={user} onLogout={handleLogout} />}
-            />
-            <Route
-              path="/deck/:id"
-              element={<DeckPage user={user} onLogout={handleLogout} />}
-            />
-            <Route
-              path="/ranking"
-              element={<RankingPage user={user} onLogout={handleLogout} />}
-            />
-            <Route path="/news" element={<NewsListPage user={user} onLogout={handleLogout} />} />
-            <Route
-              path="/news/:id"
-              element={<NewsPostPage user={user} onLogout={handleLogout} />}
-            />
-            <Route
-              path="/clans/create"
-              element={<CreateClanPage user={user} onLogout={handleLogout} />}
-            />
-            <Route
-              path="/clans/:id"
-              element={<ClanProfilePage user={user} onLogout={handleLogout} />}
-            />
-            <Route
-              path="/clans/:id/manage"
-              element={<ClanManagementPage user={user} onLogout={handleLogout} />}
-            />
-            <Route
-              path="/search"
-              element={<SearchPage user={user} onLogout={handleLogout} />}
-            />
-
-            {/* Password Reset Routes */}
-            <Route path="/esqueci-senha" element={<RequestPasswordResetPage />} />
-            <Route path="/atualizar-senha" element={<UpdatePasswordPage />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-
-            {/* Admin Routes */}
-            <Route element={<AdminRoute user={user} onLogout={handleLogout} />}>
-              <Route
-                path="/dashboard/tournaments"
-                element={<TournamentDashboard />}
-              />
-              <Route
-                path="/dashboard/tournaments/:id/manage"
-                element={<TournamentManagementPage />}
-              />
-              <Route
-                path="/dashboard/news"
-                element={<NewsDashboard />}
-              />
-              <Route
-                path="/dashboard/news/create"
-                element={<NewsEditorFormPage user={user} />}
-              />
-              <Route
-                path="/dashboard/news/:id/edit"
-                element={<NewsEditorFormPage user={user} />}
-              />
-            </Route>
-
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Footer /> {/* Add the Footer component here */}
+                    <PresenceProvider user={user}>
+                      <ChatProvider>
+                        <Routes>
+                          <Route path="/" element={<Index user={user} onLogout={handleLogout} />} />
+                          <Route path="/auth" element={<Auth />} />
+                          <Route
+                            path="/tournaments"
+                            element={<Tournaments user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/tournaments/:id"
+                            element={<TournamentDetail user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/profile/:id"
+                            element={<Profile user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/deck-builder"
+                            element={<DeckBuilder user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/deck/:id"
+                            element={<DeckPage user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/ranking"
+                            element={<RankingPage user={user} onLogout={handleLogout} />}
+                          />
+                          <Route path="/news" element={<NewsListPage user={user} onLogout={handleLogout} />} />
+                          <Route
+                            path="/news/:id"
+                            element={<NewsPostPage user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/clans/create"
+                            element={<CreateClanPage user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/clans/:id"
+                            element={<ClanProfilePage user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/clans/:id/manage"
+                            element={<ClanManagementPage user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/search"
+                            element={<SearchPage user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/messages"
+                            element={<MessagesPage user={user} onLogout={handleLogout} />}
+                          />
+          
+                          {/* Password Reset Routes */}
+                          <Route path="/esqueci-senha" element={<RequestPasswordResetPage />} />
+                          <Route path="/atualizar-senha" element={<UpdatePasswordPage />} />
+                          <Route path="/about" element={<About />} />
+                          <Route path="/contact" element={<Contact />} />
+          
+                          {/* Admin Routes */}
+                          <Route element={<AdminRoute user={user} onLogout={handleLogout} />}>
+                            <Route
+                              path="/dashboard/tournaments"
+                              element={<TournamentDashboard />}
+                            />
+                            <Route
+                              path="/dashboard/tournaments/:id/manage"
+                              element={<TournamentManagementPage />}
+                            />
+                            <Route
+                              path="/dashboard/news"
+                              element={<NewsDashboard />}
+                            />
+                            <Route
+                              path="/dashboard/news/create"
+                              element={<NewsEditorFormPage user={user} />}
+                            />
+                            <Route
+                              path="/dashboard/news/:id/edit"
+                              element={<NewsEditorFormPage user={user} />}
+                            />
+                          </Route>
+          
+                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                                                    <Footer /> {/* Add the Footer component here */}
+                                                    <ChatDock currentUser={user} />
+                                                  </ChatProvider>                    </PresenceProvider>
           <SpeedInsights />
           <Analytics />
         </BrowserRouter>

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
-import { LogOut, User as UserIcon, Swords, Menu, Shield, Search } from "lucide-react";
+import { LogOut, User as UserIcon, Swords, Menu, Shield, Search, MessageSquare } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,6 +140,14 @@ const NavMenu = ({ user, profile }) => {
         <DropdownMenuItem asChild>
           <Link to="/ranking">Ranking</Link>
         </DropdownMenuItem>
+        {user && (
+          <DropdownMenuItem asChild>
+            <Link to="/messages" className="flex items-center">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              <span>Mensagens</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
         {user && (
           <DropdownMenuItem asChild>
             <Link to="/deck-builder">Deck Builder</Link>

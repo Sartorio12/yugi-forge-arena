@@ -7,7 +7,7 @@ import TrophyShelf from "@/components/TrophyShelf"; // Import TrophyShelf
 import BannerUploadForm from "@/components/forms/BannerUploadForm"; // Import BannerUploadForm
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
-import { Loader2, User as UserIcon, Pencil, Plus } from "lucide-react";
+import { Loader2, User as UserIcon, Pencil, Plus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress"; // Import Progress
 import { useState, useEffect } from "react";
+import { useChat } from "@/components/chat/ChatProvider";
 
 interface Deck {
   id: number;
@@ -40,6 +41,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { openChat } = useChat();
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', id],
@@ -176,7 +178,8 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
 
   const publicDecks = decks?.filter((deck: any) => !deck.is_private) || [];
   const privateDecks = decks?.filter((deck: any) => deck.is_private) || [];
-  const isProfileOwner = user?.id === profile?.id; // Renamed to avoid conflict with DeckCard's isOwner
+  const isProfileOwner = user?.id === profile?.id;
+  const canSendMessage = user && !isProfileOwner && profile;
 
   return (
     <div className="min-h-screen bg-background">
@@ -219,68 +222,76 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                     </div>
                   )}
                 </div>
-                {isProfileOwner && ( // Use isProfileOwner here
-                  <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogTrigger asChild><Button variant="outline"><Pencil className="h-4 w-4 mr-2" /> Editar Perfil</Button></DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>Editar Perfil</DialogTitle></DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="username">Nome de Usuário</Label>
-                          <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                <div className="flex items-center gap-2">
+                  {isProfileOwner && (
+                    <Dialog open={open} onOpenChange={setOpen}>
+                      <DialogTrigger asChild><Button variant="outline"><Pencil className="h-4 w-4 mr-2" /> Editar Perfil</Button></DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Editar Perfil</DialogTitle></DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="username">Nome de Usuário</Label>
+                            <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="bio">Bio</Label>
+                            <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="avatar">Avatar (Max 10MB)</Label>
+                            <Input id="avatar" type="file" accept="image/*" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) {
+                                setAvatarFile(null);
+                                return;
+                              }
+                              if (file.size > 10 * 1024 * 1024) { // 10MB
+                                toast({
+                                  title: "Arquivo muito grande",
+                                  description: "O avatar não pode exceder 10MB.",
+                                  variant: "destructive",
+                                });
+                                e.target.value = "";
+                                return;
+                              }
+                              setAvatarFile(file);
+                            }} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="banner">Banner (Max 10MB)</Label>
+                            <Input id="banner" type="file" accept="image/*" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) {
+                                setBannerFile(null);
+                                return;
+                              }
+                              if (file.size > 10 * 1024 * 1024) { // 10MB
+                                toast({
+                                  title: "Arquivo muito grande",
+                                  description: "O banner não pode exceder 10MB.",
+                                  variant: "destructive",
+                                });
+                                e.target.value = "";
+                                return;
+                              }
+                              setBannerFile(file);
+                            }} />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="bio">Bio</Label>
-                          <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="avatar">Avatar (Max 10MB)</Label>
-                          <Input id="avatar" type="file" accept="image/*" onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) {
-                              setAvatarFile(null);
-                              return;
-                            }
-                            if (file.size > 10 * 1024 * 1024) { // 10MB
-                              toast({
-                                title: "Arquivo muito grande",
-                                description: "O avatar não pode exceder 10MB.",
-                                variant: "destructive",
-                              });
-                              e.target.value = "";
-                              return;
-                            }
-                            setAvatarFile(file);
-                          }} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="banner">Banner (Max 10MB)</Label>
-                          <Input id="banner" type="file" accept="image/*" onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) {
-                              setBannerFile(null);
-                              return;
-                            }
-                            if (file.size > 10 * 1024 * 1024) { // 10MB
-                              toast({
-                                title: "Arquivo muito grande",
-                                description: "O banner não pode exceder 10MB.",
-                                variant: "destructive",
-                              });
-                              e.target.value = "";
-                              return;
-                            }
-                            setBannerFile(file);
-                          }} />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
-                        <Button onClick={handleProfileUpdate} disabled={isUpdating}>{isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar Alterações</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                )}
+                        <DialogFooter>
+                          <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
+                          <Button onClick={handleProfileUpdate} disabled={isUpdating}>{isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar Alterações</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                  {canSendMessage && (
+                    <Button variant="outline" onClick={() => openChat(profile.id)}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Enviar Mensagem
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             <div>
