@@ -13,7 +13,7 @@ interface YgoProCard {
 }
 
 const fetchRandomCard = async (): Promise<YgoProCard> => {
-  const response = await fetch("https://db.ygoprodeck.com/api/v7/randomcard.php");
+  const response = await fetch("/api/random-card");
   if (!response.ok) {
     throw new Error("Network response was not ok");
   }
