@@ -66,7 +66,7 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
             <NewsLikeButton postId={post.id} user={user} postAuthorId={post.author_id} postTitle={post.title} />
           </div>
         </header>
-        <div className="prose dark:prose-invert max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content || "") }} />
+        <div className="prose dark:prose-invert max-w-none text-foreground prose-strong:text-primary" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content || "") }} />
         {post && <NewsCommentSection postId={post.id} user={user} postAuthorId={post.author_id} postTitle={post.title} />}
       </div>
     </div>

@@ -72,8 +72,8 @@ export const NewsSection = () => {
                                 </div>
                               )}
                               <CardHeader>
-                                <CardTitle className="text-lg font-bold">{post.title}</CardTitle>
-                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pt-2">
+                                <CardTitle className="text-base font-bold">{post.title}</CardTitle>
+                                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-2">
                                   <Avatar className="h-6 w-6">
                                     <AvatarImage src={post.profiles?.avatar_url || undefined} />
                                     <AvatarFallback>{post.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>

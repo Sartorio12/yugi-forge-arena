@@ -83,6 +83,11 @@ export const RichTextEditor = ({ value, onChange }) => {
       StarterKit.configure({
         bulletList: { keepMarks: true, keepAttributes: false },
         orderedList: { keepMarks: true, keepAttributes: false },
+        bold: {
+          HTMLAttributes: {
+            class: 'text-primary',
+          },
+        },
       }),
       Image.configure({ inline: true, allowBase64: false }),
       Link.configure({
@@ -97,7 +102,7 @@ export const RichTextEditor = ({ value, onChange }) => {
     onUpdate: ({ editor }) => { onChange(editor.getHTML()); },
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl min-h-[250px] p-4 focus:outline-none',
+        class: 'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-2xl min-h-[250px] p-4 focus:outline-none text-foreground',
       },
     },
   });

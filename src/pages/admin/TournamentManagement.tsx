@@ -138,16 +138,19 @@ const TournamentManagementPage = () => {
   }
 
   const updateWinsMutation = useMutation({
-    mutationFn: async ({ participantId, newWins }: { participantId: number; newWins: number }) => {
-      const { error } = await supabase
-        .from("tournament_participants")
-        .update({ total_wins_in_tournament: newWins })
-        .eq("id", participantId);
+    mutationFn: async ({ participantId, change, userId }: { participantId: number; change: number; userId: string }) => {
+      const { error } = await supabase.rpc('update_player_wins', {
+        p_participant_id: participantId,
+        p_win_change: change
+      });
       if (error) throw error;
+      return { userId }; // Pass userId to onSuccess
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({ title: "Sucesso", description: "Contagem de vitórias atualizada." });
       queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+      queryClient.invalidateQueries({ queryKey: ["profile", data.userId] });
+      queryClient.invalidateQueries({ queryKey: ["topRankedPlayers"] });
     },
     onError: (error: Error) => {
       toast({
@@ -180,9 +183,8 @@ const TournamentManagementPage = () => {
   });
 
   const handleUpdateWins = (participant: Participant, change: 1 | -1) => {
-    const newWins = participant.total_wins_in_tournament + change;
-    if (newWins < 0) return;
-    updateWinsMutation.mutate({ participantId: participant.id, newWins });
+    // No longer calculating newWins here to prevent race conditions
+    updateWinsMutation.mutate({ participantId: participant.id, change, userId: participant.user_id });
   };
 
   const handleRemoveParticipant = (participantId: number) => {

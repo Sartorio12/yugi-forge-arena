@@ -6,11 +6,11 @@ export function HeroSection() {
     // 1. Container Relativo com altura definida (ex: 60% da tela)
     // 2. Background (imagem) e overlay (pseudo-elemento ::before)
     <div 
-      className="relative flex items-center justify-center w-full h-[60vh] min-h-[400px] overflow-hidden rounded-lg"
+      className="relative flex items-center justify-center w-full h-[36vh] min-h-[240px] overflow-hidden rounded-lg"
       style={{
         backgroundImage: "url('/hero-bg.jpg')", // << Coloque sua imagem na pasta /public
         backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundPosition: "center top",
       }}
     >
       {/* Overlay escuro para legibilidade */}

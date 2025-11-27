@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress"; // Import Progress
 import { useState, useEffect } from "react";
 
 interface Deck {
@@ -36,13 +37,29 @@ interface ProfileProps {
 }
 
 const Profile = ({ user, onLogout }: ProfileProps) => {
-  const { id } = useParams();
-  console.log("Profile page ID:", id);
+  const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['profile', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*, level, xp")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        toast({ title: "Erro", description: "Perfil não encontrado.", variant: "destructive" });
+        return null;
+      }
+      return data as Profile;
+    },
+    enabled: !!id,
+  });
 
   // State for edit modal
   const [open, setOpen] = useState(false);
@@ -51,27 +68,14 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isBannerUploadDialogOpen, setIsBannerUploadDialogOpen] = useState(false); // State for banner upload dialog
+  const [isBannerUploadDialogOpen, setIsBannerUploadDialogOpen] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!id) return;
-      setProfileLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) {
-        console.error("Error fetching profile:", error);
-      }
-      setProfile(data);
-      setProfileLoading(false);
-    };
-
-    fetchProfile();
-  }, [id]);
+    if (profile) {
+      setUsername(profile.username || "");
+      setBio(profile.bio || "");
+    }
+  }, [profile]);
 
   const { data: clan, isLoading: clanLoading } = useQuery({
     queryKey: ["user-clan", id],
@@ -82,7 +86,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         .select("clans(*)")
         .eq("user_id", id)
         .single();
-      return data?.clans;
+      return data?.clans || null;
     },
     enabled: !!id,
   });
@@ -201,6 +205,19 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                     <UserDisplay profile={profile} clan={clan} />
                   </h1>
                   {profile.bio && <p className="text-muted-foreground">{profile.bio}</p>}
+                  
+                  {/* Duelist Level and XP Bar */}
+                  {profile.level !== undefined && profile.xp !== undefined && (
+                    <div className="mt-4">
+                      <div className="flex justify-between items-center mb-1 text-sm">
+                        <span className="font-bold text-primary">Nível de Duelista: {profile.level}</span>
+                        <span className="text-muted-foreground">
+                          {profile.xp} / {profile.level * 75} XP
+                        </span>
+                      </div>
+                      <Progress value={(profile.xp / (profile.level * 75)) * 100} className="h-2" />
+                    </div>
+                  )}
                 </div>
                 {isProfileOwner && ( // Use isProfileOwner here
                   <Dialog open={open} onOpenChange={setOpen}>

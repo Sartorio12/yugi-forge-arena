@@ -26,7 +26,6 @@ import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDo
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import html2canvas from 'html2canvas';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 
@@ -264,7 +263,7 @@ const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode, is
           {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
           <RarityIcon rarity={card.md_rarity} />
           {!isDeckLocked && (
-            <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCard(index, section)}>
+            <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 z-10" onClick={() => removeCard(index, section)}>
               <Trash2 className="h-4 w-4" />
             </Button>
           )}
@@ -420,7 +419,6 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [isPrivate, setIsPrivate] = useState(false);
   const [isGenesysMode, setIsGenesysMode] = useState(false);
   const [totalGenesysPoints, setTotalGenesysPoints] = useState(0);
-  const [isExportingImage, setIsExportingImage] = useState(false);
   const [isDeckLocked, setIsDeckLocked] = useState(false);
 
   useEffect(() => {
@@ -569,7 +567,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     setSideDeck([]);
     setDeckName("");
     setEditingDeckId(null);
-    navigate("/deck-builder");
+    toast({ title: "Deck Limpo", description: "Todas as cartas foram removidas." });
   };
 
   const handleSortDeck = () => {
@@ -577,6 +575,41 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     setExtraDeck(sortCards(extraDeck));
     setSideDeck(sortCards(sideDeck));
     toast({ title: "Deck Reordenado", description: "As cartas foram reordenadas." });
+  };
+
+  const exportYdke = () => {
+    if (mainDeck.length === 0 && extraDeck.length === 0 && sideDeck.length === 0) {
+      toast({ title: "Deck Vazio", variant: "destructive" });
+      return;
+    }
+
+    const encodeToB64 = (cards: CardData[]) => {
+      const ids = cards.map(c => parseInt(c.id, 10));
+      const buffer = new ArrayBuffer(ids.length * 4);
+      const view = new DataView(buffer);
+      ids.forEach((id, i) => {
+        view.setUint32(i * 4, id, true); // true for little-endian
+      });
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      bytes.forEach((byte) => {
+        binary += String.fromCharCode(byte);
+      });
+      return btoa(binary);
+    };
+
+    const mainB64 = encodeToB64(mainDeck);
+    const extraB64 = encodeToB64(extraDeck);
+    const sideB64 = encodeToB64(sideDeck);
+
+    const ydkeString = `ydke://${mainB64}!${extraB64}!${sideB64}`;
+
+    navigator.clipboard.writeText(ydkeString).then(() => {
+      toast({ title: "Sucesso!", description: "Código YDKE copiado para a área de transferência." });
+    }).catch(err => {
+      console.error("Failed to copy YDKE code: ", err);
+      toast({ title: "Erro", description: "Falha ao copiar o código YDKE.", variant: "destructive" });
+    });
   };
 
   const exportDeck = () => {
@@ -598,55 +631,6 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
-
-  const handleExportAsImage = async () => {
-    const deckElement = document.getElementById('deck-for-export');
-    if (deckElement) {
-      setIsExportingImage(true);
-      const originalSrcs = new Map<HTMLImageElement, string>();
-      try {
-        const { data: { publicUrl } } = supabase.storage.from('card_images').getPublicUrl('dummy.jpg');
-        const baseUrl = publicUrl.replace('dummy.jpg', '');
-
-        const images = Array.from(deckElement.getElementsByTagName('img'));
-        await Promise.all(images.map(async (img) => {
-          originalSrcs.set(img, img.src);
-          // Extract card ID from the original src (assuming it's in the format like .../cards/{id}.jpg or .../cards/{id}_small.jpg)
-          const match = img.src.match(/(\d+)(?:_small)?\.jpg$/);
-          if (match && match[1]) {
-            const cardId = match[1];
-            img.src = `${baseUrl}${cardId}.jpg`;
-          }
-        }));
-
-        const canvas = await html2canvas(deckElement, {
-          backgroundColor: null,
-          useCORS: true,
-        });
-
-        const image = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        const sanitizedDeckName = deckName.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'deck';
-        link.download = `${sanitizedDeckName}.png`;
-        link.href = image;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (error) {
-        console.error("Error exporting image:", error);
-        toast({
-          title: "Erro ao Exportar Imagem",
-          description: "Ocorreu um erro ao tentar exportar o deck como imagem.",
-          variant: "destructive",
-        });
-      } finally {
-        originalSrcs.forEach((src, img) => {
-          img.src = src;
-        });
-        setIsExportingImage(false);
-      }
-    }
   };
 
   const handleImportYdkClick = () => fileInputRef.current?.click();
@@ -823,14 +807,20 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="outline" onClick={exportDeck}><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
-
-            <Button variant="outline" onClick={exportDeck}><FileDown className="h-4 w-4 mr-2" /> Exportar</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Exportar
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={exportDeck}>Exportar YDK</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportYdke}>Exportar YDKE</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" onClick={handleSortDeck} disabled={isDeckLocked}><ArrowDown className="h-4 w-4 mr-2" /> Re-ordenar</Button>
-            <Button variant="outline" onClick={handleExportAsImage} disabled={isExportingImage}>
-              {isExportingImage ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Image className="h-4 w-4 mr-2" />}
-              Exportar como Imagem
-            </Button>
             <Button variant="destructive" onClick={clearDeck} disabled={isDeckLocked}><Trash2 className="h-4 w-4 mr-2" /> Limpar</Button>
             <div className="flex-grow md:flex-grow-0"></div>
             <Button onClick={saveDeck} disabled={isSaving || isDeckLocked} className="bg-blue-600 hover:bg-blue-700 md:ml-auto mt-2 md:mt-0">
@@ -865,7 +855,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-[35%] order-1 md:order-2">
-            <div className="sticky top-24 space-y-4 z-0">
+            <div className="sticky top-24 space-y-4">
               <div className="flex gap-2">
                 <Input id="search" placeholder="Buscar pelo nome da carta..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchCards()} disabled={isDeckLocked} />
                 <Button onClick={searchCards} disabled={isSearching || isDeckLocked}>
