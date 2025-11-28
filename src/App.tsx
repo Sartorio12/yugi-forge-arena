@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"; // Import useLocation
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import Index from "./pages/Index";
@@ -31,6 +31,7 @@ import About from "./pages/About"; // Import the About component
 import Contact from "./pages/Contact"; // Import the Contact component
 import MessagesPage from "./pages/MessagesPage"; // Import the new page
 import { Footer } from "./components/Footer"; // Import the Footer component
+import { ConditionalFooter } from "./components/ConditionalFooter";
 import SearchPage from "./pages/SearchPage";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
@@ -168,9 +169,9 @@ const App = () => {
                           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                           <Route path="*" element={<NotFound />} />
                         </Routes>
-                                                    <Footer /> {/* Add the Footer component here */}
-                                                    <ChatDock currentUser={user} />
-                                                  </ChatProvider>                    </PresenceProvider>
+                        <ConditionalFooter /> {/* Use the new component */}
+                        <ChatDock currentUser={user} />
+                      </ChatProvider>                    </PresenceProvider>
           <SpeedInsights />
           <Analytics />
         </BrowserRouter>

@@ -15,9 +15,9 @@ const MessagesPage = ({ user, onLogout }: MessagesPageProps) => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(initialUserId || null);
 
   return (
-    <div className="min-h-screen bg-background text-white flex flex-col">
+    <div className="h-screen bg-background text-white flex flex-col">
       <Navbar user={user} onLogout={onLogout} />
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 h-[calc(100vh-81px)]">
+      <main className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4">
         {/* Left Column: Conversation List */}
         <div className="md:col-span-1 lg:col-span-1 border-r border-border h-full">
           <ConversationList 
@@ -27,7 +27,7 @@ const MessagesPage = ({ user, onLogout }: MessagesPageProps) => {
         </div>
 
         {/* Right Column: Chat Window */}
-        <div className="md:col-span-2 lg:col-span-3 h-full">
+        <div className="md:col-span-2 lg:col-span-3 h-[calc(100vh-81px)]">
           <ChatWindow 
             selectedUserId={selectedUserId}
             currentUser={user} 

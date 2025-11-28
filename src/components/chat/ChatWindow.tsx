@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useProfile } from '@/hooks/useProfile';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 const MESSAGES_PER_PAGE = 30;
 
@@ -22,7 +23,7 @@ const fetchMessages = async ({ pageParam = 0, queryKey }: any) => {
     const { data, error } = await supabase
         .from('direct_messages')
         .select('*')
-        .or(`(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`)
+        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`)
         .order('created_at', { ascending: false })
         .range(pageParam, pageParam + MESSAGES_PER_PAGE - 1);
 
@@ -34,6 +35,7 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
     const queryClient = useQueryClient();
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const { toast } = useToast();
 
     const { profile: otherUserProfile, isLoading: isLoadingProfile } = useProfile(selectedUserId);
 
@@ -52,64 +54,286 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
         enabled: !!currentUser && !!selectedUserId,
     });
 
-    const sendMessageMutation = useMutation({
-        mutationFn: async (content: string) => {
-            if (!currentUser || !selectedUserId) throw new Error("User not selected");
-            const { error } = await supabase.from('direct_messages').insert({
-                sender_id: currentUser.id,
-                receiver_id: selectedUserId,
-                content,
-            });
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            setNewMessage('');
-            queryClient.invalidateQueries({ queryKey: ['messages', currentUser?.id, selectedUserId] });
-            queryClient.invalidateQueries({ queryKey: ['conversations'] });
-        },
-    });
+        const sendMessageMutation = useMutation({
+
+            mutationFn: async (content: string) => {
+
+                if (!currentUser || !selectedUserId) throw new Error("Usuário não selecionado");
+
+                
+
+                const { data, error } = await supabase.from('direct_messages').insert({
+
+                    sender_id: currentUser.id,
+
+                    receiver_id: selectedUserId,
+
+                    content,
+
+                }).select();
+
     
-    // Mark messages as read when a chat is opened
-    useEffect(() => {
-        if (selectedUserId) {
-            supabase.rpc('mark_messages_as_read', { p_sender_id: selectedUserId }).then(() => {
-                queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            });
-        }
-    }, [selectedUserId, queryClient]);
 
-    // Real-time subscription for new messages
-    useEffect(() => {
-        if (!currentUser || !selectedUserId) return;
+                if (error) throw error;
 
-        const channel = supabase.channel(`dm:${currentUser.id}-${selectedUserId}`)
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'direct_messages',
-                filter: `receiver_id=eq.${currentUser.id},sender_id=eq.${selectedUserId}`
+                return data[0];
+
             },
-            (payload) => {
-                // Invalidate query to refetch, which is simpler and more reliable than manual cache updates
+
+            onSuccess: () => {
+                setNewMessage('');
                 queryClient.invalidateQueries({ queryKey: ['messages', currentUser?.id, selectedUserId] });
-                // Also mark as read immediately if window is open
-                supabase.rpc('mark_messages_as_read', { p_sender_id: selectedUserId });
-                queryClient.invalidateQueries({ queryKey: ['conversations'] });
-            })
-            .subscribe();
+                queryClient.invalidateQueries({ queryKey: ['conversations'] }); // Still invalidate conversations
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); // Manual scroll
+            },
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [currentUser, selectedUserId, queryClient]);
+            onError: (err: Error) => {
+
+                toast({
+
+                    title: "Erro ao enviar mensagem",
+
+                    description: err.message,
+
+                    variant: "destructive"
+
+                });
+
+            },
+
+        });
+
+        
+
+        // Mark messages as read when a chat is opened
+
+        useEffect(() => {
+
+            if (selectedUserId) {
+
+                supabase.rpc('mark_messages_as_read', { p_sender_id: selectedUserId }).then(() => {
+
+                    queryClient.invalidateQueries({ queryKey: ['conversations'] });
+
+                });
+
+            }
+
+        }, [selectedUserId, queryClient]);
+
     
-    // Scroll to bottom when new messages are added
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [data]);
 
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
+                // Real-time subscription for new messages
+
+    
+
+                useEffect(() => {
+
+    
+
+                    if (!currentUser || !selectedUserId) return;
+
+    
+
+        
+
+    
+
+                    // Sort IDs to ensure both users subscribe to the same channel
+
+    
+
+                    const channelName = `dm:${[currentUser.id, selectedUserId].sort().join(':')}`;
+
+    
+
+                    const channel = supabase.channel(channelName)
+
+    
+
+                        .on('postgres_changes', {
+
+    
+
+                            event: 'INSERT',
+
+    
+
+                            schema: 'public',
+
+    
+
+                            table: 'direct_messages',
+
+    
+
+                            // Filter client-side to be sure it's for this conversation
+
+    
+
+                        },
+
+    
+
+                        (payload) => {
+
+    
+
+                            const newMessage = payload.new;
+
+    
+
+                            
+
+    
+
+                            // Only update if the message is relevant to the current conversation
+
+    
+
+                            const isRelevantSender = newMessage.sender_id === selectedUserId && newMessage.receiver_id === currentUser.id;
+
+    
+
+                            const isRelevantReceiver = newMessage.sender_id === currentUser.id && newMessage.receiver_id === selectedUserId;
+
+    
+
+        
+
+    
+
+                            if (isRelevantSender || isRelevantReceiver) {
+
+    
+
+                                queryClient.setQueryData(['messages', currentUser.id, selectedUserId], (old: any) => {
+
+    
+
+                                    if (!old || !old.pages || old.pages.length === 0) {
+
+    
+
+                                        return { pages: [[newMessage]], pageParams: [undefined] };
+
+    
+
+                                    }
+
+    
+
+                                    const newPages = [...old.pages];
+
+    
+
+                                    newPages[newPages.length - 1] = [...newPages[newPages.length - 1], newMessage]; // Add to the last page
+
+    
+
+                                    return { ...old, pages: newPages };
+
+    
+
+                                });
+
+    
+
+                                queryClient.invalidateQueries({ queryKey: ['conversations'] });
+
+    
+
+        
+
+    
+
+                                // Show toast to receiver if they received a message from the person they are chatting with
+
+    
+
+                                // And the message came from the other user, and this is not the sender's own message
+
+    
+
+                                if (newMessage.receiver_id === currentUser.id && newMessage.sender_id === selectedUserId) {
+
+    
+
+                                    toast({
+
+    
+
+                                        title: `Nova mensagem de ${otherUserProfile?.username || 'alguém'} `,
+
+    
+
+                                        description: newMessage.content,
+
+    
+
+                                    });
+
+    
+
+                                    supabase.rpc('mark_messages_as_read', { p_sender_id: newMessage.sender_id });
+
+    
+
+                                }
+
+    
+
+                            }
+
+    
+
+                        })
+
+    
+
+                        .subscribe();
+
+    
+
+        
+
+    
+
+                    return () => {
+
+    
+
+                        supabase.removeChannel(channel);
+
+    
+
+                    };
+
+    
+
+                }, [currentUser, selectedUserId, queryClient, otherUserProfile, toast]);
+
+    
+
+            
+
+    
+
+            // Scroll to bottom when new messages are added - THIS IS THE CAUSE OF THE PROBLEM
+
+    
+
+            // useEffect(() => {
+
+    
+
+            //     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+    
+
+            // }, [data]);
+
+    const handleSendMessage = () => {
         const content = newMessage.trim();
         if (content) {
             sendMessageMutation.mutate(content);
@@ -143,7 +367,7 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
             )}
 
             {/* Message Area */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-4">
+            <div className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0">
                 {data?.pages.map(page => page.map(message => (
                     <div key={message.id} className={`flex gap-3 ${message.sender_id === currentUser.id ? 'justify-end' : 'justify-start'}`}>
                         {message.sender_id !== currentUser.id && (
@@ -163,7 +387,7 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
 
             {/* Input Area */}
             <div className="p-4 border-t border-border">
-                <form onSubmit={handleSendMessage} className="flex items-start gap-2">
+                <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-start gap-2">
                     <Textarea
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
@@ -173,11 +397,11 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
-                                handleSendMessage(e);
+                                handleSendMessage();
                             }
                         }}
                     />
-                    <Button type="submit" disabled={sendMessageMutation.isPending || !newMessage.trim()}>
+                    <Button type="button" onClick={handleSendMessage} disabled={sendMessageMutation.isPending || !newMessage.trim()}>
                         {sendMessageMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     </Button>
                 </form>
