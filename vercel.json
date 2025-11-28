@@ -11,8 +11,8 @@
   ],
   "crons": [
     {
-      "path": "/api/cleanup-presence",
-      "schedule": "*/2 * * * *"
+      "path": "/api/daily-maintenance",
+      "schedule": "0 1 * * *"
     }
   ]
 }
