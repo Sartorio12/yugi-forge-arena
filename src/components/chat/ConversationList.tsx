@@ -49,7 +49,7 @@ export const ConversationList = ({ onSelectConversation, selectedUserId }: Conve
                             <button
                                 key={convo.other_user_id}
                                 onClick={() => onSelectConversation(convo.other_user_id)}
-                                className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${selectedUserId === convo.other_user_id ? 'bg-secondary' : 'hover:bg-secondary/50'}`}
+                                className={`w-full text-left p-3 rounded-lg grid grid-cols-[auto_1fr] gap-3 transition-colors ${selectedUserId === convo.other_user_id ? 'bg-secondary' : 'hover:bg-secondary/50'}`}
                             >
                                 <div className="relative shrink-0">
                                     <Avatar className="h-12 w-12">
@@ -60,20 +60,20 @@ export const ConversationList = ({ onSelectConversation, selectedUserId }: Conve
                                         <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
                                     )}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-center mb-0.5">
-                                        <h3 className="font-semibold truncate pr-2">
+                                <div className="overflow-hidden min-w-0">
+                                    <div className="flex justify-between items-center mb-0.5 gap-2">
+                                        <h3 className="font-semibold truncate min-w-0">
                                             {convo.clan_tag && <span className="text-yellow-500 mr-1">[{convo.clan_tag}]</span>}
                                             {convo.username}
                                         </h3>
                                         {convo.last_message_at && (
-                                            <p className="text-xs text-muted-foreground shrink-0">
+                                            <p className="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
                                                 {formatDistanceToNow(new Date(convo.last_message_at), { locale: ptBR, addSuffix: false }).replace('cerca de ', '')}
                                             </p>
                                         )}
                                     </div>
-                                    <div className="flex justify-between items-center">
-                                        <p className="text-sm text-muted-foreground truncate pr-4">
+                                    <div className="flex justify-between items-center gap-2">
+                                        <p className="text-sm text-muted-foreground truncate">
                                             {convo.last_message_content}
                                         </p>
                                         {convo.unread_count > 0 && (
