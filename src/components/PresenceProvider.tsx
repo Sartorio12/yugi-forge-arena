@@ -9,6 +9,24 @@ interface PresenceProviderProps {
 
 export const PresenceProvider = ({ user, children }: PresenceProviderProps) => {
 
+  // Crowdsourced Cleanup:
+  // Every time a user visits the site, we trigger a cleanup of inactive users.
+  // This acts as a distributed "cron job" to keep the online list fresh.
+  useEffect(() => {
+    const runCleanup = async () => {
+        // Add a small random delay to prevent thundering herd if many users join at once
+        // and simple probability check to reduce write load (e.g., run 20% of the time)
+        if (Math.random() < 0.2) {
+            try {
+                await supabase.rpc('cleanup_inactive_users');
+            } catch (error) {
+                console.error("Failed to run inactive user cleanup:", error);
+            }
+        }
+    };
+    runCleanup();
+  }, []);
+
   useEffect(() => {
     if (!user) {
       return;
