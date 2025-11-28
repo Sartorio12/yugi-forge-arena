@@ -7,11 +7,7 @@
   ],
   "crons": [
     {
-      "path": "/api/sync-all-cards",
-      "schedule": "0 0 * * 0"
-    },
-    {
-      "path": "/api/sync-banlist",
+      "path": "/api/daily-maintenance",
       "schedule": "0 1 * * *"
     },
     {
