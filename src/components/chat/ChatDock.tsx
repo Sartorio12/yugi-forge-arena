@@ -19,7 +19,7 @@ export const ChatDock = ({ currentUser }: ChatDockProps) => {
   const DOCK_RIGHT_OFFSET = 80;
 
   return (
-    <div className="fixed bottom-0 right-0 h-0 z-[1000] flex items-end">
+    <div className="fixed bottom-0 right-0 h-0 z-[1000] hidden md:flex items-end">
       {openChats.map((chat, index) => (
         <FloatingChatWindow
           key={chat.userId}

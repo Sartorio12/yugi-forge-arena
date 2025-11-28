@@ -395,7 +395,7 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
             )}
 
             {/* Message Area */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0">
+            <div className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-background">
                 {data?.pages.map(page => page.map(message => (
                     <div key={message.id} className={`flex gap-3 ${message.sender_id === currentUser.id ? 'justify-end' : 'justify-start'}`}>
                         {message.sender_id !== currentUser.id && (
@@ -404,7 +404,7 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
                                 <AvatarFallback>{otherUserProfile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
                             </Avatar>
                         )}
-                        <div className={`max-w-xs md:max-w-md p-3 rounded-lg ${message.sender_id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
+                        <div className={`max-w-xs md:max-w-md p-3 rounded-lg shadow-md ${message.sender_id === currentUser.id ? 'bg-yellow-700 text-white' : 'bg-secondary'}`}>
                             <p className="text-sm">{message.content}</p>
                             <p className="text-xs opacity-70 mt-1 text-right">{format(new Date(message.created_at), 'HH:mm')}</p>
                         </div>
@@ -420,7 +420,7 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Digite sua mensagem..."
-                        className="flex-1 resize-none"
+                        className="flex-1 resize-none border-yellow-700 focus-visible:ring-yellow-700"
                         rows={1}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
@@ -429,7 +429,7 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
                             }
                         }}
                     />
-                    <Button type="button" onClick={handleSendMessage} disabled={sendMessageMutation.isPending || !newMessage.trim()}>
+                    <Button type="button" onClick={handleSendMessage} disabled={sendMessageMutation.isPending || !newMessage.trim()} className="bg-yellow-700 hover:bg-yellow-800">
                         {sendMessageMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     </Button>
                 </form>

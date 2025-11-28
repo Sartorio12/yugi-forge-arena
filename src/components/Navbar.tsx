@@ -144,14 +144,6 @@ const NavMenu = ({ user, profile }) => {
         </DropdownMenuItem>
         {user && (
           <DropdownMenuItem asChild>
-            <Link to="/messages" className="flex items-center">
-              <MessageSquare className="mr-2 h-4 w-4" />
-              <span>Mensagens</span>
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {user && (
-          <DropdownMenuItem asChild>
             <Link to="/deck-builder">Deck Builder</Link>
           </DropdownMenuItem>
         )}

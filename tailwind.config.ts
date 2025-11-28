@@ -2,6 +2,7 @@ import type { Config } from "tailwindcss";
 
 import tailwindcssAnimate from "tailwindcss-animate";
 import typography from "@tailwindcss/typography";
+import scrollbarPlugin from "tailwind-scrollbar";
 
 export default {
   darkMode: ["class"],
@@ -100,5 +101,5 @@ export default {
       },
     },
   },
-  plugins: [tailwindcssAnimate, typography],
+  plugins: [tailwindcssAnimate, typography, scrollbarPlugin],
 } satisfies Config;
