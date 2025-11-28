@@ -319,19 +319,47 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
 
     
 
-            // Scroll to bottom when new messages are added - THIS IS THE CAUSE OF THE PROBLEM
+                        // Scroll to bottom when new messages are added or on initial load, but not when fetching older messages
 
     
 
-            // useEffect(() => {
+            
 
     
 
-            //     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                        useEffect(() => {
 
     
 
-            // }, [data]);
+            
+
+    
+
+                            if (messagesEndRef.current && !isFetchingNextPage) {
+
+    
+
+            
+
+    
+
+                                messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+
+    
+
+            
+
+    
+
+                            }
+
+    
+
+            
+
+    
+
+                        }, [data, isFetchingNextPage]);
 
     const handleSendMessage = () => {
         const content = newMessage.trim();

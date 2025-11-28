@@ -38,6 +38,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { PresenceProvider } from "./components/PresenceProvider";
 import { ChatProvider } from "./components/chat/ChatProvider";
 import { ChatDock } from "./components/chat/ChatDock";
+import { GlobalChatListener } from "./components/chat/GlobalChatListener";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,12 @@ const App = () => {
   }, []);
 
   const handleLogout = async () => {
+    if (user) {
+      await supabase.from('profiles').update({
+        is_online: false,
+        last_seen: new Date().toISOString(),
+      }).eq('id', user.id);
+    }
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
@@ -171,6 +178,7 @@ const App = () => {
                         </Routes>
                         <ConditionalFooter /> {/* Use the new component */}
                         <ChatDock currentUser={user} />
+                        <GlobalChatListener currentUser={user} />
                       </ChatProvider>                    </PresenceProvider>
           <SpeedInsights />
           <Analytics />

@@ -44,8 +44,24 @@ export const PresenceProvider = ({ user, children }: PresenceProviderProps) => {
       }
     });
 
+    const handleBeforeUnload = () => {
+        // Attempt to set offline status before page unload
+        // Note: This is best-effort as async calls may be cancelled by the browser
+        const payload = { is_online: false, last_seen: new Date().toISOString() };
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        navigator.sendBeacon(
+            `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
+            blob
+        );
+        // Also try the standard method in case it works
+        updateUserStatus(false);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     // Cleanup function
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       clearInterval(intervalId);
       if (channel) {
         // Set user offline on unmount/cleanup
