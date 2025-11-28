@@ -4,5 +4,15 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/daily-maintenance",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cleanup-presence",
+      "schedule": "*/2 * * * *"
+    }
   ]
 }
