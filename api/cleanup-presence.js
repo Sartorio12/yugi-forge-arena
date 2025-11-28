@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
@@ -9,16 +8,12 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// Use Service Role Key for Cron Jobs to bypass RLS authentication requirements
-// Fallback to anon key if service key is missing (though less secure/capable)
 const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseKey);
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Check for authorization if needed (e.g., a secret header from Vercel Cron)
+export default async function handler(req, res) {
   const authHeader = req.headers.authorization;
   if (req.headers['x-vercel-cron'] !== '1' && (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`)) {
-    // Optional: Secure your cron endpoint
-    // return res.status(401).json({ error: 'Unauthorized' });
+    // Optional security
   }
 
   try {
