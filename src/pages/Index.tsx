@@ -12,6 +12,7 @@ import { NewsSection } from "@/components/NewsSection";
 import { ActivityTimeline } from "@/components/ActivityTimeline"; // Import the new component
 import { CardOfTheDay } from "@/components/CardOfTheDay";
 import { TopRankedClans } from "@/components/TopRankedClans"; // Import the new component
+import { DiscordWidget } from "@/components/DiscordWidget";
 
 interface IndexProps {
   user: User | null;
@@ -42,6 +43,7 @@ const Index = ({ user, onLogout }: IndexProps) => {
           <TopRankedPlayers />
           <TopRankedClans />
           <CardOfTheDay />
+          <DiscordWidget />
         </div>
         
       </div>
