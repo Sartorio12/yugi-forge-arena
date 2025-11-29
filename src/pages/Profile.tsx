@@ -124,15 +124,24 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   });
 
   const handleDeleteDeck = async (deckId: number) => {
+    console.log("Attempting to delete deck:", deckId);
     try {
-      const { error: cardsError } = await supabase.from("deck_cards").delete().eq("deck_id", deckId);
-      if (cardsError) throw cardsError;
       const { error: deckError } = await supabase.from("decks").delete().eq("id", deckId);
       if (deckError) throw deckError;
       toast({ title: "Sucesso", description: "Deck deletado com sucesso." });
       queryClient.invalidateQueries({ queryKey: ["user-decks", id] });
-    } catch (error: Error) {
-      toast({ title: "Erro", description: error.message || "Falha ao deletar o deck.", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Error deleting deck:", error);
+      // Check for foreign key constraint violation (code 23503) or specific message
+      if (
+        error.code === '23503' || 
+        error.message?.includes('foreign key constraint') ||
+        error.details?.includes('foreign key constraint')
+      ) {
+        toast({ title: "Erro", description: "Não é possível deletar o deck, cadastrado em algum torneio.", variant: "destructive" });
+      } else {
+        toast({ title: "Erro", description: error.message || "Falha ao deletar o deck.", variant: "destructive" });
+      }
     }
   };
 
