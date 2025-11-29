@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +52,13 @@ const TournamentDashboard = () => {
   const [editingTournament, setEditingTournament] = useState<Tables<"tournaments"> | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [tournamentToDeleteId, setTournamentToDeleteId] = useState<number | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setCurrentUserId(user.id);
+    });
+  }, []);
 
   const { data: tournaments, isLoading } = useQuery<Tables<"tournaments">[]>(
     {
@@ -59,7 +66,7 @@ const TournamentDashboard = () => {
       queryFn: async () => {
         const { data, error } = await supabase
           .from("tournaments")
-          .select("*")
+          .select("*, organizer_id, exclusive_organizer_only") // Added new columns
           .order("event_date", { ascending: false });
         if (error) throw error;
         return data;
@@ -233,8 +240,11 @@ const TournamentDashboard = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleManageClick(tournament.id)}>
-                            Gerenciar
+                          <DropdownMenuItem 
+                            onClick={() => handleManageClick(tournament.id)}
+                            disabled={(tournament as any).exclusive_organizer_only && (tournament as any).organizer_id !== currentUserId}
+                          >
+                            {(tournament as any).exclusive_organizer_only && (tournament as any).organizer_id !== currentUserId ? "Acesso Restrito" : "Gerenciar"}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEditClick(tournament)}>
                             Editar

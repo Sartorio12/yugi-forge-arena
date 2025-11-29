@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Profile } from "@/hooks/useProfile";
 import { supabase } from '../../integrations/supabase/client';
+import { useEffect } from "react";
 
 // Updated to match the RPC return type
 interface ParticipantDeck {
@@ -62,6 +63,7 @@ interface Participant {
 
 const TournamentManagementPage = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
@@ -69,13 +71,33 @@ const TournamentManagementPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("title")
+        .select("title, organizer_id, exclusive_organizer_only")
         .eq("id", Number(id))
         .single();
       if (error) throw error;
       return data;
     },
   });
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (tournament) {
+        const t = tournament as any;
+        if (t.exclusive_organizer_only) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user || user.id !== t.organizer_id) {
+            toast({
+              title: "Acesso Negado",
+              description: "Este torneio é exclusivo do organizador. Você não tem permissão para gerenciá-lo.",
+              variant: "destructive",
+            });
+            navigate("/dashboard/tournaments");
+          }
+        }
+      }
+    };
+    checkAccess();
+  }, [tournament, navigate]);
 
   const { data: participants, isLoading: isLoadingParticipants } = useQuery({
     queryKey: ["tournamentParticipantsManagement", id],
