@@ -69,7 +69,16 @@ const TournamentDashboard = () => {
 
   const createTournamentMutation = useMutation({
     mutationFn: async (newTournament: TablesInsert<"tournaments">) => {
-      const { error } = await supabase.from("tournaments").insert([newTournament]);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const tournamentData = {
+        ...newTournament,
+        organizer_id: user.id,
+      };
+
+      // Cast to any to bypass type check since generated types are outdated
+      const { error } = await supabase.from("tournaments").insert([tournamentData as any]);
       if (error) throw error;
     },
     onSuccess: () => {

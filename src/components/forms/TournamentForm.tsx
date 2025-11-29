@@ -52,6 +52,7 @@ const tournamentFormSchema = z.object({
     (val) => (val === "" ? 1 : Number(val)),
     z.number().int().min(1, { message: "O número de decks deve ser no mínimo 1." }).default(1)
   ),
+  exclusive_organizer_only: z.boolean().default(false),
 });
 
 interface TournamentFormProps {
@@ -84,6 +85,7 @@ export const TournamentForm = ({
       is_decklist_required: initialData?.is_decklist_required ?? true,
       max_participants: initialData?.max_participants || undefined,
       num_decks_allowed: initialData?.num_decks_allowed || 1,
+      exclusive_organizer_only: initialData?.exclusive_organizer_only ?? false,
     },
   });
 
@@ -178,6 +180,26 @@ export const TournamentForm = ({
                 <Input placeholder="Nome do Torneio" {...field} />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="exclusive_organizer_only"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel>Modo Exclusivo do Organizador</FormLabel>
+                <FormDescription>
+                  Se ativado, apenas o organizador deste torneio (você) poderá ver os decks. Outros admins não terão acesso.
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
             </FormItem>
           )}
         />
