@@ -42,6 +42,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TournamentForm } from "@/components/forms/TournamentForm";
 import { useToast } from "@/components/ui/use-toast";
+import { useProfile } from "@/hooks/useProfile"; // Import useProfile
 
 const TournamentDashboard = () => {
   const navigate = useNavigate();
@@ -59,6 +60,8 @@ const TournamentDashboard = () => {
       if (user) setCurrentUserId(user.id);
     });
   }, []);
+
+  const { profile, isLoading: isLoadingProfile } = useProfile(currentUserId || undefined); // Use useProfile
 
   const { data: tournaments, isLoading } = useQuery<Tables<"tournaments">[]>(
     {
@@ -246,12 +249,16 @@ const TournamentDashboard = () => {
                           >
                             {(tournament as any).exclusive_organizer_only && (tournament as any).organizer_id !== currentUserId ? "Acesso Restrito" : "Gerenciar"}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditClick(tournament)}>
+                          <DropdownMenuItem
+                            onClick={() => handleEditClick(tournament)}
+                            disabled={isLoadingProfile || profile?.role !== 'admin'}
+                          >
                             Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDeleteClick(tournament.id)}
                             className="text-destructive"
+                            disabled={isLoadingProfile || profile?.role !== 'admin'}
                           >
                             Excluir
                           </DropdownMenuItem>
