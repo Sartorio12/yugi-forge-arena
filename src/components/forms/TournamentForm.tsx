@@ -56,7 +56,7 @@ const tournamentFormSchema = z.object({
 
 interface TournamentFormProps {
   formId: string;
-  initialData?: TablesInsert<"tournaments">;
+  initialData?: TablesInsert<"tournaments"> & { id?: number }; // Add id for existing tournaments
   onSubmit: (data: TablesInsert<"tournaments">) => void;
   isLoading?: boolean;
 }
@@ -163,6 +163,23 @@ export const TournamentForm = ({
       num_decks_allowed: values.num_decks_allowed,
     };
     onSubmit(dataToSubmit);
+
+    // If the tournament is being updated to 'Fechado' (Closed), release associated decks
+    if (initialData?.id && values.status === "Fechado") {
+      const { error: rpcError } = await supabase.rpc('release_decks_for_tournament', { p_tournament_id: initialData.id });
+      if (rpcError) {
+        toast({
+          title: "Erro ao liberar decks",
+          description: `Não foi possível liberar os decks associados ao torneio: ${rpcError.message}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Decks Liberados",
+          description: "Os decks associados a este torneio foram liberados com sucesso.",
+        });
+      }
+    }
   };
 
   return (
