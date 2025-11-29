@@ -97,6 +97,13 @@ const TournamentDashboard = () => {
         .update(updatedTournament)
         .eq("id", editingTournament.id);
       if (error) throw error;
+
+      if (updatedTournament.status === "Fechado") {
+        const { error: rpcError } = await supabase.rpc("release_decks_for_tournament", {
+          p_tournament_id: editingTournament.id,
+        });
+        if (rpcError) throw rpcError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-tournaments"] });
