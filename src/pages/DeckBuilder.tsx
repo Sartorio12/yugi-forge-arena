@@ -420,6 +420,46 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [isGenesysMode, setIsGenesysMode] = useState(false);
   const [totalGenesysPoints, setTotalGenesysPoints] = useState(0);
   const [isDeckLocked, setIsDeckLocked] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isJustLoaded, setIsJustLoaded] = useState(false);
+
+  // Auto-save Draft & Unsaved Changes Tracker
+  useEffect(() => {
+    if (isLoadingDeck) return;
+
+    const draft = {
+      mainDeck,
+      extraDeck,
+      sideDeck,
+      deckName,
+      isPrivate,
+      isGenesysMode,
+      editingDeckId,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('deck_builder_draft', JSON.stringify(draft));
+
+    if (isJustLoaded) {
+      setIsJustLoaded(false);
+    } else {
+      // Only mark as unsaved if we have at least some content or name
+      if (mainDeck.length > 0 || extraDeck.length > 0 || sideDeck.length > 0 || deckName) {
+        setHasUnsavedChanges(true);
+      }
+    }
+  }, [mainDeck, extraDeck, sideDeck, deckName, isPrivate, isGenesysMode, editingDeckId, isLoadingDeck]);
+
+  // Warn on Unsaved Changes (Browser Close/Refresh)
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   useEffect(() => {
     const calculatePoints = () => {
@@ -453,32 +493,62 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         }
       }
 
+      // Fetch from DB
       const { data: deckData, error: deckError } = await supabase.from('decks').select('*, profiles(*)').eq('id', deckId).single();
       if (deckError || !deckData) throw new Error("Deck para edição não encontrado.");
       if (deckData.user_id !== user?.id) throw new Error("Você não tem permissão para editar este deck.");
 
-      setDeckName(deckData.deck_name);
-      setIsPrivate(deckData.is_private);
-      setEditingDeckId(deckId);
+      let loadedFromDraft = false;
+      const draftString = localStorage.getItem('deck_builder_draft');
+      if (draftString) {
+        try {
+          const draft = JSON.parse(draftString);
+          if (draft.editingDeckId === deckId) {
+            // Restore from Draft
+            setDeckName(draft.deckName || "");
+            setIsPrivate(draft.isPrivate || false);
+            setIsGenesysMode(draft.isGenesysMode || false);
+            setEditingDeckId(deckId);
+            setMainDeck(draft.mainDeck || []);
+            setExtraDeck(draft.extraDeck || []);
+            setSideDeck(draft.sideDeck || []);
+            setHasUnsavedChanges(true); // Draft implies unsaved changes
+            loadedFromDraft = true;
+            toast({ title: "Rascunho Restaurado", description: "Alterações não salvas foram restauradas." });
+          }
+        } catch (e) { console.error("Draft parse error", e); }
+      }
 
-      const { data: deckCards, error: cardsError } = await supabase.from('deck_cards').select('card_api_id, deck_section').eq('deck_id', deckId);
-      if (cardsError) throw new Error(cardsError.message);
-      if (!deckCards) { setIsLoadingDeck(false); return; }
+      if (!loadedFromDraft) {
+        // Load from DB
+        setDeckName(deckData.deck_name);
+        setIsPrivate(deckData.is_private);
+        setEditingDeckId(deckId);
 
-      const allIds = [...new Set(deckCards.map(c => c.card_api_id))].filter(Boolean);
-      if (allIds.length === 0) { setIsLoadingDeck(false); return; }
+        const { data: deckCards, error: cardsError } = await supabase.from('deck_cards').select('card_api_id, deck_section').eq('deck_id', deckId);
+        if (cardsError) throw new Error(cardsError.message);
 
-      const { data: apiData, error: fetchCardsError } = await supabase.from('cards').select('*').in('id', allIds);
-      if (fetchCardsError || !apiData) throw new Error("Erro ao buscar dados das cartas no banco de dados.");
+        if (deckCards) {
+          const allIds = [...new Set(deckCards.map(c => c.card_api_id))].filter(Boolean);
+          if (allIds.length > 0) {
+            const { data: apiData, error: fetchCardsError } = await supabase.from('cards').select('*').in('id', allIds);
+            if (fetchCardsError || !apiData) throw new Error("Erro ao buscar dados das cartas no banco de dados.");
 
-      const cardDataMap = new Map(apiData.map((c: CardData) => [String(c.id), c]));
-      const newMain = deckCards.filter(dc => dc.deck_section === 'main').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
-      const newExtra = deckCards.filter(dc => dc.deck_section === 'extra').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
-      const newSide = deckCards.filter(dc => dc.deck_section === 'side').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
+            const cardDataMap = new Map(apiData.map((c: CardData) => [String(c.id), c]));
+            const newMain = deckCards.filter(dc => dc.deck_section === 'main').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
+            const newExtra = deckCards.filter(dc => dc.deck_section === 'extra').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
+            const newSide = deckCards.filter(dc => dc.deck_section === 'side').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
 
-      setMainDeck(newMain);
-      setExtraDeck(newExtra);
-      setSideDeck(newSide);
+            setMainDeck(newMain);
+            setExtraDeck(newExtra);
+            setSideDeck(newSide);
+          }
+        }
+        // Mark as just loaded so we don't trigger unsaved changes immediately
+        setIsJustLoaded(true);
+        setHasUnsavedChanges(false);
+      }
+
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       toast({ title: "Erro ao Carregar Deck", description: errorMessage, variant: "destructive" });
@@ -493,6 +563,24 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     if (deckId && user) {
       loadDeckForEditing(Number(deckId));
     } else {
+      // New Deck Mode - Check for Draft
+      const draftString = localStorage.getItem('deck_builder_draft');
+      if (draftString) {
+          try {
+              const draft = JSON.parse(draftString);
+              // Only restore if draft was also a New Deck (editingDeckId is null)
+              if (!draft.editingDeckId) {
+                   setMainDeck(draft.mainDeck || []);
+                   setExtraDeck(draft.extraDeck || []);
+                   setSideDeck(draft.sideDeck || []);
+                   setDeckName(draft.deckName || "");
+                   setIsPrivate(draft.isPrivate || false);
+                   setIsGenesysMode(draft.isGenesysMode || false);
+                   setHasUnsavedChanges(true);
+                   toast({ title: "Rascunho Restaurado", description: "Seu deck anterior foi restaurado." });
+              }
+          } catch (e) { console.error(e); }
+      }
       setIsLoadingDeck(false);
     }
   }, [searchParams, user, loadDeckForEditing]);
@@ -567,6 +655,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     setSideDeck([]);
     setDeckName("");
     setEditingDeckId(null);
+    localStorage.removeItem('deck_builder_draft');
+    setHasUnsavedChanges(false);
     toast({ title: "Deck Limpo", description: "Todas as cartas foram removidas." });
   };
 
@@ -746,6 +836,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         const { error: insertError } = await supabase.from('deck_cards').insert(cardsWithDeckId);
         if (insertError) throw insertError;
         toast({ title: "Sucesso!", description: `Deck "${deckName.trim()}" atualizado!` });
+        localStorage.removeItem('deck_builder_draft');
+        setHasUnsavedChanges(false);
         navigate(`/profile/${user.id}`);
       } else {
         const { data: deck, error: deckError } = await supabase.from("decks").insert({ user_id: user.id, deck_name: deckName.trim(), is_private: isPrivate, is_genesys: isGenesysMode }).select().single();
@@ -755,6 +847,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         const { error: cardsError } = await supabase.from("deck_cards").insert(cardsWithDeckId);
         if (cardsError) throw cardsError;
         toast({ title: "Sucesso!", description: `Deck "${deckName.trim()}" salvo!` });
+        localStorage.removeItem('deck_builder_draft');
+        setHasUnsavedChanges(false);
         navigate(`/profile/${user.id}`);
       }
     } catch (error: unknown) {
