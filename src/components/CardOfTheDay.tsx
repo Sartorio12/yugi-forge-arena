@@ -47,7 +47,6 @@ export const CardOfTheDay = () => {
           </div>
         ) : card ? (
           <div className="text-center">
-            <h3 className="text-xl font-bold text-primary mb-1">{card.name}</h3>
             {card.image_url && (
               <img
                 src={card.image_url}

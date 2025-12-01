@@ -13,12 +13,6 @@ export const DiscordWidget = () => {
   
   return (
     <Card className="border-accent/20 bg-card/50 backdrop-blur-sm">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg font-bold text-primary">
-          <MessageSquare className="h-5 w-5" />
-          Chat da Comunidade
-        </CardTitle>
-      </CardHeader>
       <CardContent className="p-0 overflow-hidden rounded-b-lg">
         <iframe 
           src={`https://discord.com/widget?id=${discordServerId}&theme=dark`} 
