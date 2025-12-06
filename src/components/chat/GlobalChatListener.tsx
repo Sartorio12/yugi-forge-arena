@@ -21,6 +21,40 @@ export const GlobalChatListener = ({ currentUser }: GlobalChatListenerProps) => 
         openChatsRef.current = openChats;
     }, [openChats]);
 
+    // Request notification permission on mount
+    useEffect(() => {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
+
+    const playNotificationSound = () => {
+        try {
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContext) return;
+            
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            // Simple chime sound
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1); // A5
+            
+            gain.gain.setValueAtTime(0.05, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            
+            osc.start();
+            osc.stop(ctx.currentTime + 0.5);
+        } catch (error) {
+            console.error("Error playing notification sound:", error);
+        }
+    };
+
     useEffect(() => {
         if (!currentUser) return;
 
@@ -38,19 +72,34 @@ export const GlobalChatListener = ({ currentUser }: GlobalChatListenerProps) => 
                 const newMessage = payload.new;
                 
                 // Check if we already have an open chat window for this sender
-                // Use the ref to get the latest state without triggering re-subscription
                 const isChatOpen = openChatsRef.current.some(c => c.userId === newMessage.sender_id);
-                console.log("GlobalChatListener: isChatOpen?", isChatOpen, "Sender:", newMessage.sender_id);
+                
+                // Fetch sender details
+                const { data: senderProfile } = await supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('id', newMessage.sender_id)
+                    .single();
+
+                const senderName = senderProfile?.username || 'Alguém';
+
+                // Play sound and show desktop notification if chat is closed OR user is tabbed away
+                if (!isChatOpen || document.hidden) {
+                    playNotificationSound();
+                    
+                    if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+                        try {
+                            new Notification(`Nova mensagem de ${senderName}`, {
+                                body: newMessage.content,
+                                icon: '/favicon.ico'
+                            });
+                        } catch (e) {
+                            console.error("Error showing desktop notification:", e);
+                        }
+                    }
+                }
 
                 if (!isChatOpen) {
-                    // Fetch sender details for the toast
-                    const { data: senderProfile } = await supabase
-                        .from('profiles')
-                        .select('username')
-                        .eq('id', newMessage.sender_id)
-                        .single();
-
-                    const senderName = senderProfile?.username || 'Alguém';
                     console.log("GlobalChatListener: Showing toast from", senderName);
 
                     toast({
@@ -78,7 +127,7 @@ export const GlobalChatListener = ({ currentUser }: GlobalChatListenerProps) => 
             console.log("GlobalChatListener: Cleaning up channel");
             supabase.removeChannel(channel);
         };
-    }, [currentUser, toast, openChat, queryClient]); // Removed openChats from dependencies
+    }, [currentUser, toast, openChat, queryClient]);
 
     return null;
 };
