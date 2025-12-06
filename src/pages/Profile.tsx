@@ -7,7 +7,7 @@ import TrophyShelf from "@/components/TrophyShelf"; // Import TrophyShelf
 import BannerUploadForm from "@/components/forms/BannerUploadForm"; // Import BannerUploadForm
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
-import { Loader2, User as UserIcon, Pencil, Plus, MessageSquare } from "lucide-react";
+import { Loader2, User as UserIcon, Pencil, Plus, MessageSquare, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -145,6 +145,43 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
     }
   };
 
+  const handleDeleteTournamentBanner = async (bannerId: number) => {
+    try {
+      const { error } = await supabase
+        .from("user_tournament_banners")
+        .delete()
+        .eq("id", bannerId);
+        
+      if (error) throw error;
+      
+      toast({ title: "Sucesso", description: "Banner removido." });
+      queryClient.invalidateQueries({ queryKey: ["user-tournament-banners", id] });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Falha ao remover banner.", variant: "destructive" });
+    }
+  };
+
+  const handleRemoveBanner = async () => {
+    if (!user) return;
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ banner_url: null }).eq('id', user.id);
+      if (error) throw error;
+      
+      toast({ title: "Sucesso!", description: "Banner removido." });
+      queryClient.invalidateQueries({ queryKey: ["profile", id] });
+      setBannerFile(null);
+      // Also close the dialog if desired, or keep it open to show change? 
+      // Usually closing is fine, or keeping it open to edit other things.
+      // I'll keep it open but maybe I should update the local state 'profile' if I wasn't invalidating?
+      // Invalidation is best.
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Falha ao remover o banner.", variant: "destructive" });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleProfileUpdate = async () => {
     if (!user) return;
     setIsUpdating(true);
@@ -267,7 +304,20 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                             }} />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="banner">Banner (Max 10MB)</Label>
+                            <div className="flex justify-between items-center mb-2">
+                              <Label htmlFor="banner">Banner (Max 10MB)</Label>
+                              {profile.banner_url && (
+                                <Button 
+                                  type="button" 
+                                  variant="destructive" 
+                                  size="sm" 
+                                  onClick={handleRemoveBanner}
+                                  disabled={isUpdating}
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" /> Remover
+                                </Button>
+                              )}
+                            </div>
                             <Input id="banner" type="file" accept="image/*" onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (!file) {
@@ -392,7 +442,11 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
-                  <TrophyShelf banners={userBanners || []} />
+                  <TrophyShelf 
+                    banners={userBanners || []} 
+                    isOwner={isProfileOwner}
+                    onDelete={handleDeleteTournamentBanner}
+                  />
                 )}
               </div>
             </div>

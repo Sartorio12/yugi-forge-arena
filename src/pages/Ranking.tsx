@@ -34,6 +34,7 @@ interface PlayerRanking {
   total_wins: number;
   total_points: number;
   clan_tag: string | null;
+  level: number;
 }
 
 const RankingPage = ({ user, onLogout }: RankingPageProps) => {
@@ -104,7 +105,7 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
                             <AvatarFallback>{player.username?.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className="font-medium group-hover:underline">
-                            <UserDisplay profile={player} clan={player.clan_tag ? { tag: player.clan_tag } : null} />
+                            <UserDisplay profile={{ ...player, id: player.user_id }} clan={player.clan_tag ? { tag: player.clan_tag } : null} />
                           </span>
                         </Link>
                       </TableCell>

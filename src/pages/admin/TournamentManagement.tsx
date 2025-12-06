@@ -51,6 +51,8 @@ interface Participant {
     id: string;
     username: string;
     avatar_url: string | null;
+    banner_url: string | null;
+    level: number;
     clan_members: {
       clans: {
         tag: string;
@@ -112,6 +114,8 @@ const TournamentManagementPage = () => {
             id,
             username,
             avatar_url,
+            banner_url,
+            level,
             clan_members (
               clans (
                 tag
@@ -244,6 +248,7 @@ const TournamentManagementPage = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">No.</TableHead>
                     <TableHead>Jogador</TableHead>
                     <TableHead>Decklist</TableHead>
                     <TableHead className="text-center w-[150px]">Vitórias</TableHead>
@@ -251,12 +256,15 @@ const TournamentManagementPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {participants.sort((a, b) => a.id - b.id).map((p) => {
+                  {participants.sort((a, b) => a.id - b.id).map((p, index) => {
                     const userDecks = decksByUserId.get(p.user_id);
                     const hasDecks = userDecks && userDecks.length > 0;
 
                     return (
                       <TableRow key={p.id}>
+                        <TableCell className="font-medium">
+                          {index + 1}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-4">
                             <Avatar>
@@ -264,8 +272,8 @@ const TournamentManagementPage = () => {
                               <AvatarFallback>{p.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <span className="font-medium">
-                              <Link to={`/profile/${p.profiles.id}`}>
-                                <UserDisplay profile={{id: p.profiles?.id || "", username: p.profiles?.username || "Usuário desconhecido"}} clan={p.profiles?.clan_members?.clans} />
+                              <Link to={`/profile/${p.profiles?.id}`}>
+                                <UserDisplay profile={p.profiles || {}} clan={p.profiles?.clan_members?.clans} />
                               </Link>
                             </span>
                           </div>

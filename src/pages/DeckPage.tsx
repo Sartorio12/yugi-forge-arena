@@ -223,7 +223,8 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
         .from("clan_members")
         .select("clans(*)")
         .eq("user_id", deck.user_id)
-        .single();
+        .limit(1)
+        .maybeSingle();
       return data?.clans;
     },
     enabled: !!deck?.user_id,
@@ -287,7 +288,8 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
         .select("id")
         .eq("deck_id", id)
         .eq("user_id", user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
       if (error || !data) return false;
       return true;
     },
