@@ -590,15 +590,45 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     if (!trimmedQuery) return;
     setIsSearching(true);
     try {
-      const { data: cards, error } = await supabase.from('cards').select('*').or(`name.ilike.%${trimmedQuery.toLowerCase()}%,pt_name.ilike.%${trimmedQuery.toLowerCase()}%`).limit(50);
+      // Increased limit to 100 to cast a wider net
+      const { data: cards, error } = await supabase
+        .from('cards')
+        .select('*')
+        .or(`name.ilike.%${trimmedQuery.toLowerCase()}%,pt_name.ilike.%${trimmedQuery.toLowerCase()}%`)
+        .limit(100);
+
       if (error) throw error;
-      cards.sort((a, b) => {
+
+      const sortedCards = (cards || []).sort((a, b) => {
+        const queryLower = trimmedQuery.toLowerCase();
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        const ptNameA = (a.pt_name || "").toLowerCase();
+        const ptNameB = (b.pt_name || "").toLowerCase();
+
+        // 1. Exact Match Priority
+        const exactA = nameA === queryLower || ptNameA === queryLower;
+        const exactB = nameB === queryLower || ptNameB === queryLower;
+        if (exactA && !exactB) return -1;
+        if (!exactA && exactB) return 1;
+
+        // 2. Starts With Priority
+        const startsA = nameA.startsWith(queryLower) || ptNameA.startsWith(queryLower);
+        const startsB = nameB.startsWith(queryLower) || ptNameB.startsWith(queryLower);
+        if (startsA && !startsB) return -1;
+        if (!startsA && startsB) return 1;
+
+        // 3. Length Priority (Shorter names first -> likely more relevant for short queries like "Eva")
+        if (nameA.length !== nameB.length) return nameA.length - nameB.length;
+
+        // 4. Default Sort (Type Rank -> Name)
         const rankA = getCardTypeRank(a.type);
         const rankB = getCardTypeRank(b.type);
         if (rankA !== rankB) return rankA - rankB;
         return a.name.localeCompare(b.name);
       });
-      setSearchResults(cards || []);
+
+      setSearchResults(sortedCards);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao buscar cartas";
       toast({ title: "Erro", description: errorMessage, variant: "destructive" });
