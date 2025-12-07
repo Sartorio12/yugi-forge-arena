@@ -121,27 +121,39 @@ export default async function handler(req, res) {
     const fetchCurrentDbState = async () => {
         let allRows = [];
         let page = 0;
-        const pageSize = 2000;
+        const pageSize = 1000; // Safer page size
         let hasMore = true;
         
-        // We fetch in chunks to avoid timeouts or memory issues, though parallel could work too.
-        // Given we want to be nice to the DB, sequential pages with large size is okay for reading.
         while (hasMore) {
             const { data, error } = await supabaseAdmin
                 .from('cards')
                 .select('id, name, pt_name, ban_master_duel, md_rarity, genesys_points, image_url')
                 .range(page * pageSize, (page + 1) * pageSize - 1);
             
-            if (error) throw error;
+            if (error) {
+                console.error(`Error fetching page ${page}:`, error);
+                throw error;
+            }
             
             if (data.length > 0) {
+                // console.log(`Fetched page ${page}: ${data.length} rows`);
                 allRows = allRows.concat(data);
-                page++;
+                
+                // If we got fewer rows than requested, we reached the end
+                if (data.length < pageSize) {
+                    hasMore = false;
+                } else {
+                    page++;
+                }
             } else {
                 hasMore = false;
             }
-            // Safety break for infinite loops
-            if (page > 20) hasMore = false; // Max ~40k cards, plenty for now
+            
+            // Safety break
+            if (page > 50) { // Increased limit for 1000 pageSize (50k cards max)
+                console.warn("Reached max pagination safety limit, stopping DB fetch.");
+                hasMore = false;
+            }
         }
         return allRows;
     };
@@ -179,17 +191,23 @@ export default async function handler(req, res) {
     // 4. Upsert to Supabase in batches
     if (cardsToUpdate.length > 0) {
         const BATCH_SIZE = 1000;
+        const totalBatches = Math.ceil(cardsToUpdate.length / BATCH_SIZE);
         for (let i = 0; i < cardsToUpdate.length; i += BATCH_SIZE) {
+            const batchNum = (i / BATCH_SIZE) + 1;
+            // console.log(`Upserting batch ${batchNum}/${totalBatches}...`);
             const batch = cardsToUpdate.slice(i, i + BATCH_SIZE);
             const { error } = await supabaseAdmin
                 .from('cards')
                 .upsert(batch, { onConflict: 'id' });
             
             if (error) {
-                console.error(`Error upserting batch ${i}-${i+BATCH_SIZE}:`, error);
+                console.error(`Error upserting batch ${batchNum}:`, error);
                 throw error; 
             }
         }
+        console.log(`Finished upserting ${cardsToUpdate.length} cards.`);
+    } else {
+        console.log("No cards to update/insert.");
     }
 
     console.log('Daily Maintenance completed successfully.');
