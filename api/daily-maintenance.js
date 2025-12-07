@@ -112,26 +112,89 @@ export default async function handler(req, res) {
         });
     }
 
-    console.log(`Prepared ${cardsToUpsert.length} cards for upsert.`);
+    console.log(`Prepared ${cardsToUpsert.length} cards from API.`);
+
+    // --- OPTIMIZATION: FETCH CURRENT STATE & COMPARE ---
+    console.log('Fetching current DB state for comparison...');
+    
+    // Function to fetch all existing card signatures
+    const fetchCurrentDbState = async () => {
+        let allRows = [];
+        let page = 0;
+        const pageSize = 2000;
+        let hasMore = true;
+        
+        // We fetch in chunks to avoid timeouts or memory issues, though parallel could work too.
+        // Given we want to be nice to the DB, sequential pages with large size is okay for reading.
+        while (hasMore) {
+            const { data, error } = await supabaseAdmin
+                .from('cards')
+                .select('id, name, pt_name, ban_master_duel, md_rarity, genesys_points, image_url')
+                .range(page * pageSize, (page + 1) * pageSize - 1);
+            
+            if (error) throw error;
+            
+            if (data.length > 0) {
+                allRows = allRows.concat(data);
+                page++;
+            } else {
+                hasMore = false;
+            }
+            // Safety break for infinite loops
+            if (page > 20) hasMore = false; // Max ~40k cards, plenty for now
+        }
+        return allRows;
+    };
+
+    const currentDbCards = await fetchCurrentDbState();
+    const dbCardMap = new Map();
+    currentDbCards.forEach(c => dbCardMap.set(String(c.id), c));
+
+    console.log(`Fetched ${currentDbCards.length} existing cards from DB.`);
+
+    const cardsToUpdate = cardsToUpsert.filter(newCard => {
+        const existing = dbCardMap.get(newCard.id);
+        
+        // If it's a new card, we must upsert
+        if (!existing) return true;
+
+        // Compare fields (Strict equality check)
+        // We only check fields that are critical or dynamic. 
+        // Note: description is skipped to save DB read bandwidth, assuming usually name/stats/image update with text.
+        // If you need perfect text sync, add 'description' to the select above and check it here.
+        const hasChanged = 
+            existing.name !== newCard.name ||
+            existing.pt_name !== newCard.pt_name ||
+            existing.ban_master_duel !== newCard.ban_master_duel ||
+            existing.md_rarity !== newCard.md_rarity ||
+            existing.genesys_points !== newCard.genesys_points ||
+            existing.image_url !== newCard.image_url;
+
+        return hasChanged;
+    });
+
+    console.log(`Optimization: Skipping ${cardsToUpsert.length - cardsToUpdate.length} unchanged cards.`);
+    console.log(`Proceeding to upsert ${cardsToUpdate.length} cards...`);
 
     // 4. Upsert to Supabase in batches
-    const BATCH_SIZE = 1000;
-    for (let i = 0; i < cardsToUpsert.length; i += BATCH_SIZE) {
-        const batch = cardsToUpsert.slice(i, i + BATCH_SIZE);
-        const { error } = await supabaseAdmin
-            .from('cards')
-            .upsert(batch, { onConflict: 'id' });
-        
-        if (error) {
-            console.error(`Error upserting batch ${i}-${i+BATCH_SIZE}:`, error);
-            throw error; 
+    if (cardsToUpdate.length > 0) {
+        const BATCH_SIZE = 1000;
+        for (let i = 0; i < cardsToUpdate.length; i += BATCH_SIZE) {
+            const batch = cardsToUpdate.slice(i, i + BATCH_SIZE);
+            const { error } = await supabaseAdmin
+                .from('cards')
+                .upsert(batch, { onConflict: 'id' });
+            
+            if (error) {
+                console.error(`Error upserting batch ${i}-${i+BATCH_SIZE}:`, error);
+                throw error; 
+            }
         }
-        // console.log(`Upserted batch ${i / BATCH_SIZE + 1}/${Math.ceil(cardsToUpsert.length / BATCH_SIZE)}`);
     }
 
     console.log('Daily Maintenance completed successfully.');
     return res.status(200).json({ 
-        message: `Successfully synced ${cardsToUpsert.length} cards (Info + Banlists).` 
+        message: `Sync Complete. Total: ${cardsToUpsert.length}. Updated/Inserted: ${cardsToUpdate.length}. Skipped: ${cardsToUpsert.length - cardsToUpdate.length}.` 
     });
 
   } catch (error) {
