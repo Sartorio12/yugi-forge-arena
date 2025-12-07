@@ -19,10 +19,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { ToastAction } from "@/components/ui/toast";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image, ChevronDown, Info } from "lucide-react";
+import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image, ChevronDown, Info, RotateCcw } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -473,6 +474,27 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const isExtraDeckCard = (type: string) => 
     type.includes("Fusion") || type.includes("Synchro") || type.includes("XYZ") || type.includes("Link");
 
+  const discardChanges = useCallback(() => {
+    localStorage.removeItem('deck_builder_draft');
+    setHasUnsavedChanges(false);
+    
+    if (editingDeckId) {
+      // Force reload by calling the internal logic of loadDeckForEditing or similar
+      // Since loadDeckForEditing is a dependency of this function (if we wrap it), we need to be careful with cycles.
+      // Instead, we can just reload the page or manually trigger the fetch.
+      // Reloading the page is the safest way to ensure clean state if we are unsure about other state variables.
+      // But we can try to re-fetch.
+      window.location.reload(); 
+    } else {
+      setMainDeck([]);
+      setExtraDeck([]);
+      setSideDeck([]);
+      setDeckName("");
+      setEditingDeckId(null);
+      toast({ title: "Rascunho Descartado", description: "O deck foi limpo." });
+    }
+  }, [editingDeckId, toast]);
+
   const loadDeckForEditing = useCallback(async (deckId: number) => {
     setIsLoadingDeck(true);
     try {
@@ -514,7 +536,14 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             setSideDeck(draft.sideDeck || []);
             setHasUnsavedChanges(true); // Draft implies unsaved changes
             loadedFromDraft = true;
-            toast({ title: "Rascunho Restaurado", description: "Alterações não salvas foram restauradas." });
+            toast({ 
+              title: "Rascunho Restaurado", 
+              description: "Alterações não salvas foram restauradas.",
+              action: <ToastAction altText="Descartar" onClick={() => {
+                localStorage.removeItem('deck_builder_draft');
+                window.location.reload();
+              }}>Descartar</ToastAction>
+            });
           }
         } catch (e) { console.error("Draft parse error", e); }
       }
@@ -577,7 +606,14 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                    setIsPrivate(draft.isPrivate || false);
                    setIsGenesysMode(draft.isGenesysMode || false);
                    setHasUnsavedChanges(true);
-                   toast({ title: "Rascunho Restaurado", description: "Seu deck anterior foi restaurado." });
+                   toast({ 
+                     title: "Rascunho Restaurado", 
+                     description: "Seu deck anterior foi restaurado.",
+                     action: <ToastAction altText="Descartar" onClick={() => {
+                       localStorage.removeItem('deck_builder_draft');
+                       window.location.reload();
+                     }}>Descartar</ToastAction>
+                   });
               }
           } catch (e) { console.error(e); }
       }
@@ -945,6 +981,11 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
             <Button variant="outline" onClick={handleSortDeck} disabled={isDeckLocked}><ArrowDown className="h-4 w-4 mr-2" /> Re-ordenar</Button>
+            {editingDeckId && hasUnsavedChanges && (
+              <Button variant="secondary" onClick={discardChanges} disabled={isDeckLocked}>
+                <RotateCcw className="h-4 w-4 mr-2" /> Reverter
+              </Button>
+            )}
             <Button variant="destructive" onClick={clearDeck} disabled={isDeckLocked}><Trash2 className="h-4 w-4 mr-2" /> Limpar</Button>
             <div className="flex-grow md:flex-grow-0"></div>
             <Button onClick={saveDeck} disabled={isSaving || isDeckLocked} className="bg-blue-600 hover:bg-blue-700 md:ml-auto mt-2 md:mt-0">
