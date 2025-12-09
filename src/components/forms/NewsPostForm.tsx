@@ -31,6 +31,7 @@ const newsPostFormSchema = z.object({
   tournament_id: z.coerce.number().optional(),
   featuredDecks: z.array(z.object({
     deck_id: z.coerce.number({ required_error: "Selecione um deck." }),
+    deck_snapshot_id: z.coerce.number().optional(),
     placement: z.string().min(1, { message: "A colocação é obrigatória." }),
   })).optional(),
 });
@@ -39,7 +40,7 @@ export type NewsPostFormValues = z.infer<typeof newsPostFormSchema>;
 
 interface NewsPostFormProps {
   formId: string;
-  initialData?: TablesInsert<"news_posts"> & { news_post_decks?: { deck_id: number; placement: string }[] };
+  initialData?: TablesInsert<"news_posts"> & { news_post_decks?: { deck_id: number; deck_snapshot_id?: number | null; placement: string }[] };
   onSubmit: (data: NewsPostFormValues) => void;
   isLoading?: boolean;
 }
@@ -78,8 +79,38 @@ export const NewsPostForm = ({
       title: initialData?.title || "",
       content: initialData?.content || "",
       tournament_id: initialData?.tournament_id || undefined,
-      featuredDecks: initialData?.news_post_decks || [],
+      featuredDecks: initialData?.news_post_decks?.map(d => ({
+        ...d,
+        deck_snapshot_id: d.deck_snapshot_id ?? undefined
+      })) || [],
     },
+  });
+
+  const selectedTournamentId = form.watch("tournament_id");
+
+  const { data: tournamentDecks } = useQuery({
+    queryKey: ["tournament-decks-form", selectedTournamentId],
+    queryFn: async () => {
+      if (!selectedTournamentId) return [];
+      
+      const { data, error } = await supabase
+        .from('tournament_decks')
+        .select(`
+          deck_id,
+          deck_snapshot_id,
+          decks (
+            deck_name
+          ),
+          profiles (
+            username
+          )
+        `)
+        .eq('tournament_id', selectedTournamentId);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedTournamentId
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -148,18 +179,51 @@ export const NewsPostForm = ({
                   render={({ field }) => (
                     <FormItem className="flex-grow">
                       <FormLabel>Deck</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
-                        <FormControl>
-                          <SelectTrigger><SelectValue placeholder="Selecione um deck" /></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {decks?.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.deck_name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      {selectedTournamentId && tournamentDecks && tournamentDecks.length > 0 ? (
+                        <Select 
+                          onValueChange={(val) => {
+                             field.onChange(val);
+                             const snapshot = tournamentDecks.find(td => td.deck_id === Number(val))?.deck_snapshot_id;
+                             form.setValue(`featuredDecks.${index}.deck_snapshot_id`, snapshot);
+                          }} 
+                          defaultValue={String(field.value)}
+                        >
+                            <FormControl>
+                              <SelectTrigger><SelectValue placeholder="Selecione um deck do torneio" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {tournamentDecks.map((td: any) => (
+                                <SelectItem key={td.deck_id} value={String(td.deck_id)}>
+                                  {td.profiles?.username} - {td.decks?.deck_name || "Sem nome"}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                        </Select>
+                      ) : (
+                        <Select onValueChange={(val) => {
+                            field.onChange(val);
+                            form.setValue(`featuredDecks.${index}.deck_snapshot_id`, undefined);
+                        }} defaultValue={String(field.value)}>
+                            <FormControl>
+                              <SelectTrigger><SelectValue placeholder="Selecione um deck" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {decks?.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.deck_name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
+                {/* Hidden field for snapshot_id */}
+                <FormField
+                    control={form.control}
+                    name={`featuredDecks.${index}.deck_snapshot_id`}
+                    render={({ field }) => <input type="hidden" {...field} value={field.value || ''} />}
+                />
+
                 <FormField
                   control={form.control}
                   name={`featuredDecks.${index}.placement`}

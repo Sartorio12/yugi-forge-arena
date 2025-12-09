@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +10,11 @@ import { useToast } from "@/components/ui/use-toast";
 
 const fetchPost = async (postId) => {
   if (!postId) return null;
-  const { data, error } = await supabase.from('news_posts').select('*').eq('id', postId).single();
+  const { data, error } = await supabase
+    .from('news_posts')
+    .select('*, news_post_decks(*)')
+    .eq('id', postId)
+    .single();
   if (error) throw error;
   return data;
 };
@@ -31,7 +34,7 @@ const NewsEditorFormPage = ({ user }) => {
   });
 
   const mutation = useMutation({
-    mutationFn: async (postData) => {
+    mutationFn: async (postData: any) => {
       if (!profile) throw new Error('Perfil não encontrado.');
 
       let banner_url = initialData?.banner_url || null;
@@ -51,7 +54,7 @@ const NewsEditorFormPage = ({ user }) => {
         banner_url = urlData.publicUrl;
       }
 
-      const { banner, ...restOfPostData } = postData;
+      const { banner, featuredDecks, ...restOfPostData } = postData;
 
       const dataToSave = {
         ...restOfPostData,
@@ -59,11 +62,37 @@ const NewsEditorFormPage = ({ user }) => {
         banner_url: banner_url,
       };
 
-      const { error } = isEditMode
-        ? await supabase.from('news_posts').update(dataToSave).eq('id', id)
-        : await supabase.from('news_posts').insert(dataToSave);
+      let postId = id;
 
-      if (error) throw error;
+      if (isEditMode) {
+        const { error } = await supabase.from('news_posts').update(dataToSave).eq('id', id);
+        if (error) throw error;
+      } else {
+        const { data: newPost, error } = await supabase.from('news_posts').insert(dataToSave).select().single();
+        if (error) throw error;
+        postId = newPost.id;
+      }
+
+      // Handle featured decks
+      if (featuredDecks) {
+        // Delete existing if edit mode (simple replace strategy)
+        if (isEditMode) {
+           const { error: deleteError } = await supabase.from('news_post_decks').delete().eq('post_id', postId);
+           if (deleteError) throw deleteError;
+        }
+
+        // Insert new ones
+        if (featuredDecks.length > 0) {
+            const decksToInsert = featuredDecks.map((d: any) => ({
+                post_id: Number(postId),
+                deck_id: d.deck_id,
+                deck_snapshot_id: d.deck_snapshot_id || null,
+                placement: d.placement
+            }));
+            const { error: decksError } = await supabase.from('news_post_decks').insert(decksToInsert);
+            if (decksError) throw decksError;
+        }
+      }
     },
     onSuccess: () => {
       toast({ title: `Postagem ${isEditMode ? 'atualizada' : 'criada'} com sucesso!` });

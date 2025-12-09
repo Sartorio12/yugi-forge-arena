@@ -23,12 +23,14 @@ interface DeckCardProps {
   is_genesys?: boolean;
   onDelete: (id: number) => void;
   isOwner: boolean; // Added isOwner prop
+  snapshotId?: number;
 }
 
-const DeckCard = ({ id, deckName, cardCount = 0, isPrivate = false, is_genesys = false, onDelete, isOwner }: DeckCardProps) => {
+const DeckCard = ({ id, deckName, cardCount = 0, isPrivate = false, is_genesys = false, onDelete, isOwner, snapshotId }: DeckCardProps) => {
+  const linkTo = snapshotId ? `/deck/${id}?snapshot_id=${snapshotId}` : `/deck/${id}`;
   return (
     <Card className="p-4 group transition-all duration-300 border-border bg-gradient-card flex flex-col">
-      <Link to={`/deck/${id}`} className="flex-grow">
+      <Link to={linkTo} className="flex-grow">
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
             <Layers className="h-6 w-6 text-primary" />
