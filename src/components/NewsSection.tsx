@@ -1,12 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { Loader2, Newspaper, Trophy } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2, Newspaper } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import UserDisplay from "./UserDisplay";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface NewsPost {
   id: number;
@@ -19,7 +17,7 @@ interface NewsPost {
     avatar_url: string;
     clan_members: {
       clans: { tag: string } | null;
-    } | null; // clan_members is a single object or null
+    } | null;
   } | null;
 }
 
@@ -43,61 +41,95 @@ export const NewsSection = () => {
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(3);
+        .limit(6);
 
       if (error) throw error;
       return data as NewsPost[];
     },
   });
 
-
-
   return (
-    <section className="py-4 md:py-6 bg-[url('/bg-main.png')] bg-cover border border-gray-800 rounded-lg p-4">
-      <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          Últimas Notícias e Reports
+    <section className="py-4">
+      <div className="flex items-center justify-between mb-4 px-2">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Newspaper className="h-5 w-5 text-primary" />
+          Últimas Notícias
         </h2>
-        {isLoading ? (
-          <div className="flex justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : posts && posts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {posts.map((post) => (
-              <Card key={post.id} className="h-full flex flex-col bg-gray-800/50 border-border text-center">
-                              {post.banner_url && (
-                                <div className="aspect-video w-full overflow-hidden rounded-t-lg">
-                                  <img src={post.banner_url} alt={post.title} className="w-full h-full object-cover" />
-                                </div>
-                              )}
-                              <CardHeader>
-                                <CardTitle className="text-base font-bold">{post.title}</CardTitle>
-                                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-2">
-                                  <Avatar className="h-6 w-6">
-                                    <AvatarImage src={post.profiles?.avatar_url || undefined} />
-                                    <AvatarFallback>{post.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                                  </Avatar>
-                                  <UserDisplay profile={post.profiles} clan={post.profiles.clan_members?.clans || null} />
-                                  <span>•</span>
-                                  <span>{format(new Date(post.created_at), "dd/MM/yy", { locale: ptBR })}</span>
-                                </div>
-                              </CardHeader>
-                              <CardFooter className="flex justify-center mt-auto">
-                                <Link to={`/news/${post.id}`} className="text-primary hover:underline">
-                                  Ler Mais
-                                </Link>
-                              </CardFooter>
-                            </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-muted-foreground py-12 border-2 border-dashed border-border rounded-lg">
-            <Newspaper className="mx-auto h-12 w-12 mb-4" />
-            <p>Nenhuma notícia publicada ainda.</p>
-          </div>
-        )}
+        <Link to="/news" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+          Ver todas
+        </Link>
       </div>
+      
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : posts && posts.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {posts.map((post) => (
+            <Link 
+              key={post.id} 
+              to={`/news/${post.id}`} 
+              className="group relative h-48 md:h-56 overflow-hidden rounded-lg border border-border/50 bg-card shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-300"
+            >
+              {/* Background Image with Gradient Overlay */}
+              <div className="absolute inset-0">
+                {post.banner_url ? (
+                  <img 
+                    src={post.banner_url} 
+                    alt={post.title} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                  />
+                ) : (
+                  <div className="w-full h-full bg-secondary/20 flex items-center justify-center">
+                    <Newspaper className="h-12 w-12 text-muted-foreground/20" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+              </div>
+
+              {/* Content Overlay */}
+              <div className="absolute inset-0 p-4 flex flex-col justify-end">
+                <div className="space-y-2 transform translate-y-0 transition-transform duration-300">
+                  <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-primary/90 text-primary-foreground uppercase tracking-wider">
+                    Notícia
+                  </span>
+                  
+                  <h3 className="text-lg font-bold text-white leading-tight line-clamp-2 group-hover:text-primary-foreground/90 transition-colors">
+                    {post.title}
+                  </h3>
+                  
+                  <div className="flex items-center gap-2 text-xs text-gray-300 mt-2">
+                    {post.profiles && (
+                      <div className="flex items-center gap-1.5">
+                        <Avatar className="h-4 w-4 border border-white/20">
+                          <AvatarImage src={post.profiles.avatar_url} />
+                          <AvatarFallback className="text-[8px]">
+                            {post.profiles.username?.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium truncate max-w-[100px]">
+                          {post.profiles.clan_members?.clans?.tag && (
+                             <span className="text-primary mr-1">[{post.profiles.clan_members.clans.tag}]</span>
+                          )}
+                          {post.profiles.username}
+                        </span>
+                      </div>
+                    )}
+                    <span className="text-gray-500">•</span>
+                    <span>{format(new Date(post.created_at), "d MMM", { locale: ptBR })}</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center text-muted-foreground py-12 border-2 border-dashed border-border rounded-lg">
+          <Newspaper className="mx-auto h-12 w-12 mb-4 opacity-20" />
+          <p>Nenhuma notícia encontrada.</p>
+        </div>
+      )}
     </section>
   );
 };

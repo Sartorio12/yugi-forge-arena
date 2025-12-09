@@ -124,7 +124,14 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
                         const isSnapshot = !!item.deck_snapshot_id;
                         const deckData = isSnapshot ? item.tournament_deck_snapshots : item.decks;
                         
-                        if (!deckData) return null;
+                        if (!deckData) {
+                             return (
+                                <div key={index} className="p-4 border border-dashed border-red-500/50 rounded bg-red-500/10 text-center">
+                                    <span className="font-bold block mb-2">{item.placement}</span>
+                                    <span className="text-muted-foreground">Deck não encontrado ou privado.</span>
+                                </div>
+                             );
+                        }
 
                         return (
                             <FeaturedDeckDisplay
