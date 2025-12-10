@@ -51,7 +51,7 @@ export const TopRankedPlayers = () => {
   };
 
   return (
-    <section className="py-8 md:py-12 bg-[url('/bg-main.png')] bg-cover border border-gray-800 rounded-lg p-4">
+    <section className="py-8 md:py-12 bg-[hsl(0_0%_5%)] border border-gray-800 rounded-lg p-4">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-center mb-6">
           Top 10 Duelistas do Ranking
@@ -61,7 +61,7 @@ export const TopRankedPlayers = () => {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : players && players.length > 0 ? (
-          <Card className="bg-gray-800/50 border-border">
+          <Card className="bg-transparent border-none shadow-none">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>

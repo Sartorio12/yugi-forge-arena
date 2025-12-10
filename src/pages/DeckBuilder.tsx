@@ -1012,7 +1012,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             </div>
             <div className="flex-1 flex justify-end">
               <div className={`text-lg font-bold ${!isGenesysMode ? 'invisible' : ''}`}>
-                Pontos Genesys: <span className="text-violet-400">{totalGenesysPoints}</span>
+                Pontos Genesys: <span className="text-primary">{totalGenesysPoints}</span>
               </div>
             </div>
           </div>

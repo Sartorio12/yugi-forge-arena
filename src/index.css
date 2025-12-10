@@ -6,88 +6,85 @@
 All colors MUST be HSL.
 */
 
-@layer base {
   :root {
-    /* Yu-Gi-Oh! Dark Theme - Always dark mode */
-    --background: 220 15% 7%;
-    --foreground: 0 0% 88%;
+    /* Christmas Theme (Temporary) - Dark Gold Background */
+    --background: 0 0% 0%; /* Pure Black */
+    --foreground: 0 0% 90%; /* Light Grey for text */
 
-    --card: 220 13% 12%;
-    --card-foreground: 0 0% 88%;
+    --card: 0 0% 5%; /* Very dark grey for cards */
+    --card-foreground: 0 0% 90%;
 
-    --popover: 220 13% 10%;
-    --popover-foreground: 0 0% 88%;
+    --popover: 0 0% 7%; /* Slightly lighter than card for popovers */
+    --popover-foreground: 0 0% 90%;
 
-    --primary: 280 100% 65%;
+    --primary: 350 85% 60%; /* Christmas Red */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 13% 18%;
-    --secondary-foreground: 0 0% 88%;
+    --secondary: 142 70% 30%; /* Christmas Green */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 13% 15%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 0 0% 10%; /* Dark grey for muted elements */
+    --muted-foreground: 0 0% 60%; /* Medium grey for muted text */
 
-    --accent: 280 100% 65%;
+    --accent: 142 70% 30%; /* Green Accent */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 20%;
-    --input: 220 13% 18%;
-    --ring: 280 100% 65%;
+    --border: 0 0% 15%; /* Dark grey border */
+    --input: 0 0% 10%; /* Dark grey input field */
+    --ring: 350 85% 60%; /* Red Ring */
 
     --radius: 0.75rem;
 
-    /* Custom tokens for Yu-Gi-Oh! theme */
-    --primary-glow: 280 100% 75%;
-    --gradient-primary: linear-gradient(135deg, hsl(280 100% 65%), hsl(240 100% 70%));
-    --gradient-card: linear-gradient(180deg, hsl(220 13% 14%), hsl(220 13% 10%));
-    --shadow-glow: 0 0 40px hsl(280 100% 65% / 0.3);
-    --shadow-card: 0 10px 30px -10px hsl(0 0% 0% / 0.5);
+    /* Custom tokens for Christmas theme */
+    --primary-glow: 350 85% 70%;
+    --gradient-primary: linear-gradient(135deg, hsl(350 85% 60%), hsl(142 70% 30%)); /* Red to Green gradient */
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 7%), hsl(0 0% 5%)); /* Very dark card gradient */
+    --shadow-glow: 0 0 40px hsl(350 85% 60% / 0.3);
+    --shadow-card: 0 10px 30px -10px hsl(0 0% 0% / 0.5); /* Dark shadow */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sidebar-background: 220 15% 8%;
-    --sidebar-foreground: 0 0% 88%;
-    --sidebar-primary: 280 100% 65%;
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 350 85% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 13% 15%;
-    --sidebar-accent-foreground: 0 0% 88%;
-    --sidebar-border: 220 13% 18%;
-    --sidebar-ring: 280 100% 65%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 60%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 350 85% 60%;
   }
 
   .dark {
-    /* Dark theme is default - same values */
-    --background: 220 15% 7%;
-    --foreground: 0 0% 88%;
-    --card: 220 13% 12%;
-    --card-foreground: 0 0% 88%;
-    --popover: 220 13% 10%;
-    --popover-foreground: 0 0% 88%;
-    --primary: 280 100% 65%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 90%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 90%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 350 85% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 13% 18%;
-    --secondary-foreground: 0 0% 88%;
-    --muted: 220 13% 15%;
+    --secondary: 142 70% 30%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 10%;
     --muted-foreground: 0 0% 60%;
-    --accent: 280 100% 65%;
+    --accent: 142 70% 30%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 20%;
-    --input: 220 13% 18%;
-    --ring: 280 100% 65%;
-    --sidebar-background: 220 15% 8%;
-    --sidebar-foreground: 0 0% 88%;
-    --sidebar-primary: 280 100% 65%;
+    --border: 0 0% 15%;
+    --input: 0 0% 10%;
+    --ring: 350 85% 60%;
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 350 85% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 13% 15%;
-    --sidebar-accent-foreground: 0 0% 88%;
-    --sidebar-border: 220 13% 18%;
-    --sidebar-ring: 280 100% 65%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 60%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 350 85% 60%;
   }
-}
 
 @layer base {
   * {

@@ -32,7 +32,7 @@ export const CardOfTheDay = () => {
   });
 
   return (
-    <Card className="bg-gray-800/50 border-border bg-[url('/bg-main.png')] bg-cover">
+    <Card className="bg-[hsl(0_0%_12%)] border-border">
       <CardHeader className="pb-2">
         <CardTitle className="text-2xl font-bold text-center">Card do Dia</CardTitle>
       </CardHeader>

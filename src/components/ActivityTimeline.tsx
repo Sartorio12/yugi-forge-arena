@@ -421,7 +421,7 @@ export const ActivityTimeline = () => {
   }, []);
 
   return (
-    <Card className="bg-gray-800/50 border-border">
+    <Card className="bg-[hsl(0_0%_5%)] border-border">
       <CardHeader>
         <CardTitle className="text-xl font-bold">Atividade Recente</CardTitle>
       </CardHeader>
@@ -445,7 +445,7 @@ export const ActivityTimeline = () => {
                     <Trophy className="h-5 w-5 text-yellow-500 flex-shrink-0" />
                   )}
                   {activity.type === "public_deck" && (
-                    <LayoutList className="h-5 w-5 text-purple-500 flex-shrink-0" />
+                    <LayoutList className="h-5 w-5 text-primary flex-shrink-0" />
                   )}
                   {activity.type === "news_post" && (
                     <BookOpen className="h-5 w-5 text-red-500 flex-shrink-0" />

@@ -41,7 +41,7 @@ const DeckCard = ({ id, deckName, cardCount = 0, isPrivate = false, is_genesys =
                 {deckName}
               </h3>
               {is_genesys && (
-                <Badge className="bg-violet-500">Genesys</Badge>
+                <Badge className="bg-secondary">Genesys</Badge>
               )}
               {isPrivate ? (
                 <Badge variant="destructive">Privado</Badge>

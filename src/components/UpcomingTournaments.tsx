@@ -1,8 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import TournamentCard from "@/components/TournamentCard";
-import { Loader2 } from "lucide-react";
-import { Tables } from "@/integrations/supabase/types";
+import { Link } from "react-router-dom";
+import { Loader2, Trophy } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+interface Tournament {
+  id: number;
+  title: string;
+  banner_image_url: string | null;
+  event_date: string;
+  status: string;
+  profiles: {
+    username: string | null;
+    avatar_url: string | null;
+  } | null;
+}
 
 export const UpcomingTournaments = () => {
   const { data: tournaments, isLoading } = useQuery({
@@ -10,46 +24,102 @@ export const UpcomingTournaments = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("*")
+        .select(`
+          *,
+          profiles:organizer_id (
+            username,
+            avatar_url
+          )
+        `)
         .eq("status", "Aberto")
         .gt("event_date", new Date().toISOString())
         .order("event_date", { ascending: true })
-        .limit(2);
+        .limit(3);
 
       if (error) throw error;
-      return data as Tables<"tournaments">[];
+      return data as Tournament[];
     },
   });
 
   return (
-    <section className="py-4 md:py-6 bg-[url('/bg-main.png')] bg-cover border border-gray-800 rounded-lg p-4">
-      <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12">
+    <section className="py-4">
+      <div className="flex items-center justify-between mb-4 px-2">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-primary" />
           Próximos Torneios
         </h2>
-        {isLoading ? (
-          <div className="flex justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : tournaments && tournaments.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {tournaments.map((tournament) => (
-              <TournamentCard
-                key={tournament.id}
-                id={tournament.id}
-                title={tournament.title}
-                bannerImageUrl={tournament.banner_image_url || undefined}
-                eventDate={tournament.event_date}
-                status={tournament.status}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-muted-foreground">
-            <p>Nenhum torneio aberto agendado no momento. Volte em breve!</p>
-          </div>
-        )}
+        <Link to="/tournaments" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+          Ver todos
+        </Link>
       </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : tournaments && tournaments.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {tournaments.map((tournament) => (
+            <Link
+              key={tournament.id}
+              to={`/tournament/${tournament.id}`}
+              className="group relative h-48 md:h-56 overflow-hidden rounded-lg border border-border/50 bg-card shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-300"
+            >
+              {/* Background Image with Gradient Overlay */}
+              <div className="absolute inset-0">
+                {tournament.banner_image_url ? (
+                  <img
+                    src={tournament.banner_image_url}
+                    alt={tournament.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-secondary/20 flex items-center justify-center">
+                    <Trophy className="h-12 w-12 text-muted-foreground/20" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+              </div>
+
+              {/* Content Overlay */}
+              <div className="absolute inset-0 p-4 flex flex-col justify-end">
+                <div className="space-y-2 transform translate-y-0 transition-transform duration-300">
+                  <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/90 text-black uppercase tracking-wider">
+                    Torneio
+                  </span>
+
+                  <h3 className="text-lg font-bold text-white leading-tight line-clamp-2 group-hover:text-primary-foreground/90 transition-colors">
+                    {tournament.title}
+                  </h3>
+
+                  <div className="flex items-center gap-2 text-xs text-gray-300 mt-2">
+                    {tournament.profiles && (
+                      <div className="flex items-center gap-1.5">
+                        <Avatar className="h-4 w-4 border border-white/20">
+                          <AvatarImage src={tournament.profiles.avatar_url || undefined} />
+                          <AvatarFallback className="text-[8px]">
+                            {tournament.profiles.username?.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium truncate max-w-[100px]">
+                          {tournament.profiles.username}
+                        </span>
+                      </div>
+                    )}
+                    <span className="text-gray-500">•</span>
+                    <span>{format(new Date(tournament.event_date), "d MMM, HH:mm", { locale: ptBR })}</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center text-muted-foreground py-12 border-2 border-dashed border-border rounded-lg">
+          <Trophy className="mx-auto h-12 w-12 mb-4 opacity-20" />
+          <p>Nenhum torneio aberto agendado no momento.</p>
+        </div>
+      )}
     </section>
   );
 };

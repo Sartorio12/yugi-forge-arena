@@ -1,12 +1,12 @@
 import { useState, useRef, useMemo } from "react";
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, Loader2, Heart, MessageSquare } from "lucide-react";
+import { Home, Loader2, Heart, MessageSquare, Copy } from "lucide-react";
 import { DeckCommentSection } from "@/components/comments/DeckCommentSection";
 import UserDisplay from "@/components/UserDisplay";
 import { Tables } from "@/integrations/supabase/types";
@@ -157,6 +157,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const snapshotId = searchParams.get('snapshot_id');
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const commentsRef = useRef<HTMLDivElement>(null);
@@ -364,6 +365,35 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     }
   };
 
+  const handleCopyDeck = () => {
+    if (!user) {
+        toast({
+            title: "Ação necessária",
+            description: "Você precisa estar logado para copiar um deck.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    if (!deck) return;
+
+    const deckData = {
+        deckName: `Cópia de ${deck.deck_name}`,
+        mainDeck: mainDeck,
+        extraDeck: extraDeck,
+        sideDeck: sideDeck,
+        isPrivate: true, // Default to private for copies
+        isGenesysMode: deck.is_genesys || false,
+    };
+
+    localStorage.setItem('importDeckData', JSON.stringify(deckData));
+    toast({
+        title: "Deck Copiado",
+        description: "Redirecionando para o Deck Builder...",
+    });
+    navigate('/deck-builder');
+  };
+
   const scrollToComments = () => {
     commentsRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -419,7 +449,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
               <h1 className="text-4xl font-bold">{deck.deck_name}</h1>
               {deck.is_genesys && (
                 <>
-                  <Badge className="bg-violet-500 text-lg">Genesys</Badge>
+                  <Badge className="bg-secondary text-lg">Genesys</Badge>
                   <Badge className="bg-amber-500 text-lg">{genesysPoints} Pontos</Badge>
                 </>
               )}
@@ -432,18 +462,24 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                 </Link>
               </p>
             )}
-            {!snapshotId && (
-              <div className="flex items-center gap-4 text-muted-foreground">
-                  <Button variant="ghost" size="sm" onClick={toggleLike} disabled={!user}>
-                      <Heart className={`h-5 w-5 mr-2 ${userHasLiked ? 'text-red-500 fill-current' : ''}`} />
-                      <span>{likeCount} Likes</span>
+            <div className="flex items-center gap-4 text-muted-foreground">
+                  {!snapshotId && (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={toggleLike} disabled={!user}>
+                            <Heart className={`h-5 w-5 mr-2 ${userHasLiked ? 'text-red-500 fill-current' : ''}`} />
+                            <span>{likeCount} Likes</span>
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={scrollToComments}>
+                            <MessageSquare className="h-5 w-5 mr-2" />
+                            <span>{commentCount} Comentários</span>
+                        </Button>
+                      </>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={handleCopyDeck}>
+                      <Copy className="h-5 w-5 mr-2" />
+                      <span>Copiar Deck</span>
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={scrollToComments}>
-                      <MessageSquare className="h-5 w-5 mr-2" />
-                      <span>{commentCount} Comentários</span>
-                  </Button>
-              </div>
-            )}
+            </div>
           </CardHeader>
           <CardContent className="bg-card/50 rounded-b-lg">
             <div className="space-y-2">
@@ -495,5 +531,6 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     </div>
   );
 };
+
 
 export default DeckPage;

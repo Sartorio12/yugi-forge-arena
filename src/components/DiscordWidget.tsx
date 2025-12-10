@@ -12,7 +12,7 @@ export const DiscordWidget = () => {
   // Note: If this ID is invalid, the widget will show an error.
   
   return (
-    <Card className="border-accent/20 bg-card/50 backdrop-blur-sm">
+    <Card className="bg-[hsl(0_0%_12%)] border-border">
       <CardContent className="p-0 overflow-hidden rounded-b-lg">
         <iframe 
           src={`https://discord.com/widget?id=${discordServerId}&theme=dark`} 
