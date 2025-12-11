@@ -245,7 +245,7 @@ export const FeaturedDeckDisplay = ({
                     {/* Main Deck */}
                     <div>
                         <h4 className="text-sm font-semibold text-muted-foreground mb-2">Main Deck ({mainDeck.length})</h4>
-                        <div className="grid grid-cols-10 gap-1">
+                        <div className="grid grid-cols-5 md:grid-cols-10 gap-1">
                             {groupedMainDeck.map(({ card, count }) => {
                                 const banlistIcon = getBanlistIcon(card.ban_master_duel);
                                 return (
@@ -258,8 +258,7 @@ export const FeaturedDeckDisplay = ({
                     {/* Extra Deck */}
                     {groupedExtraDeck.length > 0 && (
                         <div>
-                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">Extra Deck ({extraDeck.length})</h4>
-                            <div className="grid grid-cols-10 gap-1">
+                            <div className="grid grid-cols-5 md:grid-cols-10 gap-1">
                                 {groupedExtraDeck.map(({ card, count }) => {
                                     const banlistIcon = getBanlistIcon(card.ban_master_duel);
                                     return (
@@ -274,7 +273,7 @@ export const FeaturedDeckDisplay = ({
                     {groupedSideDeck.length > 0 && (
                         <div>
                             <h4 className="text-sm font-semibold text-muted-foreground mb-2">Side Deck ({sideDeck.length})</h4>
-                            <div className="grid grid-cols-10 gap-1">
+                            <div className="grid grid-cols-5 md:grid-cols-10 gap-1">
                                 {groupedSideDeck.map(({ card, count }) => {
                                     const banlistIcon = getBanlistIcon(card.ban_master_duel);
                                     return (

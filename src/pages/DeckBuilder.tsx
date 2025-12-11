@@ -162,9 +162,25 @@ const sortCards = (cards: CardData[]): CardData[] => {
   const sorted = [...cards].sort((a, b) => {
     const rankA = getCardTypeRank(a.type);
     const rankB = getCardTypeRank(b.type);
+
     if (rankA !== rankB) {
       return rankA - rankB;
     }
+
+    // If both are monsters (main deck or extra deck) and have levels, sort by level
+    if (
+      (a.type.includes('Monster') || a.type.includes('Fusion') || a.type.includes('Synchro') || a.type.includes('XYZ') || a.type.includes('Link')) &&
+      (b.type.includes('Monster') || b.type.includes('Fusion') || b.type.includes('Synchro') || b.type.includes('XYZ') || b.type.includes('Link'))
+    ) {
+      // Handle undefined levels by treating them as a value that pushes them to the end
+      const levelA = a.level ?? Infinity;
+      const levelB = b.level ?? Infinity;
+      if (levelA !== levelB) {
+        return levelA - levelB; // Sort by level ascending (smallest to largest)
+      }
+    }
+
+    // Fallback to existing sort criteria if types/levels are not different enough
     if (a.id !== b.id) {
       return a.id.localeCompare(b.id);
     }
@@ -206,7 +222,7 @@ const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtra
                   {card.pt_name && card.pt_name.toLowerCase() !== card.name.toLowerCase() && (
                     <p className="text-gray-400 truncate text-xs">{card.pt_name}</p>
                   )}
-                  <p className="text-muted-foreground text-xs truncate">
+                  <p className className="text-muted-foreground text-xs truncate">
                     {card.attribute ? `${card.attribute} / ` : ''}{card.race}{card.level ? ` / Level ${card.level}` : ''}
                   </p>
                   {card.type.includes('Monster') && (
@@ -344,7 +360,7 @@ const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard, remov
 
 const instructions = `# 📥 Como Exportar e Enviar seu Deck
 
-Para enviar seus decks do **Master Duel** ou **Neuron** para o nosso site, você precisará do código do deck (formato YDKE) ou do arquivo \`.ydk\`.
+Para enviar seus decks do **Master Duel** ou **Neuron** para o nosso site, você precisará do código do deck (formato YDKE) ou do arquivo ".ydk".
 
 Siga o guia abaixo dependendo do seu dispositivo.
 
@@ -398,7 +414,7 @@ Se você não conseguir usar o Kiwi Browser:
 
 ---
 
-> **💡 Dica:** O formato **YDKE** é uma sequência de texto (ex: \`ydke://...\`). É o método mais rápido para colar diretamente no nosso formulário de envio!`;
+> **💡 Dica:** O formato **YDKE** é uma sequência de texto (ex: 'ydke://...'). É o método mais rápido para colar diretamente no nosso formulário de envio!`;
 
 const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const navigate = useNavigate();
@@ -536,7 +552,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             setSideDeck(draft.sideDeck || []);
             setHasUnsavedChanges(true); // Draft implies unsaved changes
             loadedFromDraft = true;
-            toast({ 
+            toast({
               title: "Rascunho Restaurado", 
               description: "Alterações não salvas foram restauradas.",
               action: <ToastAction altText="Descartar" onClick={() => {
@@ -606,7 +622,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                    setIsPrivate(draft.isPrivate || false);
                    setIsGenesysMode(draft.isGenesysMode || false);
                    setHasUnsavedChanges(true);
-                   toast({ 
+                   toast({
                      title: "Rascunho Restaurado", 
                      description: "Seu deck anterior foi restaurado.",
                      action: <ToastAction altText="Descartar" onClick={() => {
@@ -616,6 +632,27 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                    });
               }
           } catch (e) { console.error(e); }
+      }
+
+      // Check for imported deck data (from "Copiar Deck" button)
+      const importedDeckDataString = localStorage.getItem('importDeckData');
+      if (importedDeckDataString) {
+        try {
+          const importedDeckData = JSON.parse(importedDeckDataString);
+          setDeckName(importedDeckData.deckName || "");
+          setMainDeck(importedDeckData.mainDeck || []);
+          setExtraDeck(importedDeckData.extraDeck || []);
+          setSideDeck(importedDeckData.sideDeck || []);
+          setIsPrivate(importedDeckData.isPrivate || false);
+          setIsGenesysMode(importedDeckData.isGenesysMode || false);
+          setEditingDeckId(null); // Ensure it's treated as a new deck
+          localStorage.removeItem('importDeckData'); // Clear it after use
+          setHasUnsavedChanges(true);
+          toast({ title: "Deck Importado", description: "O deck foi carregado no construtor." });
+        } catch (e) {
+          console.error("Error parsing imported deck data:", e);
+          toast({ title: "Erro de Importação", description: "Falha ao carregar o deck copiado.", variant: "destructive" });
+        }
       }
       setIsLoadingDeck(false);
     }

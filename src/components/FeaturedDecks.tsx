@@ -45,7 +45,7 @@ export const FeaturedDecks = () => {
           <Layers className="h-5 w-5 text-primary" />
           Decks Recentes
         </h2>
-        <Link to="/deck-builder" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+        <Link to="/community-decks" className="text-sm text-muted-foreground hover:text-primary transition-colors">
           Ver todos
         </Link>
       </div>

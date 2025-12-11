@@ -13,6 +13,7 @@ import TournamentDetail from "./pages/TournamentDetail";
 import Profile from "./pages/Profile";
 import DeckBuilder from "./pages/DeckBuilder";
 import DeckPage from "./pages/DeckPage";
+import CommunityDecksPage from "./pages/CommunityDecksPage";
 import RankingPage from "./pages/Ranking";
 import NotFound from "./pages/NotFound";
 import AdminRoute from "./components/AdminRoute";
@@ -112,6 +113,10 @@ const App = () => {
                           <Route
                             path="/deck/:id"
                             element={<DeckPage user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/community-decks"
+                            element={<CommunityDecksPage user={user} onLogout={handleLogout} />}
                           />
                           <Route
                             path="/ranking"
