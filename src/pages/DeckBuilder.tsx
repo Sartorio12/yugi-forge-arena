@@ -2,7 +2,14 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +23,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -23,12 +37,39 @@ import { ToastAction } from "@/components/ui/toast";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image, ChevronDown, Info, RotateCcw } from "lucide-react";
+import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image, ChevronDown, Info, RotateCcw, Filter, ArrowUpDown } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
+
+const CARD_TYPE_GROUPS = {
+  "Monstros de Efeito": ["Effect Monster", "Flip Effect Monster", "Tuner Monster", "Pendulum Effect Monster"],
+  "Monstros Normais": ["Normal Monster", "Normal Tuner Monster", "Pendulum Normal Monster"],
+  "Monstros de Ritual": ["Ritual Monster", "Ritual Effect Monster"],
+  "Monstros de Fusão": ["Fusion Monster"],
+  "Monstros de Sincro": ["Synchro Monster", "Synchro Tuner Monster", "Synchro Pendulum Effect Monster"],
+"Monstros Xyz": ["XYZ Monster", "XYZ Pendulum Effect Monster"],
+  "Monstros Link": ["Link Monster"],
+  "Spells": ["Spell Card"],
+  "Traps": ["Trap Card"],
+};
+
+const ATTRIBUTES = ["LIGHT", "DARK", "WATER", "FIRE", "EARTH", "WIND", "DIVINE"];
+
+const MONSTER_RACES = [
+  "Aqua", "Beast", "Beast-Warrior", "Creator-God", "Cyberse", "Dinosaur", "Divine-Beast", 
+  "Dragon", "Fairy", "Fiend", "Fish", "Insect", "Machine", "Plant", "Psychic", 
+  "Pyro", "Reptile", "Rock", "Sea Serpent", "Spellcaster", "Thunder", "Warrior", 
+  "Winged Beast", "Wyrm", "Zombie"
+];
+
+const SPELL_RACES = [
+  "Normal", "Field", "Equip", "Continuous", "Quick-Play", "Ritual"
+];
+
+const TRAP_RACES = ["Normal", "Continuous", "Counter"];
 
 // Interfaces
 interface CardData {
@@ -150,18 +191,43 @@ const GenesysPointBadge = ({ points }: { points: number | undefined | null }) =>
   return <div style={style}>{points}</div>;
 };
 
-const getCardTypeRank = (type: string): number => {
-  if (type.includes('Fusion') || type.includes('Synchro') || type.includes('XYZ') || type.includes('Link')) return 0; // Extra Deck Monsters
-  if (type.includes('Monster')) return 1; // Main Deck Monsters
-  if (type.includes('Spell')) return 2;
-  if (type.includes('Trap')) return 3;
-  return 4; // Other types
+const getCardTypeRank = (card: CardData): number => {
+  const { type, race } = card;
+
+  // Extra Deck monsters should be handled separately, but we give them a high rank 
+  // so they appear last if they end up in a main deck sort.
+  if (type.includes('Fusion') || type.includes('Synchro') || type.includes('XYZ') || type.includes('Link')) return 100;
+
+  // Main Deck Monsters
+  if (type.includes("Normal Monster")) return 0;
+  if (type.includes("Effect Monster") || type.includes("Flip Effect Monster") || type.includes("Tuner Monster")) return 1;
+  if (type.includes("Ritual Monster")) return 2;
+  if (type.includes("Pendulum")) return 3; // General Pendulum category
+  if (type.includes("Monster")) return 4; // Any other monster
+
+  // Spells
+  if (type === "Spell Card") {
+    if (race === "Normal") return 5;
+    if (race === "Quick-Play") return 6;
+    if (race === "Continuous") return 7;
+    return 8; // Other spells (Field, Equip, etc.)
+  }
+
+  // Traps
+  if (type === "Trap Card") {
+    if (race === "Normal") return 9;
+    if (race === "Counter") return 10;
+    if (race === "Continuous") return 11;
+    return 12; // Other traps
+  }
+
+  return 99; // Default fallback for any other card type
 };
 
 const sortCards = (cards: CardData[]): CardData[] => {
   const sorted = [...cards].sort((a, b) => {
-    const rankA = getCardTypeRank(a.type);
-    const rankB = getCardTypeRank(b.type);
+    const rankA = getCardTypeRank(a);
+    const rankB = getCardTypeRank(b);
 
     if (rankA !== rankB) {
       return rankA - rankB;
@@ -440,6 +506,71 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isJustLoaded, setIsJustLoaded] = useState(false);
 
+  // New state for filters and sorting
+  const [sortBy, setSortBy] = useState("name_asc");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [selectedCardTypes, setSelectedCardTypes] = useState<string[]>([]);
+  const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [genesysPointsValue, setGenesysPointsValue] = useState<number | ''>('');
+  const [genesysPointsOperator, setGenesysPointsOperator] = useState<'gte' | 'lte'>('gte');
+  const [selectedMonsterRaces, setSelectedMonsterRaces] = useState<string[]>([]);
+  const [selectedSpellRaces, setSelectedSpellRaces] = useState<string[]>([]);
+  const [selectedTrapRaces, setSelectedTrapRaces] = useState<string[]>([]);
+  
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768); // Tailwind's md breakpoint is 768px
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleCardTypeChange = (typeGroup: string) => {
+    const typesInGroup = CARD_TYPE_GROUPS[typeGroup];
+    const areAllSelected = typesInGroup.every(t => selectedCardTypes.includes(t));
+    if (areAllSelected) {
+      setSelectedCardTypes(prev => prev.filter(t => !typesInGroup.includes(t)));
+    } else {
+      setSelectedCardTypes(prev => [...new Set([...prev, ...typesInGroup])]);
+    }
+  };
+
+  const handleAttributeChange = (attribute: string) => {
+    setSelectedAttributes(prev => 
+      prev.includes(attribute) 
+        ? prev.filter(a => a !== attribute)
+        : [...prev, attribute]
+    );
+  };
+
+  const handleMonsterRaceChange = (race: string) => {
+    setSelectedMonsterRaces(prev => 
+      prev.includes(race) 
+        ? prev.filter(r => r !== race)
+        : [...prev, race]
+    );
+  };
+
+  const handleSpellRaceChange = (race: string) => {
+    setSelectedSpellRaces(prev => 
+      prev.includes(race) 
+        ? prev.filter(r => r !== race)
+        : [...prev, race]
+    );
+  };
+
+  const handleTrapRaceChange = (race: string) => {
+    setSelectedTrapRaces(prev => 
+      prev.includes(race) 
+        ? prev.filter(r => r !== race)
+        : [...prev, race]
+    );
+  };
+
+
   // Auto-save Draft & Unsaved Changes Tracker
   useEffect(() => {
     if (isLoadingDeck) return;
@@ -658,55 +789,72 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     }
   }, [searchParams, user, loadDeckForEditing]);
 
-  const searchCards = async () => {
+  const searchCards = async (shouldCloseModal: boolean = true) => {
     const trimmedQuery = searchQuery.trim();
-    if (!trimmedQuery) return;
+    if (!trimmedQuery && selectedAttributes.length === 0 && selectedCardTypes.length === 0 && genesysPointsValue === '' && selectedMonsterRaces.length === 0 && selectedSpellRaces.length === 0 && selectedTrapRaces.length === 0) {
+        toast({ title: "Busca vazia", description: "Digite um nome ou selecione um filtro para buscar."});
+        return;
+    }
+
     setIsSearching(true);
     try {
-      // Increased limit to 100 to cast a wider net
-      const { data: cards, error } = await supabase
-        .from('cards')
-        .select('*')
-        .or(`name.ilike.%${trimmedQuery.toLowerCase()}%,pt_name.ilike.%${trimmedQuery.toLowerCase()}%`)
-        .limit(100);
+      let query = supabase.from('cards').select('*');
+
+      if (trimmedQuery) {
+        query = query.or(`name.ilike.%${trimmedQuery.toLowerCase()}%,pt_name.ilike.%${trimmedQuery.toLowerCase()}%`);
+      }
+
+      // Build the OR conditions for race/type filters
+      const raceFilters = [];
+      if (selectedMonsterRaces.length > 0) {
+          raceFilters.push(`and(type.like.%Monster%,race.in.("${selectedMonsterRaces.join('","')}"))`);
+      }
+      if (selectedSpellRaces.length > 0) {
+          raceFilters.push(`and(type.eq.Spell Card,race.in.("${selectedSpellRaces.join('","')}"))`);
+      }
+      if (selectedTrapRaces.length > 0) {
+          raceFilters.push(`and(type.eq.Trap Card,race.in.("${selectedTrapRaces.join('","')}"))`);
+      }
+      if (raceFilters.length > 0) {
+          query = query.or(raceFilters.join(','));
+      }
+      
+      if (selectedCardTypes.length > 0) {
+        query = query.in('type', selectedCardTypes);
+      }
+      if (selectedAttributes.length > 0) {
+        query = query.in('attribute', selectedAttributes);
+      }
+      if (typeof genesysPointsValue === 'number') {
+        if (genesysPointsOperator === 'gte') {
+          query = query.gte('genesys_points', genesysPointsValue);
+        }
+        else {
+          query = query.lte('genesys_points', genesysPointsValue);
+        }
+      }
+
+      // Parse sortBy and sortDirection from the combined sortBy state
+      const [sortColumn, sortOrder] = sortBy.split('_');
+      const ascending = sortOrder === 'asc';
+
+      query = query.order(sortColumn, { ascending: ascending, nullsFirst: false });
+      
+      query = query.limit(100);
+
+      const { data: cards, error } = await query;
 
       if (error) throw error;
+      setSearchResults(cards || []);
 
-      const sortedCards = (cards || []).sort((a, b) => {
-        const queryLower = trimmedQuery.toLowerCase();
-        const nameA = a.name.toLowerCase();
-        const nameB = b.name.toLowerCase();
-        const ptNameA = (a.pt_name || "").toLowerCase();
-        const ptNameB = (b.pt_name || "").toLowerCase();
-
-        // 1. Exact Match Priority
-        const exactA = nameA === queryLower || ptNameA === queryLower;
-        const exactB = nameB === queryLower || ptNameB === queryLower;
-        if (exactA && !exactB) return -1;
-        if (!exactA && exactB) return 1;
-
-        // 2. Starts With Priority
-        const startsA = nameA.startsWith(queryLower) || ptNameA.startsWith(queryLower);
-        const startsB = nameB.startsWith(queryLower) || ptNameB.startsWith(queryLower);
-        if (startsA && !startsB) return -1;
-        if (!startsA && startsB) return 1;
-
-        // 3. Length Priority (Shorter names first -> likely more relevant for short queries like "Eva")
-        if (nameA.length !== nameB.length) return nameA.length - nameB.length;
-
-        // 4. Default Sort (Type Rank -> Name)
-        const rankA = getCardTypeRank(a.type);
-        const rankB = getCardTypeRank(b.type);
-        if (rankA !== rankB) return rankA - rankB;
-        return a.name.localeCompare(b.name);
-      });
-
-      setSearchResults(sortedCards);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao buscar cartas";
       toast({ title: "Erro", description: errorMessage, variant: "destructive" });
     } finally {
       setIsSearching(false);
+      if (shouldCloseModal) {
+        setIsFilterModalOpen(false);
+      }
     }
   };
 
@@ -1058,24 +1206,340 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-[35%] order-1 md:order-2">
             <div className="sticky top-24 space-y-4">
+              {/* Search Bar (outside modal) */}
               <div className="flex gap-2">
-                <Input id="search" placeholder="Buscar pelo nome da carta..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchCards()} disabled={isDeckLocked} />
-                <Button onClick={searchCards} disabled={isSearching || isDeckLocked}>
+                <Input 
+                  id="search" 
+                  placeholder="Buscar pelo nome da carta..." 
+                  className="bg-stone-800 border-stone-700 w-full"
+                  value={searchQuery} 
+                  onChange={(e) => setSearchQuery(e.target.value)} 
+                  onKeyDown={(e) => e.key === "Enter" && searchCards(false)} // Don't close modal if it's not open
+                  disabled={isDeckLocked} 
+                />
+                <Button onClick={() => searchCards(false)} disabled={isSearching || isDeckLocked} variant="destructive">
                   {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 </Button>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <Button variant="outline" className="bg-blue-600 hover:bg-blue-700 border-0">Filtrar</Button>
-                <select className="bg-background border border-border rounded-md p-2">
-                  <option>Nome</option>
-                  <option>Nível</option>
-                  <option>ATK</option>
-                </select>
-                <span className="text-muted-foreground">
-                  Resultados: {searchResults.length}
-                </span>
-              </div>
-              <div className="h-[60vh] rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
+
+               <Dialog open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 border-0">
+                        <Filter className="h-4 w-4 mr-2" />
+                        Filtros Avançados
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-stone-900 border-stone-800 text-white max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Filtros Avançados e Ordenação</DialogTitle>
+                      </DialogHeader>
+                      {isMobile ? (
+                        <div className="max-h-[70vh] overflow-y-auto pr-4">
+                          <Accordion type="multiple" className="w-full">
+                            {/* Sorting */}
+                            <AccordionItem value="item-1">
+                              <AccordionTrigger>Ordenação</AccordionTrigger>
+                              <AccordionContent>
+                                <div className="flex items-center gap-2 pt-2">
+                                  <Select value={sortBy} onValueChange={setSortBy}>
+                                    <SelectTrigger className="flex-grow bg-stone-800 border-stone-700">
+                                      <SelectValue placeholder="Ordenar por..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
+                                      <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
+                                      <SelectItem value="atk_asc">ATK (Crescente)</SelectItem>
+                                      <SelectItem value="atk_desc">ATK (Decrescente)</SelectItem>
+                                      <SelectItem value="def_asc">DEF (Crescente)</SelectItem>
+                                      <SelectItem value="def_desc">DEF (Decrescente)</SelectItem>
+                                      <SelectItem value="level_asc">Nível (Crescente)</SelectItem>
+                                      <SelectItem value="level_desc">Nível (Decrescente)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            {/* Card Type Filters */}
+                            <AccordionItem value="item-2">
+                              <AccordionTrigger>Tipo de Carta</AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
+                                    {Object.keys(CARD_TYPE_GROUPS).map(group => (
+                                        <div key={group} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={group} 
+                                                checked={CARD_TYPE_GROUPS[group].every(t => selectedCardTypes.includes(t))}
+                                                onCheckedChange={() => handleCardTypeChange(group)}
+                                            />
+                                            <label htmlFor={group} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {group}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            {/* Attribute Filters */}
+                            <AccordionItem value="item-3">
+                              <AccordionTrigger>Atributo</AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+                                    {ATTRIBUTES.map(attr => (
+                                         <div key={attr} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={attr} 
+                                                checked={selectedAttributes.includes(attr)}
+                                                onCheckedChange={() => handleAttributeChange(attr)}
+                                            />
+                                            <label htmlFor={attr} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {attr}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            {/* Monster Race Filters */}
+                            <AccordionItem value="item-4">
+                                <AccordionTrigger>Tipo de Monstro</AccordionTrigger>
+                                <AccordionContent>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
+                                      {MONSTER_RACES.map(race => (
+                                           <div key={race} className="flex items-center space-x-2">
+                                              <Checkbox 
+                                                  id={`monster_${race}`}
+                                                  checked={selectedMonsterRaces.includes(race)}
+                                                  onCheckedChange={() => handleMonsterRaceChange(race)}
+                                              />
+                                              <label htmlFor={`monster_${race}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                  {race}
+                                              </label>
+                                          </div>
+                                      ))}
+                                  </div>
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            {/* Spell Race Filters */}
+                            <AccordionItem value="item-5">
+                              <AccordionTrigger>Tipo de Magia</AccordionTrigger>
+                              <AccordionContent>
+                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
+                                    {SPELL_RACES.map(race => (
+                                         <div key={`spell_${race}`} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={`spell_${race}`}
+                                                checked={selectedSpellRaces.includes(race)}
+                                                onCheckedChange={() => handleSpellRaceChange(race)}
+                                            />
+                                            <label htmlFor={`spell_${race}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {race}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                            
+                            {/* Trap Race Filters */}
+                            <AccordionItem value="item-6">
+                               <AccordionTrigger>Tipo de Armadilha</AccordionTrigger>
+                               <AccordionContent>
+                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
+                                    {TRAP_RACES.map(race => (
+                                         <div key={`trap_${race}`} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={`trap_${race}`}
+                                                checked={selectedTrapRaces.includes(race)}
+                                                onCheckedChange={() => handleTrapRaceChange(race)}
+                                            />
+                                            <label htmlFor={`trap_${race}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {race}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                               </AccordionContent>
+                            </AccordionItem>
+
+                            {/* Genesys Points Filter */}
+                            <AccordionItem value="item-7">
+                              <AccordionTrigger>Pontos Genesys</AccordionTrigger>
+                              <AccordionContent>
+                                <div className="flex items-center gap-2 pt-2">
+                                    <Select value={genesysPointsOperator} onValueChange={(value: 'gte' | 'lte') => setGenesysPointsOperator(value)}>
+                                        <SelectTrigger className="w-[180px] bg-stone-800 border-stone-700">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="gte">Maior ou igual a</SelectItem>
+                                            <SelectItem value="lte">Menor ou igual a</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Input 
+                                        type="number"
+                                        placeholder="Pontos"
+                                        className="bg-stone-800 border-stone-700"
+                                        value={genesysPointsValue}
+                                        onChange={(e) => setGenesysPointsValue(e.target.value === '' ? '' : Number(e.target.value))}
+                                    />
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        </div>
+                      ) : (
+                        <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                            {/* Sorting */}
+                            <div className="space-y-2">
+                                <Label>Ordenação</Label>
+                                <div className="flex items-center gap-2">
+                                    <Select value={sortBy} onValueChange={setSortBy}>
+                                        <SelectTrigger className="flex-grow bg-stone-800 border-stone-700">
+                                            <SelectValue placeholder="Ordenar por..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
+                                            <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
+                                            <SelectItem value="atk_asc">ATK (Crescente)</SelectItem>
+                                            <SelectItem value="atk_desc">ATK (Decrescente)</SelectItem>
+                                            <SelectItem value="def_asc">DEF (Crescente)</SelectItem>
+                                            <SelectItem value="def_desc">DEF (Decrescente)</SelectItem>
+                                            <SelectItem value="level_asc">Nível (Crescente)</SelectItem>
+                                            <SelectItem value="level_desc">Nível (Decrescente)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            {/* Card Type Filters */}
+                            <div className="space-y-2">
+                                <Label>Tipo de Carta</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2">
+                                    {Object.keys(CARD_TYPE_GROUPS).map(group => (
+                                        <div key={group} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={group} 
+                                                checked={CARD_TYPE_GROUPS[group].every(t => selectedCardTypes.includes(t))}
+                                                onCheckedChange={() => handleCardTypeChange(group)}
+                                            />
+                                            <label htmlFor={group} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {group}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Attribute Filters */}
+                            <div className="space-y-2">
+                                <Label>Atributo</Label>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 gap-2">
+                                    {ATTRIBUTES.map(attr => (
+                                         <div key={attr} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={attr} 
+                                                checked={selectedAttributes.includes(attr)}
+                                                onCheckedChange={() => handleAttributeChange(attr)}
+                                            />
+                                            <label htmlFor={attr} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {attr}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Monster Race Filters */}
+                            <div className="space-y-2">
+                                <Label>Tipo de Monstro</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2">
+                                    {MONSTER_RACES.map(race => (
+                                         <div key={race} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={`monster_${race}`}
+                                                checked={selectedMonsterRaces.includes(race)}
+                                                onCheckedChange={() => handleMonsterRaceChange(race)}
+                                            />
+                                            <label htmlFor={`monster_${race}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {race}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Spell Race Filters */}
+                            <div className="space-y-2">
+                                <Label>Tipo de Magia</Label>
+                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2">
+                                    {SPELL_RACES.map(race => (
+                                         <div key={`spell_${race}`} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={`spell_${race}`}
+                                                checked={selectedSpellRaces.includes(race)}
+                                                onCheckedChange={() => handleSpellRaceChange(race)}
+                                            />
+                                            <label htmlFor={`spell_${race}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {race}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            {/* Trap Race Filters */}
+                            <div className="space-y-2">
+                                <Label>Tipo de Armadilha</Label>
+                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2">
+                                    {TRAP_RACES.map(race => (
+                                         <div key={`trap_${race}`} className="flex items-center space-x-2">
+                                            <Checkbox 
+                                                id={`trap_${race}`}
+                                                checked={selectedTrapRaces.includes(race)}
+                                                onCheckedChange={() => handleTrapRaceChange(race)}
+                                            />
+                                            <label htmlFor={`trap_${race}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {race}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Genesys Points Filter */}
+                            <div className="space-y-2">
+                                <Label>Pontos Genesys</Label>
+                                <div className="flex items-center gap-2">
+                                    <Select value={genesysPointsOperator} onValueChange={(value: 'gte' | 'lte') => setGenesysPointsOperator(value)}>
+                                        <SelectTrigger className="w-[180px] bg-stone-800 border-stone-700">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="gte">Maior ou igual a</SelectItem>
+                                            <SelectItem value="lte">Menor ou igual a</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Input 
+                                        type="number"
+                                        placeholder="Pontos"
+                                        className="bg-stone-800 border-stone-700"
+                                        value={genesysPointsValue}
+                                        onChange={(e) => setGenesysPointsValue(e.target.value === '' ? '' : Number(e.target.value))}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                      )}
+                      <Button onClick={() => searchCards(true)} disabled={isSearching} className="w-full mt-4" variant="destructive">
+                        {isSearching ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
+                        Buscar
+                      </Button>
+                    </DialogContent>                  </Dialog>
+              <div className="h-[75vh] rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
                 <div className="h-full overflow-y-auto bg-stone-900/50 p-2 rounded-lg">
                   {searchResults.map((card, index) => (
                     <DraggableSearchResultCard key={`${card.id}-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} isDeckLocked={isDeckLocked} />
