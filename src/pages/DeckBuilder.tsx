@@ -699,6 +699,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         // Load from DB
         setDeckName(deckData.deck_name);
         setIsPrivate(deckData.is_private);
+        setIsGenesysMode(deckData.is_genesys);
         setEditingDeckId(deckId);
 
         const { data: deckCards, error: cardsError } = await supabase.from('deck_cards').select('card_api_id, deck_section').eq('deck_id', deckId);
