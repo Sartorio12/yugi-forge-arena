@@ -507,7 +507,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [isJustLoaded, setIsJustLoaded] = useState(false);
 
   // New state for filters and sorting
-  const [sortBy, setSortBy] = useState("name_asc");
+  const [sortBy, setSortBy] = useState("popularity_desc");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [selectedCardTypes, setSelectedCardTypes] = useState<string[]>([]);
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
@@ -791,61 +791,35 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
   const searchCards = async (shouldCloseModal: boolean = true) => {
     const trimmedQuery = searchQuery.trim();
-    if (!trimmedQuery && selectedAttributes.length === 0 && selectedCardTypes.length === 0 && genesysPointsValue === '' && selectedMonsterRaces.length === 0 && selectedSpellRaces.length === 0 && selectedTrapRaces.length === 0) {
+    const isSortingByPopularity = sortBy === 'popularity_desc';
+    const allFiltersEmpty = !trimmedQuery && selectedAttributes.length === 0 && selectedCardTypes.length === 0 && genesysPointsValue === '' && selectedMonsterRaces.length === 0 && selectedSpellRaces.length === 0 && selectedTrapRaces.length === 0;
+
+    if (allFiltersEmpty && !isSortingByPopularity) {
         toast({ title: "Busca vazia", description: "Digite um nome ou selecione um filtro para buscar."});
         return;
     }
 
     setIsSearching(true);
     try {
-      let query = supabase.from('cards').select('*');
+        const [sortColumn, sortOrder] = sortBy.split('_');
+        
+        const params = {
+            p_search_query: trimmedQuery || null,
+            p_selected_card_types: selectedCardTypes.length > 0 ? selectedCardTypes : null,
+            p_selected_attributes: selectedAttributes.length > 0 ? selectedAttributes : null,
+            p_selected_monster_races: selectedMonsterRaces.length > 0 ? selectedMonsterRaces : null,
+            p_selected_spell_races: selectedSpellRaces.length > 0 ? selectedSpellRaces : null,
+            p_selected_trap_races: selectedTrapRaces.length > 0 ? selectedTrapRaces : null,
+            p_genesys_points_operator: typeof genesysPointsValue === 'number' ? genesysPointsOperator : null,
+            p_genesys_points_value: typeof genesysPointsValue === 'number' ? genesysPointsValue : null,
+            p_sort_by: sortColumn,
+            p_sort_ascending: sortOrder === 'asc'
+        };
 
-      if (trimmedQuery) {
-        query = query.or(`name.ilike.%${trimmedQuery.toLowerCase()}%,pt_name.ilike.%${trimmedQuery.toLowerCase()}%`);
-      }
+        const { data, error } = await supabase.rpc('search_cards_with_filters_and_popularity', params);
 
-      // Build the OR conditions for race/type filters
-      const raceFilters = [];
-      if (selectedMonsterRaces.length > 0) {
-          raceFilters.push(`and(type.like.%Monster%,race.in.("${selectedMonsterRaces.join('","')}"))`);
-      }
-      if (selectedSpellRaces.length > 0) {
-          raceFilters.push(`and(type.eq.Spell Card,race.in.("${selectedSpellRaces.join('","')}"))`);
-      }
-      if (selectedTrapRaces.length > 0) {
-          raceFilters.push(`and(type.eq.Trap Card,race.in.("${selectedTrapRaces.join('","')}"))`);
-      }
-      if (raceFilters.length > 0) {
-          query = query.or(raceFilters.join(','));
-      }
-      
-      if (selectedCardTypes.length > 0) {
-        query = query.in('type', selectedCardTypes);
-      }
-      if (selectedAttributes.length > 0) {
-        query = query.in('attribute', selectedAttributes);
-      }
-      if (typeof genesysPointsValue === 'number') {
-        if (genesysPointsOperator === 'gte') {
-          query = query.gte('genesys_points', genesysPointsValue);
-        }
-        else {
-          query = query.lte('genesys_points', genesysPointsValue);
-        }
-      }
-
-      // Parse sortBy and sortDirection from the combined sortBy state
-      const [sortColumn, sortOrder] = sortBy.split('_');
-      const ascending = sortOrder === 'asc';
-
-      query = query.order(sortColumn, { ascending: ascending, nullsFirst: false });
-      
-      query = query.limit(100);
-
-      const { data: cards, error } = await query;
-
-      if (error) throw error;
-      setSearchResults(cards || []);
+        if (error) throw error;
+        setSearchResults(data || []);
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Erro ao buscar cartas";
@@ -1246,6 +1220,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                                       <SelectValue placeholder="Ordenar por..." />
                                     </SelectTrigger>
                                     <SelectContent>
+                                      <SelectItem value="popularity_desc">Popularidade</SelectItem>
                                       <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
                                       <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
                                       <SelectItem value="atk_asc">ATK (Crescente)</SelectItem>
@@ -1402,6 +1377,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                                             <SelectValue placeholder="Ordenar por..." />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="popularity_desc">Popularidade</SelectItem>
                                             <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
                                             <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
                                             <SelectItem value="atk_asc">ATK (Crescente)</SelectItem>
