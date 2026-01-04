@@ -234,7 +234,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       ) : profile ? (
         <main className="pb-12">
-          <div className="w-full aspect-[3/2] sm:aspect-[16/5] bg-gradient-primary">
+          <div className="w-full aspect-[3/2] sm:aspect-[4/1] bg-gradient-primary">
             {profile.banner_url ? (
               <img
                 src={profile.banner_url}
@@ -245,21 +245,24 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
               <div className="w-full h-full" />
             )}
           </div>
-          <div className="container mx-auto px-4">
-            <div className="relative -mt-8 mb-8">
-              <div className="flex flex-col md:flex-row items-start md:items-end gap-6">
-                <div className="relative">
-                  {profile.avatar_url ? (
-                    <img src={profile.avatar_url} alt={profile.username} className="w-32 h-32 rounded-full border-4 border-background object-cover" />
-                  ) : (
-                    <div className="w-32 h-32 rounded-full border-4 border-background bg-card flex items-center justify-center"><UserIcon className="h-16 w-16 text-muted-foreground" /></div>
-                  )}
-                </div>
-                <div className="w-full flex-1 md:pt-12">
-                  <h1 className="text-3xl font-bold mb-2">
+          <div className="relative container mx-auto px-4">
+            {/* AVATAR (Absolutely Positioned) */}
+            <div className="absolute -top-16 left-1/2 md:left-4 -translate-x-1/2 md:translate-x-0 z-10">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.username} className="w-32 h-32 rounded-full border-4 border-background object-cover" />
+              ) : (
+                <div className="w-32 h-32 rounded-full border-4 border-background bg-card flex items-center justify-center"><UserIcon className="h-16 w-16 text-muted-foreground" /></div>
+              )}
+            </div>
+
+            {/* USER INFO & OTHER CONTENT */}
+            <div className="pt-20 md:pt-4 md:pl-40 rounded-lg bg-card/50 backdrop-blur-sm p-4 mt-8 mb-8">
+              <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
+                <div className="w-full flex-1">
+                  <h1 className="text-3xl font-bold mb-2 text-center md:text-left">
                     <UserDisplay profile={profile} clan={clan} />
                   </h1>
-                  {profile.bio && <p className="text-muted-foreground">{profile.bio}</p>}
+                  {profile.bio && <p className="text-muted-foreground text-center md:text-left">{profile.bio}</p>}
                   
                   {/* Duelist Level and XP Bar */}
                   {profile.level !== undefined && profile.xp !== undefined && (
