@@ -115,9 +115,9 @@ export const UpcomingTournaments = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center text-muted-foreground py-12 border-2 border-dashed border-border rounded-lg">
-          <Trophy className="mx-auto h-12 w-12 mb-4 opacity-20" />
-          <p>Nenhum torneio aberto agendado no momento.</p>
+        <div className="text-center text-muted-foreground py-8 sm:py-12 px-4 border-2 border-dashed border-border rounded-lg">
+          <Trophy className="mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 opacity-20" />
+          <p className="text-sm sm:text-base">Nenhum torneio aberto agendado no momento.</p>
         </div>
       )}
     </section>

@@ -39,8 +39,7 @@ const About = () => {
             { name: 'EUG CLENITOS', role: 'Moderador', image: '/EUG CLENITOS.jpg' },
             { name: 'HDS ERYNW', role: 'Moderador', image: '/HDS ERYNW.jpg' },
             { name: 'KSN DOKA', role: 'Moderador', image: '/KSN DOKA.jpg' },
-            { name: 'KSN LEVIATÃ', role: 'Moderador', image: '/KSN LEVIATÃ.jpg' },
-            { name: 'KSN PATO', role: 'Moderador', image: '/KSN PATO.jpg' },
+            { name: 'KSN MASTDIONE', role: 'Moderador', image: '/KSN MASTDIONE.jpg' },
             { name: 'KSN SPOOKY', role: 'Moderador', image: '/KSN SPOOKY.png' },
             { name: 'TDK LENDARIO', role: 'Moderador', image: '/TDK LENDARIO.png' },
           ].map((admin) => (

@@ -7,83 +7,83 @@ All colors MUST be HSL.
 */
 
   :root {
-    /* Christmas Theme (Temporary) - Dark Gold Background */
-    --background: 0 0% 0%; /* Pure Black */
-    --foreground: 0 0% 90%; /* Light Grey for text */
+    /* STAFF Theme - Purple/Yellow */
+    --background: 240 10% 3.9%; /* Near-black with a hint of blue */
+    --foreground: 0 0% 98%; /* White text */
 
-    --card: 0 0% 5%; /* Very dark grey for cards */
-    --card-foreground: 0 0% 90%;
+    --card: 240 10% 8%; /* Dark blue-grey for cards */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 7%; /* Slightly lighter than card for popovers */
-    --popover-foreground: 0 0% 90%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 350 85% 60%; /* Christmas Red */
+    --primary: 258 70% 65%; /* Vibrant Purple */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 142 70% 30%; /* Christmas Green */
+    --secondary: 258 70% 45%; /* Darker Purple */
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 10%; /* Dark grey for muted elements */
-    --muted-foreground: 0 0% 60%; /* Medium grey for muted text */
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 142 70% 30%; /* Green Accent */
-    --accent-foreground: 0 0% 100%;
+    --accent: 45 90% 55%; /* Golden Yellow */
+    --accent-foreground: 240 10% 3.9%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 15%; /* Dark grey border */
-    --input: 0 0% 10%; /* Dark grey input field */
-    --ring: 350 85% 60%; /* Red Ring */
+    --border: 240 5% 15%;
+    --input: 240 5% 15%;
+    --ring: 258 70% 65%; /* Purple Ring */
 
     --radius: 0.75rem;
 
-    /* Custom tokens for Christmas theme */
-    --primary-glow: 350 85% 70%;
-    --gradient-primary: linear-gradient(135deg, hsl(350 85% 60%), hsl(142 70% 30%)); /* Red to Green gradient */
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 7%), hsl(0 0% 5%)); /* Very dark card gradient */
-    --shadow-glow: 0 0 40px hsl(350 85% 60% / 0.3);
-    --shadow-card: 0 10px 30px -10px hsl(0 0% 0% / 0.5); /* Dark shadow */
+    /* Custom tokens for STAFF theme */
+    --primary-glow: 258 70% 75%;
+    --gradient-primary: linear-gradient(135deg, hsl(258 70% 65%), hsl(45 90% 55%)); /* Purple to Yellow gradient */
+    --gradient-card: linear-gradient(180deg, hsl(240 10% 10%), hsl(240 10% 6%));
+    --shadow-glow: 0 0 40px hsl(258 70% 65% / 0.3);
+    --shadow-card: 0 10px 30px -10px hsl(0 0% 0% / 0.5);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-    --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 350 85% 60%;
+    
+    --sidebar-background: 240 10% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 258 70% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 60%;
-    --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 350 85% 60%;
+    --sidebar-accent: 240 5% 15%;
+    --sidebar-accent-foreground: 240 5% 65%;
+    --sidebar-border: 240 5% 15%;
+    --sidebar-ring: 258 70% 65%;
   }
 
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 90%;
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 90%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 90%;
-    --primary: 350 85% 60%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 8%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 258 70% 65%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 142 70% 30%;
+    --secondary: 258 70% 45%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 142 70% 30%;
-    --accent-foreground: 0 0% 100%;
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 45 90% 55%;
+    --accent-foreground: 240 10% 3.9%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 15%;
-    --input: 0 0% 10%;
-    --ring: 350 85% 60%;
-    --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 350 85% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5% 15%;
+    --input: 240 5% 15%;
+    --ring: 258 70% 65%;
+    --sidebar-background: 240 10% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 258 70% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 60%;
-    --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 350 85% 60%;
+    --sidebar-accent: 240 5% 15%;
+    --sidebar-accent-foreground: 240 5% 65%;
+    --sidebar-border: 240 5% 15%;
+    --sidebar-ring: 258 70% 65%;
   }
 
 @layer base {

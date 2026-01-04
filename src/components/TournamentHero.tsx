@@ -58,19 +58,15 @@ export const TournamentHero = () => {
   if (!tournaments || tournaments.length === 0) {
     // Empty state fallback to a generic banner
     return (
-      <div className="w-full relative overflow-hidden rounded-lg border border-border bg-[hsl(0_0%_12%)]">
-        <AspectRatio ratio={16 / 5} className="bg-[hsl(0_0%_12%)]">
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-            <Trophy className="h-16 w-16 text-muted-foreground/20 mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Sem Torneios Agendados</h2>
-            <p className="text-muted-foreground mb-6">
-              Fique ligado! Novos torneios serão anunciados em breve.
-            </p>
-            <Button variant="outline" asChild>
-              <Link to="/tournaments">Ver Todos os Torneios</Link>
-            </Button>
-          </div>
-        </AspectRatio>
+      <div className="w-full relative rounded-lg border border-border bg-[hsl(0_0%_12%)] flex flex-col items-center justify-center text-center p-6 h-[300px] sm:h-auto sm:aspect-[16/5]">
+        <Trophy className="h-12 w-12 text-muted-foreground/20 mb-4" />
+        <h2 className="text-xl font-bold mb-2">Sem Torneios Agendados</h2>
+        <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+          Fique ligado! Novos torneios serão anunciados em breve.
+        </p>
+        <Button variant="outline" asChild>
+          <Link to="/tournaments">Ver Todos os Torneios</Link>
+        </Button>
       </div>
     );
   }
