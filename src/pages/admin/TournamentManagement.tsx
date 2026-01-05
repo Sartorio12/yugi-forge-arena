@@ -2,7 +2,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FramedAvatar } from "@/components/FramedAvatar";
 import UserDisplay from "@/components/UserDisplay";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +53,7 @@ interface Participant {
     avatar_url: string | null;
     banner_url: string | null;
     level: number;
+    equipped_frame_url: string | null;
     clan_members: {
       clans: {
         tag: string;
@@ -116,6 +117,7 @@ const TournamentManagementPage = () => {
             avatar_url,
             banner_url,
             level,
+            equipped_frame_url,
             clan_members (
               clans (
                 tag
@@ -267,10 +269,13 @@ const TournamentManagementPage = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-4">
-                            <Avatar>
-                              <AvatarImage src={p.profiles?.avatar_url || undefined} alt={p.profiles?.username || "Usuário desconhecido"} />
-                              <AvatarFallback>{p.profiles?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
+                            <FramedAvatar
+                              userId={p.profiles?.id}
+                              avatarUrl={p.profiles?.avatar_url}
+                              frameUrl={p.profiles?.equipped_frame_url}
+                              username={p.profiles?.username}
+                              sizeClassName="h-10 w-10"
+                            />
                             <span className="font-medium">
                               <Link to={`/profile/${p.profiles?.id}`}>
                                 <UserDisplay profile={p.profiles || {}} clan={p.profiles?.clan_members?.clans} />

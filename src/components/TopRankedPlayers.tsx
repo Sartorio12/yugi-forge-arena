@@ -11,8 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import UserDisplay from "./UserDisplay";
+import { FramedAvatar } from "./FramedAvatar";
 
 interface PlayerRanking {
   user_id: string;
@@ -21,6 +20,7 @@ interface PlayerRanking {
   total_wins: number;
   level: number;
   clan_tag: string | null;
+  equipped_frame_url: string | null;
 }
 
 export const TopRankedPlayers = () => {
@@ -80,10 +80,13 @@ export const TopRankedPlayers = () => {
                       </TableCell>
                       <TableCell className="py-1 px-1">
                         <Link to={`/profile/${player.user_id}`} className="flex items-center gap-2 hover:text-primary transition-colors">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={player.avatar_url} alt={player.username} />
-                            <AvatarFallback>{player.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
+                          <FramedAvatar
+                            userId={player.user_id}
+                            avatarUrl={player.avatar_url}
+                            frameUrl={player.equipped_frame_url}
+                            username={player.username}
+                            sizeClassName="h-8 w-8 aspect-square"
+                          />
                           <span className="font-medium text-xs">
                             <UserDisplay profile={player} clan={player.clan_tag ? { tag: player.clan_tag } : null} />
                           </span>

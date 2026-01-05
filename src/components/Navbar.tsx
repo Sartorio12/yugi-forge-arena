@@ -72,7 +72,7 @@ const UserDropdown = ({ user, onLogout, profile, clan }) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-8 w-8 rounded-full">
             <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.username || user?.email} />
             <AvatarFallback>
               <UserIcon />

@@ -5,11 +5,12 @@ import { User } from "@supabase/supabase-js";
 import Navbar from "@/components/Navbar";
 import { Loader2, User as UserIcon, ShieldCheck, Shield, Settings, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FramedAvatar } from "@/components/FramedAvatar";
+import UserDisplay from "@/components/UserDisplay";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import UserDisplay from "@/components/UserDisplay";
 
 interface ClanProfilePageProps {
   user: User | null;
@@ -190,10 +191,13 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                   {leader && (
                     <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
                       <Link to={`/profile/${leader.id}`} className="flex items-center gap-4 group">
-                        <Avatar>
-                          <AvatarImage src={leader.avatar_url} />
-                          <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
-                        </Avatar>
+                        <FramedAvatar
+                          userId={leader.id}
+                          avatarUrl={leader.avatar_url}
+                          frameUrl={leader.equipped_frame_url}
+                          username={leader.username}
+                          sizeClassName="h-10 w-10"
+                        />
                         <span className="font-medium group-hover:text-primary transition-colors">
                           <UserDisplay profile={{ ...leader, clan: { tag: leader.clan_tag } }} />
                         </span>
@@ -208,10 +212,13 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                   {strategists && strategists.map(strategist => (
                      <div key={strategist.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
                        <Link to={`/profile/${strategist.id}`} className="flex items-center gap-4 group">
-                         <Avatar>
-                           <AvatarImage src={strategist.avatar_url} />
-                           <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
-                         </Avatar>
+                         <FramedAvatar
+                           userId={strategist.id}
+                           avatarUrl={strategist.avatar_url}
+                           frameUrl={strategist.equipped_frame_url}
+                           username={strategist.username}
+                           sizeClassName="h-10 w-10"
+                         />
                          <span className="font-medium group-hover:text-primary transition-colors">
                            <UserDisplay profile={{ ...strategist, clan: { tag: strategist.clan_tag } }} />
                          </span>
@@ -226,10 +233,13 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                   {regularMembers && regularMembers.map(member => (
                      <div key={member.id} className="flex items-center justify-between p-3 rounded-md">
                        <Link to={`/profile/${member.id}`} className="flex items-center gap-4 group">
-                         <Avatar>
-                           <AvatarImage src={member.avatar_url} />
-                           <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
-                         </Avatar>
+                         <FramedAvatar
+                           userId={member.id}
+                           avatarUrl={member.avatar_url}
+                           frameUrl={member.equipped_frame_url}
+                           username={member.username}
+                           sizeClassName="h-10 w-10"
+                         />
                          <span className="font-medium group-hover:text-primary transition-colors">
                            <UserDisplay profile={{ ...member, clan: { tag: member.clan_tag } }} />
                          </span>

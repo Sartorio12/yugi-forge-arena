@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Loader2, Layers } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FramedAvatar } from "./FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserDisplay from "./UserDisplay";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +29,7 @@ export const FeaturedDecks = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("decks")
-        .select("id, deck_name, is_genesys, profiles ( username, avatar_url, clan_members(clans(tag)) )")
+        .select("id, deck_name, is_genesys, profiles ( id, username, avatar_url, equipped_frame_url, clan_members(clans(tag)) )")
         .eq("is_private", false) 
         .order("created_at", { ascending: false })
         .limit(4);
@@ -72,10 +73,12 @@ export const FeaturedDecks = () => {
                 <CardContent className="pb-4 px-4">
                   {deck.profiles ? (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Avatar className="h-5 w-5 border border-border/50">
-                        <AvatarImage src={deck.profiles.avatar_url} alt={deck.profiles.username} />
-                        <AvatarFallback className="text-[8px]">{deck.profiles.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
+                      <FramedAvatar
+                        userId={deck.profiles.id}
+                        avatarUrl={deck.profiles.avatar_url}
+                        username={deck.profiles.username}
+                        sizeClassName="h-6 w-6"
+                      />
                       <UserDisplay profile={deck.profiles} clan={deck.profiles.clan_members?.clans?.tag ? { tag: deck.profiles.clan_members.clans.tag } : null} />
                     </div>
                   ) : (

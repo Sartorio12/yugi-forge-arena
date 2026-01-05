@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Loader2, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { FramedAvatar } from "./FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Tournament {
@@ -13,6 +14,7 @@ interface Tournament {
   event_date: string;
   status: string;
   profiles: {
+    id: string;
     username: string | null;
     avatar_url: string | null;
   } | null;
@@ -27,6 +29,7 @@ export const UpcomingTournaments = () => {
         .select(`
           *,
           profiles:organizer_id (
+            id,
             username,
             avatar_url
           )
@@ -95,12 +98,12 @@ export const UpcomingTournaments = () => {
                   <div className="flex items-center gap-2 text-xs text-gray-300 mt-2">
                     {tournament.profiles && (
                       <div className="flex items-center gap-1.5">
-                        <Avatar className="h-4 w-4 border border-white/20">
-                          <AvatarImage src={tournament.profiles.avatar_url || undefined} />
-                          <AvatarFallback className="text-[8px]">
-                            {tournament.profiles.username?.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        <FramedAvatar
+                          userId={tournament.profiles.id}
+                          avatarUrl={tournament.profiles.avatar_url}
+                          username={tournament.profiles.username}
+                          sizeClassName="h-4 w-4"
+                        />
                         <span className="font-medium truncate max-w-[100px]">
                           {tournament.profiles.username}
                         </span>

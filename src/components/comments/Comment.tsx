@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/useProfile';
 import { User } from '@supabase/supabase-js';
+import { FramedAvatar } from "../FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -154,13 +155,17 @@ export const Comment = ({ comment, contentId, user, isReply = false, queryKey, c
         <div className={`flex gap-4 ${isReply ? 'mt-4' : ''}`}>
             {comment.profiles ? (
                 <Link to={`/profile/${comment.profiles.id}`}>
-                    <Avatar>
-                        <AvatarImage src={comment.profiles.avatar_url} />
-                        <AvatarFallback>{comment.profiles.username?.substring(0, 2)}</AvatarFallback>
-                    </Avatar>
+                    <FramedAvatar
+                        userId={comment.profiles.id}
+                        avatarUrl={comment.profiles.avatar_url}
+                        username={comment.profiles.username}
+                        showFrame={true} // Default Avatar size
+                    />
                 </Link>
             ) : (
-                <Avatar><AvatarFallback>A</AvatarFallback></Avatar>
+                <FramedAvatar
+                    showFrame={true}
+                />
             )}
             <div className="flex-1">
                 <div className="flex justify-between items-center">
@@ -196,7 +201,12 @@ export const Comment = ({ comment, contentId, user, isReply = false, queryKey, c
 
                 {isReplying && (
                     <div className="flex gap-4 mt-4">
-                        <Avatar><AvatarImage src={profile?.avatar_url} /><AvatarFallback>{profile?.username?.substring(0, 2)}</AvatarFallback></Avatar>
+                        <FramedAvatar
+                            userId={profile?.id}
+                            avatarUrl={profile?.avatar_url}
+                            username={profile?.username}
+                            showFrame={true}
+                        />
                         <div className="w-full">
                             <Textarea placeholder={`Respondendo a ${comment.profiles.username}...`} value={replyText} onChange={(e) => setReplyText(e.target.value)} className="mb-2" />
                             <Button onClick={() => addCommentMutation.mutate({ commentText: replyText, parentId: comment.id })} disabled={!replyText.trim() || addCommentMutation.isPending}>

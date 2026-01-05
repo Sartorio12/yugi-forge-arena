@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FramedAvatar } from "./FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserDisplay from "./UserDisplay";
@@ -22,6 +23,7 @@ interface PlayerRanking {
   total_wins: number;
   level: number;
   clan_tag: string | null;
+  equipped_frame_url: string | null;
 }
 
 interface ClanRanking {
@@ -114,10 +116,13 @@ export const RankingsWidget = () => {
                       </TableCell>
                       <TableCell className="py-2 px-2">
                         <Link to={`/profile/${player.user_id}`} className="flex items-center gap-2 hover:text-primary transition-colors">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={player.avatar_url} alt={player.username} />
-                            <AvatarFallback>{player.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
+                          <FramedAvatar
+                            userId={player.user_id}
+                            avatarUrl={player.avatar_url}
+                            frameUrl={player.equipped_frame_url}
+                            username={player.username}
+                            sizeClassName="h-8 w-8 aspect-square"
+                          />
                           <span className="font-medium text-xs truncate max-w-[120px]">
                             <UserDisplay profile={player} clan={player.clan_tag ? { tag: player.clan_tag } : null} />
                           </span>
@@ -164,10 +169,11 @@ export const RankingsWidget = () => {
                       </TableCell>
                       <TableCell className="py-2 px-2">
                         <Link to={`/clans/${clan.clan_id}`} className="flex items-center gap-2 hover:text-primary transition-colors">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={clan.clan_image_url} alt={clan.clan_name} />
-                            <AvatarFallback>{clan.clan_tag}</AvatarFallback>
-                          </Avatar>
+                          <FramedAvatar
+                            avatarUrl={clan.clan_image_url}
+                            username={clan.clan_name}
+                            sizeClassName="h-8 w-8 aspect-square"
+                          />
                           <span className="font-medium text-xs truncate max-w-[120px]">
                             [{clan.clan_tag}] {clan.clan_name}
                           </span>

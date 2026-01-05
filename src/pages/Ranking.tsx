@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FramedAvatar } from "@/components/FramedAvatar";
 import UserDisplay from "@/components/UserDisplay";
 
 interface RankingPageProps {
@@ -35,13 +35,17 @@ interface PlayerRanking {
   total_points: number;
   clan_tag: string | null;
   level: number;
+  equipped_frame_url: string | null;
 }
 
 const RankingPage = ({ user, onLogout }: RankingPageProps) => {
   const { data: rankings, isLoading } = useQuery({
     queryKey: ["playerRankings"],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_player_rankings");
+      const { data, error } = await supabase
+        .from("player_rankings_view")
+        .select("*")
+        .order("total_points", { ascending: false });
       if (error) throw error;
       return data as PlayerRanking[];
     },
@@ -100,10 +104,13 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
                       </TableCell>
                       <TableCell>
                         <Link to={`/profile/${player.user_id}`} className="flex items-center gap-4 group">
-                          <Avatar>
-                            <AvatarImage src={player.avatar_url} alt={player.username} />
-                            <AvatarFallback>{player.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
+                          <FramedAvatar
+                            userId={player.user_id}
+                            avatarUrl={player.avatar_url}
+                            frameUrl={player.equipped_frame_url}
+                            username={player.username}
+                            sizeClassName="h-10 w-10"
+                          />
                           <span className="font-medium group-hover:underline">
                             <UserDisplay profile={{ ...player, id: player.user_id }} clan={player.clan_tag ? { tag: player.clan_tag } : null} />
                           </span>

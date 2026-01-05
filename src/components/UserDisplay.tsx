@@ -1,5 +1,6 @@
 import { Profile } from "@/hooks/useProfile";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { FramedAvatar } from "./FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trophy } from "lucide-react";
 
@@ -42,10 +43,12 @@ const UserDisplay = ({ profile, clan }: UserDisplayProps) => {
          
          <div className="px-4 pb-4 pt-0 relative">
             <div className="flex justify-between items-end -mt-10 mb-3">
-               <Avatar className="h-20 w-20 border-4 border-background shadow-sm">
-                  <AvatarImage src={avatarUrl || undefined} alt={username} />
-                  <AvatarFallback>{username.charAt(0).toUpperCase()}</AvatarFallback>
-               </Avatar>
+               <FramedAvatar
+                  avatarUrl={avatarUrl}
+                  frameUrl={(profile as any).equipped_frame_url}
+                  username={username}
+                  sizeClassName="h-20 w-20"
+                />
             </div>
             
             <div className="space-y-2">

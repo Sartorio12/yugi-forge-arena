@@ -1,7 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { FramedAvatar } from "../FramedAvatar";
+
+interface Conversation {
+  id: string;
+  username: string;
+  avatar_url: string;
+  last_message: string;
+  last_message_at: string;
+  unread_count: number;
+  equipped_frame_url?: string | null;
+}
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -52,10 +62,12 @@ export const ConversationList = ({ onSelectConversation, selectedUserId }: Conve
                                 className={`w-full text-left p-3 rounded-lg grid grid-cols-[auto_1fr] gap-3 transition-colors ${selectedUserId === convo.other_user_id ? 'bg-secondary' : 'hover:bg-secondary/50'}`}
                             >
                                 <div className="relative shrink-0">
-                                    <Avatar className="h-12 w-12">
-                                        <AvatarImage src={convo.avatar_url} />
-                                        <AvatarFallback>{convo.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                                    </Avatar>
+                                    <FramedAvatar
+                                        userId={convo.other_user_id}
+                                        avatarUrl={convo.avatar_url}
+                                        username={convo.username}
+                                        sizeClassName="h-12 w-12"
+                                    />
                                     {convo.is_online && (
                                         <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
                                     )}

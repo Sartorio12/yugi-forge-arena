@@ -95,6 +95,11 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 
+  /* Custom utility for hexagonal clip-path (FLAT TOP) */
+  .clip-hexagon {
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  }
+
   /* Custom styles for links within prose content */
   .prose a {
     color: hsl(var(--primary));

@@ -181,8 +181,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     queryKey: ["deck", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("decks")
-        .select("*, profiles(*)")
+        .select("*, profiles(*, equipped_frame_url)")
         .eq("id", id)
         .single();
       if (error) {
@@ -200,7 +199,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
       queryFn: async () => {
           const { data, error } = await supabase
               .from("tournament_deck_snapshots")
-              .select("*, profiles(*)")
+              .select("*, profiles(*, equipped_frame_url)")
               .eq("id", snapshotId)
               .single();
           if (error) {

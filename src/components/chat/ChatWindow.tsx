@@ -3,6 +3,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { Loader2, Send, CornerDownLeft } from 'lucide-react';
+import { FramedAvatar } from "../FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -382,10 +383,13 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
             {showHeader && (
               <div className="p-4 border-b border-border flex items-center gap-4">
                   <div className="relative">
-                      <Avatar className="h-10 w-10">
-                          <AvatarImage src={otherUserProfile?.avatar_url} />
-                          <AvatarFallback>{otherUserProfile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
+                      <FramedAvatar
+                        userId={otherUserProfile?.id}
+                        avatarUrl={otherUserProfile?.avatar_url}
+                        frameUrl={otherUserProfile?.equipped_frame_url}
+                        username={otherUserProfile?.username}
+                        sizeClassName="h-10 w-10"
+                      />
                       {otherUserProfile?.is_online && (
                           <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
                       )}
@@ -399,10 +403,13 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
                 {data?.pages.map(page => page.map(message => (
                     <div key={message.id} className={`flex gap-3 ${message.sender_id === currentUser.id ? 'justify-end' : 'justify-start'}`}>
                         {message.sender_id !== currentUser.id && (
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src={otherUserProfile?.avatar_url} />
-                                <AvatarFallback>{otherUserProfile?.username?.charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
+                            <FramedAvatar
+                                userId={otherUserProfile?.id}
+                                avatarUrl={otherUserProfile?.avatar_url}
+                                frameUrl={otherUserProfile?.equipped_frame_url}
+                                username={otherUserProfile?.username}
+                                sizeClassName="h-8 w-8"
+                            />
                         )}
                         <div className={`max-w-xs md:max-w-md p-3 rounded-lg shadow-md ${message.sender_id === currentUser.id ? 'bg-yellow-700 text-white' : 'bg-secondary'}`}>
                             <p className="text-sm">{message.content}</p>

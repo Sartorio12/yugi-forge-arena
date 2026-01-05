@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Loader2, Newspaper } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { FramedAvatar } from "./FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface NewsPost {
@@ -13,8 +14,10 @@ interface NewsPost {
   created_at: string;
   banner_url: string | null;
   profiles: {
+    id: string;
     username: string;
     avatar_url: string;
+    equipped_frame_url: string | null;
     clan_members: {
       clans: { tag: string } | null;
     } | null;
@@ -33,8 +36,10 @@ export const NewsSection = () => {
           created_at,
           banner_url,
           profiles (
+            id,
             username,
             avatar_url,
+            equipped_frame_url,
             clan_members (
               clans ( tag )
             )
@@ -104,12 +109,13 @@ export const NewsSection = () => {
                                 {/* Author */}
                                 {post.profiles && (
                                   <div className="flex items-center gap-1.5">
-                                    <Avatar className="h-4 w-4 border border-white/20">
-                                      <AvatarImage src={post.profiles.avatar_url} />
-                                      <AvatarFallback className="text-[8px]">
-                                        {post.profiles.username?.substring(0, 2).toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
+                                    <FramedAvatar
+                                      userId={post.profiles.id}
+                                      avatarUrl={post.profiles.avatar_url}
+                                      frameUrl={post.profiles.equipped_frame_url}
+                                      username={post.profiles.username}
+                                      sizeClassName="h-6 w-6 aspect-square"
+                                    />
                                     <span className="font-medium truncate max-w-[100px]">
                                       {post.profiles.clan_members?.clans?.tag && (
                                          <span className="text-primary mr-1">[{post.profiles.clan_members.clans.tag}]</span>

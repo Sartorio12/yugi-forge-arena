@@ -19,7 +19,7 @@ interface NewsPostPageProps {
 
 const fetchNewsPost = async (postId: string | undefined) => {
   if (!postId) throw new Error("Post ID required");
-  const { data, error } = await supabase.from("news_posts").select(`id, title, content, created_at, author_id, profiles (id, username, avatar_url)`).eq("id", postId).single();
+  const { data, error } = await supabase.from("news_posts").select(`id, title, content, created_at, author_id, profiles (id, username, avatar_url, equipped_frame_url)`).eq("id", postId).single();
   if (error) throw error;
   return data;
 };

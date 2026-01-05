@@ -16,7 +16,7 @@ export const useProfile = (userId: string | undefined) => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("*, equipped_frame_url")
         .eq("id", userId)
         .single();
 
