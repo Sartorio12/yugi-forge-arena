@@ -159,11 +159,13 @@ export const Comment = ({ comment, contentId, user, isReply = false, queryKey, c
                         userId={comment.profiles.id}
                         avatarUrl={comment.profiles.avatar_url}
                         username={comment.profiles.username}
-                        showFrame={true} // Default Avatar size
+                        sizeClassName={isReply ? "h-8 w-8" : "h-10 w-10"}
+                        showFrame={true}
                     />
                 </Link>
             ) : (
                 <FramedAvatar
+                    sizeClassName={isReply ? "h-8 w-8" : "h-10 w-10"}
                     showFrame={true}
                 />
             )}
@@ -205,6 +207,7 @@ export const Comment = ({ comment, contentId, user, isReply = false, queryKey, c
                             userId={profile?.id}
                             avatarUrl={profile?.avatar_url}
                             username={profile?.username}
+                            sizeClassName="h-8 w-8"
                             showFrame={true}
                         />
                         <div className="w-full">

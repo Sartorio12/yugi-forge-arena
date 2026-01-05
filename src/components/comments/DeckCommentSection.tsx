@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/useProfile';
 import { User } from '@supabase/supabase-js';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { FramedAvatar } from "../FramedAvatar";
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
@@ -95,7 +95,13 @@ export const DeckCommentSection = ({ deckId, user, deckOwnerId, deckName }: Deck
       <h2 className="text-2xl font-bold mb-6">Comentários</h2>
       {user && (
         <Card className="mb-8"><CardContent className="p-4"><div className="flex gap-4">
-          <Avatar><AvatarImage src={profile?.avatar_url} /><AvatarFallback>{profile?.username?.substring(0, 2)}</AvatarFallback></Avatar>
+          <FramedAvatar 
+            userId={profile?.id} 
+            avatarUrl={profile?.avatar_url} 
+            username={profile?.username}
+            sizeClassName="h-10 w-10"
+            showFrame={true}
+          />
           <div className="w-full">
             <Textarea placeholder="Escreva seu comentário..." value={newComment} onChange={(e) => setNewComment(e.target.value)} className="mb-2" />
             <Button onClick={() => addCommentMutation.mutate(newComment)} disabled={!newComment.trim() || addCommentMutation.isPending}>
