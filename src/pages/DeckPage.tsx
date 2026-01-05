@@ -181,6 +181,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     queryKey: ["deck", id],
     queryFn: async () => {
       const { data, error } = await supabase
+        .from("decks")
         .select("*, profiles(*, equipped_frame_url)")
         .eq("id", id)
         .single();
