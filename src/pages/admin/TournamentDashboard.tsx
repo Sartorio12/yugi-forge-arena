@@ -70,6 +70,7 @@ const TournamentDashboard = () => {
         const { data, error } = await supabase
           .from("tournaments")
           .select("*, organizer_id, exclusive_organizer_only") // Added new columns
+          .is("deleted_at", null)
           .order("event_date", { ascending: false });
         if (error) throw error;
         return data;
@@ -144,7 +145,10 @@ const TournamentDashboard = () => {
 
   const deleteTournamentMutation = useMutation({
     mutationFn: async (id: number) => {
-      const { error } = await supabase.from("tournaments").delete().eq("id", id);
+      const { error } = await supabase
+        .from("tournaments")
+        .update({ deleted_at: new Date().toISOString() } as any)
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

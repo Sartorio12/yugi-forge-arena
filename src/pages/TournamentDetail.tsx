@@ -32,6 +32,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
         .from("tournaments")
         .select("*")
         .eq("id", Number(id))
+        .is("deleted_at", null)
         .single();
 
       if (error) throw error;

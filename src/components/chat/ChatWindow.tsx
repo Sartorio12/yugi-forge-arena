@@ -391,7 +391,7 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
                         sizeClassName="h-10 w-10"
                       />
                       {otherUserProfile?.is_online && (
-                          <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
+                          <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background z-20" />
                       )}
                   </div>
                   <h2 className="font-bold text-lg">{otherUserProfile?.username}</h2>

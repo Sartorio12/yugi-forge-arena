@@ -1,0 +1,2 @@
+ALTER TABLE public.tournaments
+ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL;

@@ -69,7 +69,7 @@ export const ConversationList = ({ onSelectConversation, selectedUserId }: Conve
                                         sizeClassName="h-12 w-12"
                                     />
                                     {convo.is_online && (
-                                        <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-background" />
+                                        <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-background z-20" />
                                     )}
                                 </div>
                                 <div className="overflow-hidden min-w-0">

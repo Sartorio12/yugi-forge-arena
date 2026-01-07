@@ -35,6 +35,7 @@ export const UpcomingTournaments = () => {
           )
         `)
         .eq("status", "Aberto")
+        .is("deleted_at", null)
         .gt("event_date", new Date().toISOString())
         .order("event_date", { ascending: true })
         .limit(3);

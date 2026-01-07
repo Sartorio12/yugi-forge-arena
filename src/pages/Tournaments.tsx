@@ -18,6 +18,7 @@ const Tournaments = ({ user, onLogout }: TournamentsProps) => {
       const { data, error } = await supabase
         .from("tournaments")
         .select("*")
+        .is("deleted_at", null)
         .order("event_date", { ascending: false });
 
       if (error) throw error;
