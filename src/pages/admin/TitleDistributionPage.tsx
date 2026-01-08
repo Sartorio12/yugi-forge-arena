@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Search, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FramedAvatar } from "@/components/FramedAvatar";
-import Navbar from "@/components/Navbar";
 import { Badge } from "@/components/ui/badge";
 
 interface SearchProfile {
@@ -117,7 +116,6 @@ const TitleDistributionPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 flex items-center gap-2">
           <Users className="h-8 w-8" />
