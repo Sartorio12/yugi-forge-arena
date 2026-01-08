@@ -28,9 +28,10 @@ interface Deck {
   deck_cards: { count: number }[];
 }
 
-import { Profile } from "@/hooks/useProfile";
+import { Profile, useProfile } from "@/hooks/useProfile";
 import UserDisplay from "@/components/UserDisplay";
 import { Database } from "@/integrations/supabase/types"; // Import Database type
+import { TitleInventory } from "@/components/TitleInventory";
 
 type UserTournamentBanner = Database['public']['Tables']['user_tournament_banners']['Row'];
 
@@ -45,13 +46,17 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const { toast } = useToast();
   const { openChat } = useChat();
 
+  // Current logged in user profile (to check permissions)
+  const { profile: currentUserProfile } = useProfile(user?.id);
+  const isAdmin = currentUserProfile?.role === 'admin' || currentUserProfile?.role === 'organizer';
+
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', id],
     queryFn: async () => {
       if (!id) return null;
       const { data, error } = await supabase
         .from("profiles")
-        .select("*, level, xp, equipped_frame_url")
+        .select("*, level, xp, equipped_frame_url, equipped_titles")
         .eq("id", id)
         .single();
 
@@ -73,7 +78,6 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isBannerUploadDialogOpen, setIsBannerUploadDialogOpen] = useState(false);
-  const [isFrameInventoryOpen, setIsFrameInventoryOpen] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -254,42 +258,21 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
               
               {/* Avatar Container */}
               <div className="-mt-20 flex-shrink-0 z-10">
-                <Dialog open={isFrameInventoryOpen} onOpenChange={setIsFrameInventoryOpen}>
-                  <DialogTrigger asChild disabled={!isProfileOwner}>
-                    <div className={`relative ${isProfileOwner ? 'cursor-pointer group' : ''}`}>
-                      <FramedAvatar 
-                        avatarUrl={profile.avatar_url}
-                        frameUrl={profile.equipped_frame_url}
-                        username={profile.username}
-                        sizeClassName="w-36 h-36"
-                      />
-                       {isProfileOwner && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
-                          <Pencil className="h-8 w-8 text-white drop-shadow-lg" />
-                        </div>
-                      )}
-                    </div>
-                  </DialogTrigger>
-                  {isProfileOwner && user && (
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Escolha sua Moldura</DialogTitle>
-                      </DialogHeader>
-                      <FrameInventory 
-                        userId={user.id} 
-                        currentEquippedFrame={profile.equipped_frame_url} 
-                        onClose={() => setIsFrameInventoryOpen(false)}
-                      />
-                    </DialogContent>
-                  )}
-                </Dialog>
+                <div className="relative">
+                  <FramedAvatar 
+                    avatarUrl={profile.avatar_url}
+                    frameUrl={profile.equipped_frame_url}
+                    username={profile.username}
+                    sizeClassName="w-36 h-36"
+                  />
+                </div>
               </div>
 
               {/* Info Wrapper */}
               <div className="w-full flex-1 text-center md:text-left">
                 <div className="md:mt-4 p-4 rounded-lg bg-card/50 backdrop-blur-sm">
                   <h1 className="text-3xl font-bold mb-2">
-                    <UserDisplay profile={profile} clan={clan} />
+                    <UserDisplay profile={profile} clan={clan} showTitles={true} />
                   </h1>
                   {profile.bio && <p className="text-muted-foreground">{profile.bio}</p>}
                   
@@ -310,69 +293,96 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                 {isProfileOwner && (
                   <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild><Button variant="outline"><Pencil className="h-4 w-4 mr-2" /> Editar Perfil</Button></DialogTrigger>
-                                          <DialogContent>
+                                          <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
                                             <DialogHeader><DialogTitle>Editar Perfil</DialogTitle></DialogHeader>
-                                            <div className="space-y-4 py-4">
-                                              <div className="space-y-2">
-                                                <Label htmlFor="username">Nome de Usuário</Label>
-                                                <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
-                                              </div>
-                                              <div className="space-y-2">
-                                                <Label htmlFor="bio">Bio</Label>
-                                                <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} />
-                                              </div>
-                                              <div className="space-y-2">
-                                                <Label htmlFor="avatar">Avatar (Max 10MB)</Label>
-                                                <Input id="avatar" type="file" accept="image/*" onChange={(e) => {
-                                                  const file = e.target.files?.[0];
-                                                  if (!file) {
-                                                    setAvatarFile(null);
-                                                    return;
-                                                  }
-                                                  if (file.size > 10 * 1024 * 1024) { // 10MB
-                                                    toast({
-                                                      title: "Arquivo muito grande",
-                                                      description: "O avatar não pode exceder 10MB.",
-                                                      variant: "destructive",
-                                                    });
-                                                    e.target.value = "";
-                                                    return;
-                                                  }
-                                                  setAvatarFile(file);
-                                                }} />
-                                              </div>
-                                              <div className="space-y-2">
-                                                <div className="flex justify-between items-center mb-2">
-                                                  <Label htmlFor="banner">Banner (Max 10MB)</Label>
-                                                  {profile.banner_url && (
-                                                    <Button 
-                                                      type="button" 
-                                                      variant="destructive" 
-                                                      size="sm" 
-                                                      onClick={handleRemoveBanner}
-                                                      disabled={isUpdating}
-                                                    >
-                                                      <Trash2 className="h-3 w-3 mr-1" /> Remover
-                                                    </Button>
-                                                  )}
+                                            <div className="flex-1 overflow-y-auto py-4 pr-2">
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                                <div className="space-y-6 md:border-r md:border-border md:pr-10">
+                                                  <div className="space-y-2">
+                                                    <Label htmlFor="username">Nome de Usuário</Label>
+                                                    <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                                                  </div>
+                                                  <div className="space-y-2">
+                                                    <Label htmlFor="bio">Bio</Label>
+                                                    <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} />
+                                                  </div>
+                                                  <div className="space-y-2">
+                                                    <Label htmlFor="avatar">Avatar (Max 10MB)</Label>
+                                                    <Input id="avatar" type="file" accept="image/*" onChange={(e) => {
+                                                      const file = e.target.files?.[0];
+                                                      if (!file) {
+                                                        setAvatarFile(null);
+                                                        return;
+                                                      }
+                                                      if (file.size > 10 * 1024 * 1024) { // 10MB
+                                                        toast({
+                                                          title: "Arquivo muito grande",
+                                                          description: "O avatar não pode exceder 10MB.",
+                                                          variant: "destructive",
+                                                        });
+                                                        e.target.value = "";
+                                                        return;
+                                                      }
+                                                      setAvatarFile(file);
+                                                    }} />
+                                                  </div>
+                                                  <div className="space-y-2">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                      <Label htmlFor="banner">Banner (Max 10MB)</Label>
+                                                      {profile.banner_url && (
+                                                        <Button 
+                                                          type="button" 
+                                                          variant="destructive" 
+                                                          size="sm" 
+                                                          onClick={handleRemoveBanner}
+                                                          disabled={isUpdating}
+                                                        >
+                                                          <Trash2 className="h-3 w-3 mr-1" /> Remover
+                                                        </Button>
+                                                      )}
+                                                    </div>
+                                                    <Input id="banner" type="file" accept="image/*" onChange={(e) => {
+                                                      const file = e.target.files?.[0];
+                                                      if (!file) {
+                                                        setBannerFile(null);
+                                                        return;
+                                                      }
+                                                      if (file.size > 10 * 1024 * 1024) { // 10MB
+                                                        toast({
+                                                          title: "Arquivo muito grande",
+                                                          description: "O banner não pode exceder 10MB.",
+                                                          variant: "destructive",
+                                                        });
+                                                        e.target.value = "";
+                                                        return;
+                                                      }
+                                                      setBannerFile(file);
+                                                    }} />
+                                                  </div>
                                                 </div>
-                                                <Input id="banner" type="file" accept="image/*" onChange={(e) => {
-                                                  const file = e.target.files?.[0];
-                                                  if (!file) {
-                                                    setBannerFile(null);
-                                                    return;
-                                                  }
-                                                  if (file.size > 10 * 1024 * 1024) { // 10MB
-                                                    toast({
-                                                      title: "Arquivo muito grande",
-                                                      description: "O banner não pode exceder 10MB.",
-                                                      variant: "destructive",
-                                                    });
-                                                    e.target.value = "";
-                                                    return;
-                                                  }
-                                                  setBannerFile(file);
-                                                }} />
+
+                                                <div className="space-y-6">
+                                                  <div className="space-y-2">
+                                                    <Label>Moldura</Label>
+                                                    <div className="border rounded-lg p-4 bg-card">
+                                                      <FrameInventory 
+                                                        userId={user.id} 
+                                                        currentEquippedFrame={profile.equipped_frame_url} 
+                                                        onClose={() => setOpen(false)}
+                                                      />
+                                                    </div>
+                                                  </div>
+
+                                                  <div className="space-y-2">
+                                                    <Label>Títulos</Label>
+                                                    <div className="border rounded-lg p-4 bg-card">
+                                                      <TitleInventory 
+                                                        userId={user.id} 
+                                                        currentEquippedTitles={profile.equipped_titles}
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                </div>
                                               </div>
                                             </div>
                                             <DialogFooter>
@@ -389,7 +399,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                 )}
               </div>
             </div>
-            <div>
+            <div className="mt-12 md:mt-20">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-bold tracking-tight">
                   Meus Decks

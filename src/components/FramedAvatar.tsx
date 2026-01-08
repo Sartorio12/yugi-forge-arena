@@ -38,7 +38,7 @@ export const FramedAvatar = ({
   const finalFrameUrl = propFrameUrl || fetchedFrameUrl;
   const shouldShowFrame = showFrame && finalFrameUrl;
   const isRound = finalFrameUrl?.includes('_round');
-  const clippingClass = isRound ? 'rounded-full' : 'clip-hexagon';
+  const clippingClass = !shouldShowFrame ? 'rounded-full' : (isRound ? 'rounded-full' : 'clip-hexagon');
 
   // Specific adjustments for hexagonal frames to fit better horizontally
   const avatarWidthClass = shouldShowFrame ? (isRound ? 'w-[94%]' : 'w-[97%]') : 'w-full';

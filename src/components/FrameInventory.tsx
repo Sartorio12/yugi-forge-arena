@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Ban } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useProfile } from "@/hooks/useProfile";
@@ -37,12 +37,12 @@ export const FrameInventory = ({ userId, currentEquippedFrame, onClose }: FrameI
   });
 
   const equipFrameMutation = useMutation({
-    mutationFn: async (frameUrl: string) => {
+    mutationFn: async (frameUrl: string | null) => {
       const { error } = await supabase.rpc("equip_frame", { p_frame_url: frameUrl });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Sucesso!", description: "Moldura equipada." });
+      toast({ title: "Sucesso!", description: "Moldura atualizada." });
       // Invalidate both profile and user-frame queries to ensure all components update
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       queryClient.invalidateQueries({ queryKey: ["user-frame", userId] });
@@ -79,6 +79,20 @@ export const FrameInventory = ({ userId, currentEquippedFrame, onClose }: FrameI
 
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 p-4 max-h-96 overflow-y-auto">
+      <div className="relative aspect-square">
+        <Button
+          variant="outline"
+          className={`w-full h-full p-2 flex flex-col items-center justify-center gap-2 transition-all ${
+            !currentEquippedFrame ? "ring-2 ring-primary" : ""
+          }`}
+          onClick={() => equipFrameMutation.mutate(null)}
+          disabled={equipFrameMutation.isPending}
+        >
+          <Ban className="w-8 h-8 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">Sem Moldura</span>
+        </Button>
+      </div>
+
       {allAvailableFrames.map((frame) => (
         <div key={frame.id} className="relative aspect-square">
           <Button

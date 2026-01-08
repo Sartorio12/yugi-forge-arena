@@ -23,6 +23,7 @@ import NewsDashboard from "./pages/admin/NewsDashboard";
 import NewsPostPage from "./pages/NewsPostPage";
 import NewsListPage from "./pages/NewsListPage";
 import NewsEditorFormPage from "./pages/admin/NewsEditorFormPage";
+import TitleDistributionPage from "./pages/admin/TitleDistributionPage";
 import { RequestPasswordResetPage } from './pages/RequestPasswordResetPage';
 import { UpdatePasswordPage } from './pages/UpdatePasswordPage';
 import CreateClanPage from "./pages/CreateClanPage";
@@ -175,6 +176,10 @@ const App = () => {
                             <Route
                               path="/dashboard/news/:id/edit"
                               element={<NewsEditorFormPage user={user} />}
+                            />
+                            <Route
+                              path="/dashboard/titles"
+                              element={<TitleDistributionPage />}
                             />
                           </Route>
           
