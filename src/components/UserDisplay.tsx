@@ -1,7 +1,6 @@
-import { Profile } from "@/hooks/useProfile";
+import { Profile, useProfile } from "@/hooks/useProfile";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { FramedAvatar } from "./FramedAvatar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -12,49 +11,26 @@ interface UserDisplayProps {
   showTitles?: boolean;
 }
 
-const UserDisplay = ({ profile, clan, showTitles = false }: UserDisplayProps) => {
-  if (!profile) {
-    return null;
-  }
+const UserCardDetails = ({ initialProfile, clan }: { initialProfile: UserDisplayProps['profile'], clan: UserDisplayProps['clan'] }) => {
+  // Fetch full profile details when this component is mounted (on hover)
+  // This ensures we have the latest banner, titles, etc. without over-fetching in lists
+  const { profile: fullProfile } = useProfile(initialProfile.id);
+  
+  // Merge initial profile with full profile (full profile takes precedence if loaded)
+  const displayProfile = fullProfile || initialProfile;
 
-  const clanTag = clan?.tag;
-  const username = profile.username || "Usuário desconhecido";
-  const avatarUrl = profile.avatar_url;
-  // Access properties safely. If types are updated, these casts can be removed.
-  // Defaulting level to 1 if not present/fetched yet.
-  const level = (profile as any).level || 1; 
-  const bannerUrl = (profile as any).banner_url;
-  const equippedTitles = profile.equipped_titles || [];
+  const username = displayProfile.username || "Usuário desconhecido";
+  const avatarUrl = displayProfile.avatar_url;
+  const level = (displayProfile as any).level || 1;
+  const bannerUrl = (displayProfile as any).banner_url;
+  // equipped_titles might be string[] or JSONB array. 
+  // In fullProfile (from DB), it is JSONB. In initialProfile, it might be whatever was passed.
+  // We handle both in rendering.
+  const equippedTitles = (displayProfile as any).equipped_titles || [];
+  const clanTag = clan?.tag; // Clan might come from separate query in parent, keep it
 
   return (
-    <HoverCard>
-      <HoverCardTrigger asChild>
-        <span className="cursor-pointer hover:underline inline-flex items-center gap-2 flex-wrap">
-          {clanTag && <span className="font-bold text-primary">[{clanTag}]</span>}
-          <span>{username}</span>
-          {showTitles && equippedTitles.slice(0, 3).map((title, index) => {
-             const name = typeof title === 'string' ? title : title.name;
-             const color = typeof title === 'string' ? undefined : title.color;
-             const textColor = typeof title === 'string' ? undefined : title.text_color;
-             const bgColor = typeof title === 'string' ? undefined : title.background_color;
-             return (
-              <Badge 
-                key={index} 
-                variant="secondary" 
-                className="rounded-md px-2 py-0.5 text-xs font-normal border-2"
-                style={{ 
-                  borderColor: color || 'transparent',
-                  color: textColor || undefined,
-                  backgroundColor: bgColor || undefined
-                }}
-              >
-                {name}
-              </Badge>
-             );
-          })}
-        </span>
-      </HoverCardTrigger>
-      <HoverCardContent className="w-80 p-0 overflow-hidden border-border" side="top">
+    <div className="w-80 p-0 overflow-hidden border-border">
          {/* Banner Area */}
          <div className="h-24 w-full bg-muted relative">
             {bannerUrl ? (
@@ -68,7 +44,7 @@ const UserDisplay = ({ profile, clan, showTitles = false }: UserDisplayProps) =>
             <div className="flex justify-between items-end -mt-10 mb-3">
                <FramedAvatar
                   avatarUrl={avatarUrl}
-                  frameUrl={(profile as any).equipped_frame_url}
+                  frameUrl={(displayProfile as any).equipped_frame_url}
                   username={username}
                   sizeClassName="h-20 w-20"
                 />
@@ -80,17 +56,20 @@ const UserDisplay = ({ profile, clan, showTitles = false }: UserDisplayProps) =>
                    {username}
                    {clanTag && <span className="text-sm text-muted-foreground font-semibold">[{clanTag}]</span>}
                    {equippedTitles.length > 0 && (() => {
+                      // Handle both string[] (legacy/partial) and object[] (JSONB)
                       const firstTitle = equippedTitles[0];
                       const name = typeof firstTitle === 'string' ? firstTitle : firstTitle.name;
-                      const color = typeof firstTitle === 'string' ? undefined : firstTitle.color;
+                      const color = typeof firstTitle === 'string' ? undefined : firstTitle.color; // border color alias or explicit
+                      const borderColor = typeof firstTitle === 'string' ? undefined : (firstTitle.border_color || firstTitle.color);
                       const textColor = typeof firstTitle === 'string' ? undefined : firstTitle.text_color;
                       const bgColor = typeof firstTitle === 'string' ? undefined : firstTitle.background_color;
+                      
                       return (
                          <Badge 
                            variant="secondary" 
                            className="rounded-md px-2 py-0.5 text-xs font-normal border-2"
                            style={{ 
-                             borderColor: color || 'transparent',
+                             borderColor: borderColor || 'transparent',
                              color: textColor || undefined,
                              backgroundColor: bgColor || undefined
                            }}
@@ -111,6 +90,49 @@ const UserDisplay = ({ profile, clan, showTitles = false }: UserDisplayProps) =>
                </div>
             </div>
          </div>
+    </div>
+  );
+};
+
+const UserDisplay = ({ profile, clan, showTitles = false }: UserDisplayProps) => {
+  if (!profile) {
+    return null;
+  }
+
+  const clanTag = clan?.tag;
+  const username = profile.username || "Usuário desconhecido";
+  const equippedTitles = profile.equipped_titles || [];
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger asChild>
+        <span className="cursor-pointer hover:underline inline-flex items-center gap-2 flex-wrap">
+          {clanTag && <span className="font-bold text-primary">[{clanTag}]</span>}
+          <span>{username}</span>
+          {showTitles && equippedTitles.slice(0, 3).map((title, index) => {
+             const name = typeof title === 'string' ? title : title.name;
+             const borderColor = typeof title === 'string' ? undefined : (title.border_color || title.color);
+             const textColor = typeof title === 'string' ? undefined : title.text_color;
+             const bgColor = typeof title === 'string' ? undefined : title.background_color;
+             return (
+              <Badge 
+                key={index} 
+                variant="secondary" 
+                className="rounded-md px-2 py-0.5 text-xs font-normal border-2"
+                style={{ 
+                  borderColor: borderColor || 'transparent',
+                  color: textColor || undefined,
+                  backgroundColor: bgColor || undefined
+                }}
+              >
+                {name}
+              </Badge>
+             );
+          })}
+        </span>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-80 p-0 overflow-hidden border-border" side="top">
+         <UserCardDetails initialProfile={profile} clan={clan} />
       </HoverCardContent>
     </HoverCard>
   );
