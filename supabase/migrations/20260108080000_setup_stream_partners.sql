@@ -38,6 +38,7 @@ USING (true);
 dione - 'youtube','UCrkky2BRRbrNZblNiiTHuNw','DioneMasterYGO', 70
 elclys - 'twitch','erys_aguiar', 'Erys Aguiar', 100
 ynui - 'twitch','ksnynui', 'ksnynui', 50
+teste
 
 
 
