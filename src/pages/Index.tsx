@@ -6,6 +6,7 @@ import { User } from "@supabase/supabase-js";
 // Import components
 import { HeroSection } from "@/components/Hero"; // Re-import HeroSection
 import { TournamentHero } from "@/components/TournamentHero";
+import { BroadcastBar } from "@/components/BroadcastBar";
 import { FeaturedDecks } from "@/components/FeaturedDecks";
 import { NewsSection } from "@/components/NewsSection";
 import { RankingsWidget } from "@/components/RankingsWidget";
@@ -34,7 +35,10 @@ const Index = ({ user, onLogout }: IndexProps) => {
 
           {/* MAIN COLUMN (Left - 70% approx) */}
           <div className="lg:col-span-7 space-y-8">
-            {/* A. Banner de Destaque (Tournament Carousel) */}
+            {/* A. Barra de Transmissão (Ao Vivo) */}
+            <BroadcastBar />
+
+            {/* B. Banner de Destaque (Tournament Carousel) */}
             <TournamentHero />
 
             {/* B. Seção de Notícias */}
