@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { ClanForm, ClanFormValues } from "@/components/forms/ClanForm";
+import { InviteMemberForm } from "@/components/forms/InviteMemberForm";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -248,6 +249,16 @@ const ClanManagementPage = ({ user, onLogout }: ClanManagementPageProps) => {
                   Salvar Alterações
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mb-8">
+            <CardHeader><CardTitle>Convidar Membros</CardTitle></CardHeader>
+            <CardContent>
+              <InviteMemberForm 
+                clanId={clanId} 
+                existingMemberIds={uniqueMembers?.map(m => m.profiles!.id) || []} 
+              />
             </CardContent>
           </Card>
 
