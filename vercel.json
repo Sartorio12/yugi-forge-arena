@@ -13,10 +13,6 @@
     {
       "path": "/api/daily-maintenance",
       "schedule": "0 1 * * *"
-    },
-    {
-      "path": "/api/check-live-streams",
-      "schedule": "*/10 * * * *"
     }
   ]
 }
