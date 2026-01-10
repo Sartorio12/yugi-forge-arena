@@ -73,6 +73,7 @@ const BroadcastDashboard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-broadcast"] });
+      queryClient.invalidateQueries({ queryKey: ["active-broadcast"] });
       toast({ title: "Sucesso", description: "Status da transmissão atualizado." });
     },
     onError: (err) => {
@@ -92,6 +93,27 @@ const BroadcastDashboard = () => {
 
   const stopBroadcast = () => {
     updateBroadcastMutation.mutate({ is_active: false });
+  };
+
+  const handleChannelInputChange = (value: string) => {
+    let finalValue = value.trim();
+    
+    // Auto-extract from URL if it's a link
+    if (finalValue.includes("youtube.com") || finalValue.includes("youtu.be")) {
+      const ytMatch = finalValue.match(/(?:v=|list=|embed\/|watch\?v=|&v=|youtu\.be\/|channel\/|c\/|u\/\w\/|user\/|@)([^#\&\?]*).*/);
+      if (ytMatch && ytMatch[1]) {
+        finalValue = ytMatch[1];
+        if (customPlatform !== 'youtube') setCustomPlatform('youtube');
+      }
+    } else if (finalValue.includes("twitch.tv")) {
+      const twitchMatch = finalValue.match(/twitch\.tv\/([a-z0-9_]+)/i);
+      if (twitchMatch && twitchMatch[1]) {
+        finalValue = twitchMatch[1];
+        if (customPlatform !== 'twitch') setCustomPlatform('twitch');
+      }
+    }
+    
+    setCustomChannel(finalValue);
   };
 
   if (isLoadingBroadcast || isLoadingPartners) {
@@ -188,10 +210,10 @@ const BroadcastDashboard = () => {
               <Input 
                 placeholder={customPlatform === 'twitch' ? "Ex: ksnynui" : "Ex: video_id_here"} 
                 value={customChannel}
-                onChange={(e) => setCustomChannel(e.target.value)}
+                onChange={(e) => handleChannelInputChange(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                {customPlatform === 'twitch' ? "Nome de usuário do canal." : "ID do vídeo (não o canal) para embed."}
+                {customPlatform === 'twitch' ? "Nome de usuário do canal ou URL." : "ID do vídeo, ID do canal (UC...) ou URL."}
               </p>
             </div>
 

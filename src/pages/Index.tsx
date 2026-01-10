@@ -25,8 +25,10 @@ const Index = ({ user, onLogout }: IndexProps) => {
       <Navbar user={user} onLogout={onLogout} />
       
       {/* 1. HERO SECTION (Restored to top) */}
-      <div className="container mx-auto max-w-7xl px-4 pt-6 pb-2">
+      <div className="container mx-auto max-w-7xl px-4 pt-6 pb-2 space-y-6">
         <HeroSection />
+        {/* A. Barra de Transmissão (Ao Vivo) - Movida para cá para ocupar largura total */}
+        <BroadcastBar />
       </div>
 
       {/* Main Grid Container */}
@@ -35,9 +37,6 @@ const Index = ({ user, onLogout }: IndexProps) => {
 
           {/* MAIN COLUMN (Left - 70% approx) */}
           <div className="lg:col-span-7 space-y-8">
-            {/* A. Barra de Transmissão (Ao Vivo) */}
-            <BroadcastBar />
-
             {/* B. Banner de Destaque (Tournament Carousel) */}
             <TournamentHero />
 

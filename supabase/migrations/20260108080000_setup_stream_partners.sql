@@ -35,10 +35,15 @@ USING (true);
 -- INSERT INTO public.stream_partners (platform, channel_id, display_name, priority)
 -- VALUES ('youtube', 'UCxxxxxxxxxxxxxxxxxxxx', 'Nome do Parceiro YT', 50);
 
-dione - 'youtube','UCrkky2BRRbrNZblNiiTHuNw','DioneMasterYGO', 70
-elclys - 'twitch','erys_aguiar', 'Erys Aguiar', 100
-ynui - 'twitch','ksnynui', 'ksnynui', 50
-teste
+INSERT INTO public.stream_partners (platform, channel_id, display_name, priority)
+VALUES 
+    ('youtube', 'UCrkky2BRRbrNZblNiiTHuNw', 'DioneMasterYGO', 70),
+    ('twitch', 'erys_aguiar', 'Erys Aguiar', 100),
+    ('twitch', 'ksnynui', 'ksnynui', 50)
+ON CONFLICT (channel_id) DO UPDATE 
+SET display_name = EXCLUDED.display_name,
+    priority = EXCLUDED.priority,
+    platform = EXCLUDED.platform;
 
 
 

@@ -55,7 +55,7 @@ export const BroadcastBar = () => {
             />
           </div>
           {showChat && (
-            <div className="hidden lg:block w-[340px] h-full border-l border-white/10 bg-zinc-900">
+            <div className="hidden lg:block w-[400px] h-full border-l border-white/10 bg-zinc-900">
               <iframe
                 src={`https://www.twitch.tv/embed/${channel_id}/chat?parent=${parentDomain}&darkpopout`}
                 className="w-full h-full"
@@ -67,14 +67,38 @@ export const BroadcastBar = () => {
       );
     }
     if (platform === 'youtube') {
+      if (!channel_id) return null;
+      
+      const isChannelId = channel_id.startsWith("UC") && channel_id.length > 20;
+      const origin = window.location.origin;
+      const domain = window.location.hostname;
+      
+      const src = isChannelId
+        ? `https://www.youtube.com/embed/live_stream?channel=${channel_id}&autoplay=1&origin=${origin}`
+        : `https://www.youtube.com/embed/${channel_id}?autoplay=1&origin=${origin}`;
+
       return (
-        <iframe
-          src={`https://www.youtube.com/embed/${channel_id}?autoplay=1`}
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          title="YouTube Stream"
-        />
+        <div className="flex h-full w-full flex-col lg:flex-row">
+          <div className="flex-1 h-full relative bg-black">
+            <iframe
+              src={src}
+              className="absolute inset-0 w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="YouTube Stream"
+            />
+          </div>
+          {/* Only show chat for specific video IDs, not channel IDs (unless we have a way to get video ID) */}
+          {!isChannelId && showChat && (
+            <div className="hidden lg:block w-[400px] h-full border-l border-white/10 bg-zinc-900">
+              <iframe
+                src={`https://www.youtube.com/live_chat?v=${channel_id}&embed_domain=${domain}`}
+                className="w-full h-full"
+                title="YouTube Chat"
+              />
+            </div>
+          )}
+        </div>
       );
     }
     return null;
@@ -105,17 +129,15 @@ export const BroadcastBar = () => {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-1">
-            {platform === 'twitch' && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10 hidden lg:flex"
-                onClick={() => setShowChat(!showChat)}
-                title={showChat ? "Ocultar Chat" : "Mostrar Chat"}
-              >
-                {showChat ? <MessageSquareOff className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10 hidden lg:flex"
+              onClick={() => setShowChat(!showChat)}
+              title={showChat ? "Ocultar Chat" : "Mostrar Chat"}
+            >
+              {showChat ? <MessageSquareOff className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+            </Button>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -127,8 +149,8 @@ export const BroadcastBar = () => {
           </div>
         </div>
 
-        {/* Player Container */}
-        <div className="w-full aspect-video bg-black">
+        {/* Player Container - Increased height for better fit */}
+        <div className="w-full h-[60vw] md:h-[55vh] bg-black">
           {renderContent()}
         </div>
       </div>
