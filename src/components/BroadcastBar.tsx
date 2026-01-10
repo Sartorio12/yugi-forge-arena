@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { X } from "lucide-react";
+import { X, MessageSquare, MessageSquareOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Broadcast {
@@ -14,6 +14,7 @@ interface Broadcast {
 
 export const BroadcastBar = () => {
   const [isVisible, setIsVisible] = useState(true);
+  const [showChat, setShowChat] = useState(true);
   const [hostname, setHostname] = useState("");
 
   useEffect(() => {
@@ -39,28 +40,37 @@ export const BroadcastBar = () => {
   }
 
   const { platform, channel_id, title } = broadcast;
+  const parentDomain = hostname === 'localhost' ? 'localhost' : hostname;
 
-  const renderEmbed = () => {
+  const renderContent = () => {
     if (platform === 'twitch') {
-      // Twitch requires parent parameter.
-      // If localhost, use 'localhost'.
-      // If ip, use ip.
-      // We pass the current hostname.
-      const parentDomain = hostname === 'localhost' ? 'localhost' : hostname;
       return (
-        <iframe
-          src={`https://player.twitch.tv/?channel=${channel_id}&parent=${parentDomain}&muted=false`}
-          className="w-full h-full aspect-video"
-          allowFullScreen
-          title="Twitch Stream"
-        />
+        <div className="flex h-full w-full flex-col lg:flex-row">
+          <div className="flex-1 h-full relative bg-black">
+            <iframe
+              src={`https://player.twitch.tv/?channel=${channel_id}&parent=${parentDomain}&muted=false`}
+              className="absolute inset-0 w-full h-full"
+              allowFullScreen
+              title="Twitch Stream"
+            />
+          </div>
+          {showChat && (
+            <div className="hidden lg:block w-[340px] h-full border-l border-white/10 bg-zinc-900">
+              <iframe
+                src={`https://www.twitch.tv/embed/${channel_id}/chat?parent=${parentDomain}&darkpopout`}
+                className="w-full h-full"
+                title="Twitch Chat"
+              />
+            </div>
+          )}
+        </div>
       );
     }
     if (platform === 'youtube') {
       return (
         <iframe
           src={`https://www.youtube.com/embed/${channel_id}?autoplay=1`}
-          className="w-full h-full aspect-video"
+          className="w-full h-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
           title="YouTube Stream"
@@ -87,26 +97,39 @@ export const BroadcastBar = () => {
           </div>
 
           {/* Center/Right: Title */}
-          <div className="flex-1 text-center md:text-left md:pl-4 truncate">
+          <div className="flex-1 text-center md:text-left md:pl-4 truncate px-2">
             <span className="text-white font-medium text-sm md:text-base">
               {title || "Transmissão Especial"}
             </span>
           </div>
 
-          {/* Right: Close Button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10"
-            onClick={() => setIsVisible(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          {/* Right: Actions */}
+          <div className="flex items-center gap-1">
+            {platform === 'twitch' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10 hidden lg:flex"
+                onClick={() => setShowChat(!showChat)}
+                title={showChat ? "Ocultar Chat" : "Mostrar Chat"}
+              >
+                {showChat ? <MessageSquareOff className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10"
+              onClick={() => setIsVisible(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Player Container */}
         <div className="w-full aspect-video bg-black">
-          {renderEmbed()}
+          {renderContent()}
         </div>
       </div>
     </div>
