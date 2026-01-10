@@ -141,12 +141,11 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
         <div className="container mx-auto px-4">
           <div className="relative pt-8 mb-8">
             <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-              <Avatar className="w-32 h-32 rounded-lg border-4 border-background">
-                <AvatarImage src={clan.icon_url || undefined} alt={clan.name} />
-                <AvatarFallback className="text-4xl">
-                  {clan.tag.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
+              <FramedAvatar
+                avatarUrl={clan.icon_url}
+                username={clan.name}
+                sizeClassName="w-32 h-32"
+              />
               <div className="flex-1 md:pt-12 text-center md:text-left">
                 <h1 className="text-4xl font-bold flex items-center gap-3 justify-center md:justify-start">
                   {clan.name} <span className="text-2xl text-muted-foreground">[{clan.tag}]</span>

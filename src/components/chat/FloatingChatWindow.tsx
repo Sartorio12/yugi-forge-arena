@@ -1,7 +1,7 @@
 import { useChat } from './ChatProvider';
 import { ChatWindow } from './ChatWindow';
 import { useProfile } from '@/hooks/useProfile';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { FramedAvatar } from '../FramedAvatar';
 import { Button } from '@/components/ui/button';
 import { X, Minus } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
@@ -24,10 +24,13 @@ export const FloatingChatWindow = ({ currentUser, otherUserId, isMinimized, posi
     >
       <div className="flex items-center gap-2 truncate">
         <div className="relative flex-shrink-0">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={otherUser?.avatar_url} />
-            <AvatarFallback>{otherUser?.username?.charAt(0)}</AvatarFallback>
-          </Avatar>
+          <FramedAvatar
+            userId={otherUserId}
+            avatarUrl={otherUser?.avatar_url}
+            frameUrl={otherUser?.equipped_frame_url}
+            username={otherUser?.username}
+            sizeClassName="h-8 w-8"
+          />
           {otherUser?.is_online && (
             <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card" />
           )}

@@ -7,7 +7,7 @@ import TrophyShelf from "@/components/TrophyShelf"; // Import TrophyShelf
 import BannerUploadForm from "@/components/forms/BannerUploadForm"; // Import BannerUploadForm
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
-import { Loader2, User as UserIcon, Pencil, Plus, MessageSquare, Trash2 } from "lucide-react";
+import { Loader2, User as UserIcon, Pencil, Plus, MessageSquare, Trash2, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,8 @@ import { useState, useEffect } from "react";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import { FrameInventory } from "@/components/FrameInventory";
 import { useChat } from "@/components/chat/ChatProvider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PROFILE_AVATARS } from "@/constants/profileAvatars";
 
 interface Deck {
   id: number;
@@ -75,6 +77,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [selectedPresetAvatar, setSelectedPresetAvatar] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isBannerUploadDialogOpen, setIsBannerUploadDialogOpen] = useState(false);
@@ -194,12 +197,17 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
     setIsUpdating(true);
     try {
       let avatar_url = profile?.avatar_url;
+      
+      // Handle File Upload for Avatar
       if (avatarFile) {
         const filePath = `public/${user.id}/avatar.jpg`;
         const { error: uploadError } = await supabase.storage.from("profiles").upload(filePath, avatarFile, { upsert: true });
         if (uploadError) throw uploadError;
         const { data: urlData } = supabase.storage.from("profiles").getPublicUrl(filePath);
         avatar_url = `${urlData.publicUrl}?t=${new Date().getTime()}`;
+      } else if (selectedPresetAvatar) {
+        // Handle Preset Avatar Selection
+        avatar_url = selectedPresetAvatar;
       }
 
       let banner_url = profile?.banner_url;
@@ -219,12 +227,19 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
       // queryClient.invalidateQueries({ queryKey: ["profile", id] });
       setOpen(false);
       setAvatarFile(null);
+      setSelectedPresetAvatar(null); // Reset selection
       setBannerFile(null);
     } catch (error: Error) {
       toast({ title: "Erro", description: error.message || "Falha ao atualizar o perfil.", variant: "destructive" });
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handlePresetAvatarSelect = (filename: string) => {
+    const fullPath = `/profilepic/${filename}`;
+    setSelectedPresetAvatar(fullPath);
+    setAvatarFile(null); // Clear file upload if preset is selected
   };
 
   const isLoading = profileLoading || decksLoading || clanLoading || bannersLoading;
@@ -307,24 +322,57 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                                     <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} />
                                                   </div>
                                                   <div className="space-y-2">
-                                                    <Label htmlFor="avatar">Avatar (Max 10MB)</Label>
-                                                    <Input id="avatar" type="file" accept="image/*" onChange={(e) => {
-                                                      const file = e.target.files?.[0];
-                                                      if (!file) {
-                                                        setAvatarFile(null);
-                                                        return;
-                                                      }
-                                                      if (file.size > 10 * 1024 * 1024) { // 10MB
-                                                        toast({
-                                                          title: "Arquivo muito grande",
-                                                          description: "O avatar não pode exceder 10MB.",
-                                                          variant: "destructive",
-                                                        });
-                                                        e.target.value = "";
-                                                        return;
-                                                      }
-                                                      setAvatarFile(file);
-                                                    }} />
+                                                    <Label htmlFor="avatar">Avatar</Label>
+                                                    <Tabs defaultValue="upload" className="w-full">
+                                                      <TabsList className="grid w-full grid-cols-2">
+                                                        <TabsTrigger value="upload">Upload</TabsTrigger>
+                                                        <TabsTrigger value="gallery">Galeria</TabsTrigger>
+                                                      </TabsList>
+                                                      <TabsContent value="upload" className="space-y-2">
+                                                        <Input id="avatar" type="file" accept="image/*" onChange={(e) => {
+                                                          const file = e.target.files?.[0];
+                                                          if (!file) {
+                                                            setAvatarFile(null);
+                                                            return;
+                                                          }
+                                                          if (file.size > 10 * 1024 * 1024) { // 10MB
+                                                            toast({
+                                                              title: "Arquivo muito grande",
+                                                              description: "O avatar não pode exceder 10MB.",
+                                                              variant: "destructive",
+                                                            });
+                                                            e.target.value = "";
+                                                            return;
+                                                          }
+                                                          setAvatarFile(file);
+                                                          setSelectedPresetAvatar(null); // Clear preset if file is uploaded
+                                                        }} />
+                                                        <p className="text-xs text-muted-foreground">Selecione uma imagem do seu dispositivo (Max 10MB).</p>
+                                                      </TabsContent>
+                                                      <TabsContent value="gallery">
+                                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 h-64 overflow-y-auto p-2 border rounded-md bg-black/20">
+                                                          {PROFILE_AVATARS.map((avatar, index) => (
+                                                            <div 
+                                                              key={index} 
+                                                              className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all relative w-full pt-[100%] ${selectedPresetAvatar === `/profilepic/${avatar}` ? 'border-primary ring-2 ring-primary ring-opacity-50 scale-95' : 'border-border hover:border-primary/50'}`}
+                                                              onClick={() => handlePresetAvatarSelect(avatar)}
+                                                            >
+                                                              <img 
+                                                                src={`/profilepic/${avatar}`} 
+                                                                alt={`Avatar ${index}`} 
+                                                                className="absolute top-0 left-0 w-full h-full object-cover"
+                                                                loading="lazy"
+                                                              />
+                                                            </div>
+                                                          ))}
+                                                        </div>
+                                                        {selectedPresetAvatar && (
+                                                          <p className="text-xs text-primary mt-2 flex items-center gap-1">
+                                                            <Image className="h-3 w-3" /> Imagem da galeria selecionada
+                                                          </p>
+                                                        )}
+                                                      </TabsContent>
+                                                    </Tabs>
                                                   </div>
                                                   <div className="space-y-2">
                                                     <div className="flex justify-between items-center mb-2">
@@ -506,6 +554,3 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
 };
 
 export default Profile;
-
-
-

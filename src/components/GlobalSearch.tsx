@@ -13,7 +13,8 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import UserDisplay from "@/components/UserDisplay";
+import { FramedAvatar } from "./FramedAvatar";
+import UserDisplay from "./UserDisplay";
 
 interface SearchResult {
   id: string;
@@ -94,12 +95,12 @@ export const GlobalSearch = () => {
                     onSelect={() => handleSelect(result)}
                     className="flex items-center gap-3 cursor-pointer"
                   >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={result.avatar_url} alt={result.name} />
-                      <AvatarFallback>
-                        {result.type === 'user' ? <UserIcon className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
-                      </AvatarFallback>
-                    </Avatar>
+                    <FramedAvatar
+                      userId={result.type === 'user' ? result.id : undefined}
+                      avatarUrl={result.avatar_url}
+                      username={result.name}
+                      sizeClassName="h-8 w-8"
+                    />
                     <UserDisplay profile={{ ...result, username: result.name }} clan={result.tag ? { tag: result.tag } : null} />
                   </CommandItem>
                 ))}

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FramedAvatar } from "./FramedAvatar";
 import { Loader2, ArrowRight } from "lucide-react";
 import { useMemo } from "react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -221,10 +221,12 @@ export const FeaturedDeckDisplay = ({
                         </h3>
                         {player && (
                             <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                                <Avatar className="h-5 w-5">
-                                    <AvatarImage src={player.avatar_url || undefined} />
-                                    <AvatarFallback>{player.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                </Avatar>
+                                <FramedAvatar
+                                    userId={player.id}
+                                    avatarUrl={player.avatar_url}
+                                    username={player.username}
+                                    sizeClassName="h-5 w-5"
+                                />
                                 <span>{player.username}</span>
                             </div>
                         )}

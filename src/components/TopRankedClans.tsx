@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FramedAvatar } from "./FramedAvatar";
 
 interface ClanRanking {
   clan_id: number;
@@ -72,10 +72,11 @@ export const TopRankedClans = () => {
                       </TableCell>
                       <TableCell className="py-1 px-1">
                         <Link to={`/clans/${clan.clan_id}`} className="flex items-center justify-center gap-2 hover:text-primary transition-colors">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={clan.clan_image_url} alt={clan.clan_name} />
-                            <AvatarFallback>{clan.clan_tag}</AvatarFallback>
-                          </Avatar>
+                          <FramedAvatar
+                            avatarUrl={clan.clan_image_url}
+                            username={clan.clan_name}
+                            sizeClassName="h-8 w-8"
+                          />
                           <span className="font-medium text-xs">
                             [{clan.clan_tag}] {clan.clan_name}
                           </span>

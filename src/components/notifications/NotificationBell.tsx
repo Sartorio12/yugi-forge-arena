@@ -12,7 +12,7 @@ import {
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { FramedAvatar } from '../FramedAvatar';
 
 interface NotificationBellProps {
     user: User;
@@ -151,10 +151,11 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
                                     <Link key={n.id} to={correctedLink || '#'} className={`block p-3 rounded-md hover:bg-muted ${!n.is_read ? 'bg-blue-950/50' : ''}`}>
                                         <div className="flex items-start gap-3">
                                             {!isClanNotification && n.data.actor_username && (
-                                                <Avatar className="h-8 w-8 border-2 border-transparent group-hover:border-primary transition-colors">
-                                                    <AvatarImage src={n.data.actor_avatar_url} />
-                                                    <AvatarFallback>{n.data.actor_username?.substring(0, 1).toUpperCase()}</AvatarFallback>
-                                                </Avatar>
+                                                <FramedAvatar
+                                                    avatarUrl={n.data.actor_avatar_url}
+                                                    username={n.data.actor_username}
+                                                    sizeClassName="h-8 w-8"
+                                                />
                                             )}
                                             <div className="flex-1">
                                                 <p className="text-sm text-foreground/90">

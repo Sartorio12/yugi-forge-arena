@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DOMPurify from 'dompurify';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FramedAvatar } from "@/components/FramedAvatar";
 import { format } from "date-fns";
 import Navbar from "@/components/Navbar";
 import { User } from "@supabase/supabase-js";
@@ -99,7 +99,13 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
             <div className="flex items-center space-x-2 text-secondary-foreground">
               {post.profiles && (
                 <>
-                  <Avatar className="h-8 w-8"><AvatarImage src={post.profiles.avatar_url || undefined} /><AvatarFallback>{post.profiles.username?.substring(0, 2)}</AvatarFallback></Avatar>
+                  <FramedAvatar
+                    userId={post.profiles.id}
+                    avatarUrl={post.profiles.avatar_url}
+                    frameUrl={post.profiles.equipped_frame_url}
+                    username={post.profiles.username}
+                    sizeClassName="h-8 w-8"
+                  />
                   <span>
                     <UserDisplay profile={post.profiles} clan={authorClan} />
                   </span>
