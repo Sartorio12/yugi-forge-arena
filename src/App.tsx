@@ -24,6 +24,7 @@ import NewsPostPage from "./pages/NewsPostPage";
 import NewsListPage from "./pages/NewsListPage";
 import NewsEditorFormPage from "./pages/admin/NewsEditorFormPage";
 import TitleDistributionPage from "./pages/admin/TitleDistributionPage";
+import BroadcastDashboard from "./pages/admin/BroadcastDashboard";
 import { RequestPasswordResetPage } from './pages/RequestPasswordResetPage';
 import { UpdatePasswordPage } from './pages/UpdatePasswordPage';
 import CreateClanPage from "./pages/CreateClanPage";
@@ -180,6 +181,10 @@ const App = () => {
                             <Route
                               path="/dashboard/titles"
                               element={<TitleDistributionPage />}
+                            />
+                            <Route
+                              path="/dashboard/broadcasts"
+                              element={<BroadcastDashboard />}
                             />
                           </Route>
           
