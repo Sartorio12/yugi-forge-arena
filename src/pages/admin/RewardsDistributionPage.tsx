@@ -22,19 +22,38 @@ interface SearchProfile {
 
 // Hardcoded list of frames for now, ideally this would come from a database table or storage list
 const AVAILABLE_FRAMES = [
+  // Admin Frames
   { name: "Link Master Frame", url: "/borders/adm/link_master_frame_round.png" },
+
+  // Random Frames
   { name: "Blue-Eyes White Dragon", url: "/borders/random/blue_eyes_white_dragon_round.png" },
+  { name: "Brain Control", url: "/borders/random/brain_control_round.png" },
+  { name: "Called by the Grave", url: "/borders/random/called_by_the_grave_round.png" },
+  { name: "Celebration of Spring Breeze", url: "/borders/random/celebration_of_spring_breeze_round.png" },
   { name: "Dark Magical Circle", url: "/borders/random/dark_magical_circle_round.png" },
+  { name: "Dark Attribute", url: "/borders/random/dark.png" },
+  { name: "Earth Attribute", url: "/borders/random/earth.png" },
+  { name: "Evil Eye of Selene", url: "/borders/random/evil_eye_of_selene_round.png" },
+  { name: "Festive Ornament", url: "/borders/random/festive_ornament.png" },
+  { name: "Fire Attribute", url: "/borders/random/fire.png" },
+  { name: "Flock Together", url: "/borders/random/flock_together_round.png" },
+  { name: "Flurry of Cherry Blossoms", url: "/borders/random/flurry_of_cherry_blossoms_round.png" },
+  { name: "Frost Frame", url: "/borders/random/frost_frame_round.png" },
+  { name: "Leodrake's Mane", url: "/borders/random/leodrakes_mane_round.png" },
+  { name: "Light Attribute", url: "/borders/random/light.png" },
+  { name: "Magic Cylinder", url: "/borders/random/magic_cylinder_round.png" },
+  { name: "Maple Maiden", url: "/borders/random/maple_maiden_round.png" },
+  { name: "Neon Sign", url: "/borders/random/neon_sign_round.png" },
+  { name: "Night Festival in Costume", url: "/borders/random/night_festival_in_costume_round.png" },
+  { name: "Polymerization", url: "/borders/random/polymerization_round.png" },
+  { name: "Rikka", url: "/borders/random/rikka.png" },
   { name: "Sky Striker Ace Raye", url: "/borders/random/sky_striker_ace_raye_round.png" },
+  { name: "The Legend of Duelist Quarter Century", url: "/borders/random/the_legend_of_duelist_quarter_century_frame.png" },
+  { name: "Tropical Seaside", url: "/borders/random/tropical_seaside_round.png" },
+  { name: "Water Attribute", url: "/borders/random/water.png" },
   { name: "WCS 2023", url: "/borders/random/wcs_2023_party_favor.png" },
   { name: "WCS 2024", url: "/borders/random/wcs_2024_party_favor.png" },
-  { name: "Dark", url: "/borders/random/dark.png" },
-  { name: "Light", url: "/borders/random/light.png" },
-  { name: "Earth", url: "/borders/random/earth.png" },
-  { name: "Water", url: "/borders/random/water.png" },
-  { name: "Fire", url: "/borders/random/fire.png" },
-  { name: "Wind", url: "/borders/random/wind.png" },
-  // Add more as needed
+  { name: "Wind Attribute", url: "/borders/random/wind.png" },
 ];
 
 const RewardsDistributionPage = () => {
