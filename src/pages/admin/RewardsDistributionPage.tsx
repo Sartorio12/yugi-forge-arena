@@ -209,7 +209,6 @@ const RewardsDistributionPage = () => {
                     >
                       <Checkbox
                         checked={selectedUsers.includes(profile.id)}
-                        onCheckedChange={() => handleToggleUser(profile.id)}
                       />
                       <FramedAvatar
                         avatarUrl={profile.avatar_url}
@@ -360,7 +359,17 @@ const RewardsDistributionPage = () => {
                         <SelectContent>
                           {AVAILABLE_FRAMES.map((frame) => (
                             <SelectItem key={frame.url} value={frame.url}>
-                              {frame.name}
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-8 h-8 flex-shrink-0">
+                                  <img 
+                                    src={frame.url} 
+                                    alt="" 
+                                    className="absolute inset-0 w-full h-full object-contain z-10"
+                                  />
+                                  <div className="absolute inset-1 bg-muted rounded-full" />
+                                </div>
+                                <span>{frame.name}</span>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
