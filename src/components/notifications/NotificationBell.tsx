@@ -114,6 +114,8 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
                 return <>{actor} curtiu seu comentário.</>;
             case 'new_clan_member':
                 return <>Um novo membro, <strong>{data.new_member_username}</strong>, entrou no seu clã: <em>{data.clan_name}</em></>;
+            case 'clan_invitation':
+                return <>{actor} te convidou para o clã <strong>{data.clan_name}</strong>.</>;
             default:
                 return 'Nova notificação';
         }

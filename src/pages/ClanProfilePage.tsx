@@ -3,14 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import Navbar from "@/components/Navbar";
-import { Loader2, User as UserIcon, ShieldCheck, Shield, Settings, Send } from "lucide-react";
+import { Loader2, User as UserIcon, ShieldCheck, Shield, Settings, Send, Check, X, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import UserDisplay from "@/components/UserDisplay";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ClanProfilePageProps {
   user: User | null;
@@ -23,6 +24,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isApplying, setIsApplying] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
 
   // Fetch clan details
   const { data: clan, isLoading: isLoadingClan } = useQuery({
@@ -70,7 +72,29 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
     enabled: !!user && !!clanId,
   });
 
-  const isLoading = isLoadingClan || isLoadingMembers || isLoadingApplication;
+  // Fetch pending invitation for the user
+  const { data: invitation, isLoading: isLoadingInvitation } = useQuery({
+    queryKey: ["clanInvitation", clanId, user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from("clan_invitations")
+        .select("*")
+        .eq("clan_id", clanId)
+        .eq("invitee_id", user.id)
+        .eq("status", "PENDING")
+        .maybeSingle();
+
+      if (error) {
+         console.error("Error fetching invitation", error);
+         return null;
+      }
+      return data;
+    },
+    enabled: !!user && !!clanId,
+  });
+
+  const isLoading = isLoadingClan || isLoadingMembers || isLoadingApplication || isLoadingInvitation;
 
   if (isLoading) {
     return (
@@ -105,6 +129,38 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
       });
     } finally {
       setIsApplying(false);
+    }
+  };
+
+  const handleRespondToInvitation = async (response: 'ACCEPTED' | 'REJECTED') => {
+    if (!invitation) return;
+    setIsResponding(true);
+    try {
+      const { error } = await supabase.rpc('respond_to_clan_invitation', {
+        p_invitation_id: invitation.id,
+        p_response: response
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: response === 'ACCEPTED' ? "Convite aceito!" : "Convite recusado.",
+        description: response === 'ACCEPTED' ? `Bem-vindo ao clã ${clan.name}!` : "Você recusou o convite.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["clanInvitation", clanId, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["clanMembers", clanId] });
+      // Refresh clan data as member count changes
+      queryClient.invalidateQueries({ queryKey: ["clan", clanId] });
+
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível responder ao convite.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResponding(false);
     }
   };
 
@@ -161,7 +217,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                     </Link>
                   </Button>
                 )}
-                {!isMember && user && (
+                {!isMember && user && !invitation && (
                   <>
                     {hasPendingApplication ? (
                       <Button variant="outline" disabled>
@@ -178,6 +234,26 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
               </div>
             </div>
           </div>
+
+          {invitation && (
+            <Alert className="mb-8 border-primary bg-primary/10">
+              <Mail className="h-4 w-4" />
+              <AlertTitle>Convite Pendente</AlertTitle>
+              <AlertDescription className="flex items-center justify-between mt-2">
+                <span>Você foi convidado para participar deste clã.</span>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => handleRespondToInvitation('ACCEPTED')} disabled={isResponding}>
+                    {isResponding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+                    Aceitar
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleRespondToInvitation('REJECTED')} disabled={isResponding}>
+                    {isResponding ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4 mr-2" />}
+                    Recusar
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
