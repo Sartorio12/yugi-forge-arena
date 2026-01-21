@@ -41,6 +41,7 @@ const tournamentFormSchema = z.object({
   event_date: z.date({
     required_error: "A data do evento é obrigatória.",
   }),
+  type: z.enum(["standard", "liga"], { required_error: "O tipo de torneio é obrigatório." }).default("standard"),
   status: z.enum(["Aberto", "Fechado", "Em Andamento"], { required_error: "O status é obrigatório." }),
   registration_link: z.string().url({ message: "URL de inscrição inválida." }).optional().or(z.literal("")),
   is_decklist_required: z.boolean().default(true),
@@ -80,6 +81,7 @@ export const TournamentForm = ({
       banner_image_url: initialData?.banner_image_url || "",
       description: initialData?.description || "",
       event_date: initialData?.event_date ? new Date(initialData.event_date) : undefined,
+      type: (initialData as any)?.type || "standard",
       status: initialData?.status || "Aberto",
       registration_link: initialData?.registration_link || "",
       is_decklist_required: initialData?.is_decklist_required ?? true,
@@ -163,7 +165,7 @@ export const TournamentForm = ({
       event_date: values.event_date.toISOString(),
       max_participants: values.max_participants || null,
       num_decks_allowed: values.num_decks_allowed,
-    };
+    } as any;
     onSubmit(dataToSubmit);
   };
 
@@ -347,6 +349,27 @@ export const TournamentForm = ({
                   </div>
                 </PopoverContent>
               </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de Torneio</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="standard">Padrão</SelectItem>
+                  <SelectItem value="liga">Liga (Seleção de Times)</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

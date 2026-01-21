@@ -34,6 +34,7 @@ import {
 import { Profile } from "@/hooks/useProfile";
 import { supabase } from '../../integrations/supabase/client';
 import { useEffect } from "react";
+import { getTeamLogoUrl } from "@/constants/teams";
 
 // Updated to match the RPC return type
 interface ParticipantDeck {
@@ -47,6 +48,7 @@ interface Participant {
   id: number;
   user_id: string;
   total_wins_in_tournament: number;
+  team_selection?: string; // Add optional team_selection
   profiles: {
     id: string;
     username: string;
@@ -111,6 +113,7 @@ const TournamentManagementPage = () => {
           id,
           user_id,
           total_wins_in_tournament,
+          team_selection,
           profiles (
             id,
             username,
@@ -276,10 +279,18 @@ const TournamentManagementPage = () => {
                               username={p.profiles?.username}
                               sizeClassName="h-10 w-10"
                             />
-                            <span className="font-medium">
+                            <span className="font-medium flex items-center gap-2">
                               <Link to={`/profile/${p.profiles?.id}`}>
                                 <UserDisplay profile={p.profiles || {}} clan={p.profiles?.clan_members?.clans} />
                               </Link>
+                              {p.team_selection && (
+                                <img
+                                  src={getTeamLogoUrl(p.team_selection)}
+                                  alt={p.team_selection}
+                                  title={`Time: ${p.team_selection}`}
+                                  className="w-6 h-6 object-contain"
+                                />
+                              )}
                             </span>
                           </div>
                         </TableCell>

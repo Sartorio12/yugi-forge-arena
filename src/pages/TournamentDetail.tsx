@@ -14,6 +14,14 @@ import { toast } from "@/components/ui/use-toast";
 import { ManageDecklist } from "@/components/ManageDecklist";
 import { ManageMultipleDecklists } from "@/components/ManageMultipleDecklists";
 import { FramedAvatar } from "@/components/FramedAvatar";
+import { FOOTBALL_TEAMS, getTeamLogoUrl } from "@/constants/teams";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TournamentDetailProps {
   user: User | null;
@@ -25,6 +33,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isRegistered, setIsRegistered] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<string>("");
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
@@ -47,7 +56,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournament_participants")
-        .select("user_id")
+        .select("user_id, team_selection")
         .eq("tournament_id", Number(id));
       if (error) throw error;
       return data;
@@ -68,10 +77,16 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
     mutationFn: async () => {
       if (!user) throw new Error("Usuário não autenticado.");
       if (!id) throw new Error("ID do torneio não encontrado.");
+      
+      const tournamentType = (tournament as any)?.type || 'standard';
+      if (tournamentType === 'liga' && !selectedTeam) {
+        throw new Error("Você deve escolher um time para participar da Liga.");
+      }
 
       const { error } = await supabase.from("tournament_participants").insert({
         user_id: user.id,
         tournament_id: Number(id),
+        team_selection: tournamentType === 'liga' ? selectedTeam : null
       });
 
       if (error) {
@@ -106,10 +121,23 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
       });
       return;
     }
+    const tournamentType = (tournament as any)?.type || 'standard';
+    if (tournamentType === 'liga' && !selectedTeam) {
+      toast({
+        title: "Seleção de Time Necessária",
+        description: "Por favor, escolha um time disponível para participar.",
+        variant: "destructive",
+      });
+      return;
+    }
     registrationMutation.mutate();
   };
 
   const isLoading = isLoadingTournament || isLoadingParticipants;
+  
+  const tournamentType = (tournament as any)?.type || 'standard';
+  const takenTeams = new Set(participants?.map(p => p.team_selection).filter(Boolean));
+  const availableTeams = FOOTBALL_TEAMS.filter(team => !takenTeams.has(team));
 
   return (
     <div className="min-h-screen bg-background">
@@ -221,6 +249,52 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                     />
                   )}
                 </>
+              )}
+
+              {/* Team Selection for Liga Mode */}
+              {tournamentType === 'liga' && (
+                <div className="mb-6">
+                   <h3 className="text-xl font-bold mb-4">Seleção de Time (Liga)</h3>
+                   {isRegistered ? (
+                     <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/20">
+                        {participants?.find(p => p.user_id === user?.id)?.team_selection ? (
+                          <>
+                             <img 
+                               src={getTeamLogoUrl(participants.find(p => p.user_id === user?.id)?.team_selection as string)} 
+                               alt="Team Logo" 
+                               className="w-16 h-16 object-contain"
+                             />
+                             <div>
+                               <p className="font-semibold text-lg">Você está defendendo:</p>
+                               <p className="text-primary text-xl font-bold">{participants.find(p => p.user_id === user?.id)?.team_selection}</p>
+                             </div>
+                          </>
+                        ) : (
+                          <p>Você está inscrito, mas sem time selecionado.</p>
+                        )}
+                     </div>
+                   ) : (
+                     <div className="space-y-2">
+                       <label className="text-sm font-medium">Escolha seu time para defender:</label>
+                       <Select value={selectedTeam} onValueChange={setSelectedTeam} disabled={registrationMutation.isPending}>
+                        <SelectTrigger className="w-full md:w-[300px]">
+                          <SelectValue placeholder="Selecione um time..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableTeams.map(team => (
+                            <SelectItem key={team} value={team}>
+                              <div className="flex items-center gap-2">
+                                <img src={getTeamLogoUrl(team)} alt={team} className="w-6 h-6 object-contain" />
+                                <span>{team}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                       </Select>
+                       <p className="text-xs text-muted-foreground">Times já selecionados por outros jogadores não aparecem na lista.</p>
+                     </div>
+                   )}
+                </div>
               )}
 
               {/* Action Buttons */}
