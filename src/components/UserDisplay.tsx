@@ -106,9 +106,11 @@ const UserDisplay = ({ profile, clan, showTitles = false }: UserDisplayProps) =>
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <span className="cursor-pointer hover:underline inline-flex items-center gap-2 flex-wrap">
-          {clanTag && <span className="font-bold text-primary">[{clanTag}]</span>}
-          <span>{username}</span>
+        <div className={`cursor-pointer hover:underline inline-flex items-center gap-2 flex-wrap ${showTitles ? 'flex-col md:flex-row' : ''}`}>
+          <div className="flex items-center gap-2">
+            {clanTag && <span className="font-bold text-primary">[{clanTag}]</span>}
+            <span>{username}</span>
+          </div>
           {showTitles && equippedTitles.slice(0, 3).map((title, index) => {
              const name = typeof title === 'string' ? title : title.name;
              const borderColor = typeof title === 'string' ? undefined : (title.border_color || title.color);
@@ -129,7 +131,7 @@ const UserDisplay = ({ profile, clan, showTitles = false }: UserDisplayProps) =>
               </Badge>
              );
           })}
-        </span>
+        </div>
       </HoverCardTrigger>
       <HoverCardContent className="w-80 p-0 overflow-hidden border-border" side="top">
          <UserCardDetails initialProfile={profile} clan={clan} />

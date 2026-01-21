@@ -11,6 +11,88 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 // Use Service Role Key for admin privileges
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+async function syncTierList(supabase) {
+  try {
+    console.log('Starting Tier List Sync...');
+    const response = await fetch('https://www.masterduelmeta.com/tier-list');
+    const text = await response.text();
+
+    const tiers = [
+        { name: 'Tier 1', id: 1 },
+        { name: 'Tier 2', id: 2 },
+        { name: 'Tier 3', id: 3 }
+    ];
+    
+    const tierDecks = [];
+    
+    // Find positions of Tier headers
+    const positions = tiers.map(t => ({ 
+        ...t, 
+        index: text.indexOf(`alt="${t.name}"`) 
+    })).filter(t => t.index !== -1).sort((a,b) => a.index - b.index);
+    
+    let highPotIndex = text.indexOf('High Potential');
+    if (highPotIndex === -1) highPotIndex = text.length;
+
+    for (let i = 0; i < positions.length; i++) {
+        const current = positions[i];
+        const nextIndex = (i < positions.length - 1) ? positions[i+1].index : highPotIndex;
+        
+        const content = text.substring(current.index, nextIndex);
+        
+        // Find links: href="/tier-list/deck-types/..."
+        const deckMatches = [...content.matchAll(/href="\/tier-list\/deck-types\/([^"]*)"/g)];
+        
+        const uniqueDecks = new Set();
+        
+        for (const m of deckMatches) {
+            let deckSlug = m[1];
+            
+            // Look ahead for Power Score (increased range to skip long srcset)
+            // match.index is relative to 'content' string
+            const lookAhead = content.substring(m.index, m.index + 4000);
+            const powerMatch = lookAhead.match(/Power:\s*<b>([\d\.]+)<\/b>/);
+            const powerScore = powerMatch ? parseFloat(powerMatch[1]) : null;
+
+            deckSlug = deckSlug.split('?')[0];
+            const deckName = decodeURIComponent(deckSlug).replace(/-/g, ' '); 
+            
+            if (uniqueDecks.has(deckName)) continue;
+            uniqueDecks.add(deckName);
+
+            // Construct Image URL based on the slug found in href
+            const imageUrl = `https://imgserv.duellinksmeta.com/v2/mdm/deck-type/${deckSlug}?portrait=true&width=140`;
+
+            tierDecks.push({
+                deck_name: deckName,
+                tier: current.id,
+                power_score: powerScore,
+                image_url: imageUrl,
+                last_updated: new Date()
+            });
+        }
+    }
+
+    if (tierDecks.length > 0) {
+        console.log(`Found ${tierDecks.length} tier decks. Updating DB...`);
+        
+        // Clear old list
+        const { error: delError } = await supabase.from('tier_list').delete().neq('id', 0); // Delete all
+        if (delError) console.error('Error clearing tier_list:', delError);
+
+        // Insert new
+        const { error: insError } = await supabase.from('tier_list').insert(tierDecks);
+        if (insError) console.error('Error inserting tier_list:', insError);
+        else console.log('Tier List updated successfully.');
+    } else {
+        console.warn('No tier decks found during scrape.');
+    }
+
+  } catch (e) {
+    console.error('Error in syncTierList:', e);
+  }
+}
+
 export default async function handler(req, res) {
   // Allow GET for testing/cron
   if (req.method !== 'GET') {
@@ -25,7 +107,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Starting Daily Maintenance (Sync All Cards + Banlists)...');
+    console.log('Starting Daily Maintenance (Sync All Cards + Banlists + Tier List)...');
+
+    // Launch Tier List Sync in parallel (fire and forget or await?)
+    // Let's await it to log completion properly
+    await syncTierList(supabaseAdmin);
 
     // --- PARALLEL FETCHING START ---
     console.log('Fetching data sources in parallel...');

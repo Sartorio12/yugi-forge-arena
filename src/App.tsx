@@ -33,6 +33,7 @@ import ClanManagementPage from "./pages/ClanManagementPage";
 import About from "./pages/About"; // Import the About component
 import Contact from "./pages/Contact"; // Import the Contact component
 import MessagesPage from "./pages/MessagesPage"; // Import the new page
+import MetaDeckExamples from "./pages/MetaDeckExamples";
 import { Footer } from "./components/Footer"; // Import the Footer component
 import { ConditionalFooter } from "./components/ConditionalFooter";
 import SearchPage from "./pages/SearchPage";
@@ -42,6 +43,7 @@ import { PresenceProvider } from "./components/PresenceProvider";
 import { ChatProvider } from "./components/chat/ChatProvider";
 import { ChatDock } from "./components/chat/ChatDock";
 import { GlobalChatListener } from "./components/chat/GlobalChatListener";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +93,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
                     <PresenceProvider user={user}>
                       <ChatProvider>
                         <Routes>
@@ -144,6 +147,10 @@ const App = () => {
                           <Route
                             path="/search"
                             element={<SearchPage user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/meta/:deckName"
+                            element={<MetaDeckExamples user={user} onLogout={handleLogout} />}
                           />
                           <Route
                             path="/messages"

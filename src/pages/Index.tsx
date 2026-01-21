@@ -13,6 +13,7 @@ import { RankingsWidget } from "@/components/RankingsWidget";
 import { CardOfTheDay } from "@/components/CardOfTheDay";
 import { DiscordWidget } from "@/components/DiscordWidget";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
+import { TierListWidget } from "@/components/TierListWidget";
 
 interface IndexProps {
   user: User | null;
@@ -39,6 +40,9 @@ const Index = ({ user, onLogout }: IndexProps) => {
           <div className="lg:col-span-7 space-y-8">
             {/* B. Banner de Destaque (Tournament Carousel) */}
             <TournamentHero />
+
+            {/* Meta Tier List */}
+            <TierListWidget />
 
             {/* B. Seção de Notícias */}
             <NewsSection />

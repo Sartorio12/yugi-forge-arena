@@ -194,43 +194,48 @@ export const NewsForm = ({ formId, initialData, onSubmit }: NewsFormProps) => {
                   render={({ field }) => (
                     <FormItem className="flex-grow">
                       <FormLabel>Deck</FormLabel>
-                      {selectedTournamentId && tournamentDecks && tournamentDecks.length > 0 ? (
-                        <Select 
+                      <Select 
                           onValueChange={(val) => {
                              field.onChange(val);
-                             const snapshot = tournamentDecks.find(td => td.deck_id === Number(val))?.deck_snapshot_id;
-                             form.setValue(`featuredDecks.${index}.deck_snapshot_id`, snapshot);
+                             // Se estivermos num torneio, tentar achar o snapshot
+                             if (selectedTournamentId && tournamentDecks) {
+                                 const snapshot = tournamentDecks.find(td => td.deck_id === Number(val))?.deck_snapshot_id;
+                                 form.setValue(`featuredDecks.${index}.deck_snapshot_id`, snapshot);
+                             } else {
+                                 form.setValue(`featuredDecks.${index}.deck_snapshot_id`, undefined);
+                             }
                           }} 
                           defaultValue={String(field.value)}
+                          disabled={!!selectedTournamentId && (!tournamentDecks || tournamentDecks.length === 0)}
                         >
                             <FormControl>
-                              <SelectTrigger><SelectValue placeholder="Selecione um deck do torneio" /></SelectTrigger>
+                              <SelectTrigger>
+                                <SelectValue placeholder={selectedTournamentId ? "Selecione um deck do torneio" : "Selecione um deck"} />
+                              </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {tournamentDecks.map((td: any) => (
-                                <SelectItem key={td.deck_id} value={String(td.deck_id)}>
-                                  {td.profiles?.username} - {td.decks?.deck_name || "Sem nome"}
-                                </SelectItem>
-                              ))}
+                              {selectedTournamentId ? (
+                                  tournamentDecks && tournamentDecks.length > 0 ? (
+                                    tournamentDecks.map((td: any) => (
+                                      <SelectItem key={td.deck_id} value={String(td.deck_id)}>
+                                        {td.profiles?.username} - {td.decks?.deck_name || "Sem nome"}
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    <SelectItem value="none" disabled>Nenhum deck disponível</SelectItem>
+                                  )
+                              ) : (
+                                  decks?.map(d => (
+                                    <SelectItem key={d.id} value={String(d.id)}>
+                                        {d.profiles?.username || 'Desconhecido'} - {d.deck_name}
+                                    </SelectItem>
+                                  ))
+                              )}
                             </SelectContent>
                         </Select>
-                      ) : (
-                        <Select onValueChange={(val) => {
-                            field.onChange(val);
-                            form.setValue(`featuredDecks.${index}.deck_snapshot_id`, undefined);
-                        }} defaultValue={String(field.value)}>
-                            <FormControl>
-                              <SelectTrigger><SelectValue placeholder="Selecione um deck" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {decks?.map(d => (
-                                <SelectItem key={d.id} value={String(d.id)}>
-                                    {d.profiles?.username || 'Desconhecido'} - {d.deck_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                        </Select>
-                      )}
+                        {selectedTournamentId && (!tournamentDecks || tournamentDecks.length === 0) && (
+                            <p className="text-[10px] text-destructive mt-1">Este torneio não possui decks registrados.</p>
+                        )}
                       <FormMessage />
                     </FormItem>
                   )}

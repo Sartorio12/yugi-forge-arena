@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { ManageDecklist } from "@/components/ManageDecklist";
 import { ManageMultipleDecklists } from "@/components/ManageMultipleDecklists";
+import { FramedAvatar } from "@/components/FramedAvatar";
 
 interface TournamentDetailProps {
   user: User | null;
@@ -30,7 +31,8 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("*")
+        // Fetch profile of the host using organizer_id, including clan info
+        .select("*, profiles:organizer_id(id, username, avatar_url, equipped_frame_url, clan_members(clans(tag)))") 
         .eq("id", Number(id))
         .is("deleted_at", null)
         .single();
@@ -138,14 +140,35 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
             )}
 
             <Card className="p-8 bg-gradient-card border-border">
-              <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
+              <div className="flex flex-col md:flex-row items-center md:items-start justify-between mb-6 gap-4 text-center md:text-left">
+                <div className="flex flex-col items-center md:items-start gap-4 w-full">
+                  <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
                     {tournament.title}
                   </h1>
-                  <div className="flex items-center gap-4 text-muted-foreground">
+                  
+                  {/* Host Info */}
+                  {tournament.profiles && (
+                    <Link to={`/profile/${tournament.profiles.id}`} className="hover:text-primary transition-colors">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <FramedAvatar 
+                          username={tournament.profiles.username}
+                          avatarUrl={tournament.profiles.avatar_url}
+                          frameUrl={tournament.profiles.equipped_frame_url}
+                          sizeClassName="h-5 w-5"
+                        />
+                        <div className="flex items-center gap-1">
+                          {tournament.profiles.clan_members?.clans?.tag && (
+                            <span className="text-primary font-bold">[{tournament.profiles.clan_members.clans.tag}]</span>
+                          )}
+                          <span className="font-medium">{tournament.profiles.username}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  )}
+
+                  <div className="flex flex-col items-center md:items-start gap-2 text-muted-foreground mt-2">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
+                      <Calendar className="h-5 w-5 text-primary" />
                       <span>
                         {tournament.event_date ? format(new Date(tournament.event_date), "dd 'de' MMMM, yyyy 'às' HH:mm", {
                           locale: ptBR,
@@ -153,15 +176,16 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Layers className="h-5 w-5" />
+                      <Layers className="h-5 w-5 text-primary" />
                       <span>
                         {tournament.num_decks_allowed} deck{tournament.num_decks_allowed > 1 ? 's' : ''} por jogador
                       </span>
                     </div>
                   </div>
                 </div>
+                
                 <span
-                  className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                  className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${
                     tournament.status === "Aberto"
                       ? "bg-primary/90 text-primary-foreground"
                       : "bg-muted/90 text-muted-foreground"
