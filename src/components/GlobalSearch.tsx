@@ -67,7 +67,7 @@ export const GlobalSearch = () => {
   }, [debouncedSearchTerm, results]);
 
   return (
-    <div className="relative flex-1">
+    <div className="relative w-full">
       <Command className="relative overflow-visible">
         <CommandInput
           placeholder="Buscar usuários ou clãs..."

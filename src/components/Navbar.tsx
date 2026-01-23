@@ -51,7 +51,7 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
             </span>
           </Link>
 
-          <div className="hidden md:block">
+          <div className="hidden md:block flex-1 max-w-2xl mx-8">
             <GlobalSearch />
           </div>
 
