@@ -38,7 +38,8 @@ interface Deck {
 }
 
 const MetaDeckExamples = ({ user, onLogout }: MetaDeckExamplesProps) => {
-  const { deckName } = useParams<{ deckName: string }>();
+  const params = useParams();
+  const deckName = params["*"] ? decodeURIComponent(params["*"]) : "";
   const navigate = useNavigate();
 
   // Use raw name for searching cards
@@ -53,7 +54,7 @@ const MetaDeckExamples = ({ user, onLogout }: MetaDeckExamplesProps) => {
       // Filter out very short terms to avoid noise
       const searchTerms = rawName
         .split(/\s+/)
-        .map(t => t.replace(/[^\w\s-]/gi, '').trim()) // Clean chars but keep hyphens
+        .map(t => t.replace(/[^\w\s\-/]/gi, '').trim()) // Clean chars but keep hyphens and slashes
         .filter(t => t.length > 1); // Ignore single chars
 
       if (searchTerms.length === 0) return [];

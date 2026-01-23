@@ -33,8 +33,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Profile } from "@/hooks/useProfile";
 import { supabase } from '../../integrations/supabase/client';
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getTeamLogoUrl } from "@/constants/teams";
+import { User } from "@supabase/supabase-js";
 
 // Updated to match the RPC return type
 interface ParticipantDeck {
@@ -70,6 +71,7 @@ const TournamentManagementPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
@@ -86,11 +88,24 @@ const TournamentManagementPage = () => {
 
   useEffect(() => {
     const checkAccess = async () => {
-      if (tournament) {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+
+      if (tournament && user) {
         const t = tournament as any;
+        
+        // Fetch user profile to check for admin role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        const isAdmin = profile?.role === 'admin';
+        const isOrganizer = user.id === t.organizer_id;
+
         if (t.exclusive_organizer_only) {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user || user.id !== t.organizer_id) {
+          if (!isOrganizer && !isAdmin) {
             toast({
               title: "Acesso Negado",
               description: "Este torneio é exclusivo do organizador. Você não tem permissão para gerenciá-lo.",
@@ -99,6 +114,9 @@ const TournamentManagementPage = () => {
             navigate("/dashboard/tournaments");
           }
         }
+      } else if (tournament && !user) {
+          // Should not happen due to AdminRoute, but safe to redirect
+          navigate("/auth");
       }
     };
     checkAccess();
@@ -264,6 +282,16 @@ const TournamentManagementPage = () => {
                   {participants.sort((a, b) => a.id - b.id).map((p, index) => {
                     const userDecks = decksByUserId.get(p.user_id);
                     const hasDecks = userDecks && userDecks.length > 0;
+                    
+                    // Check if the current logged-in user is the organizer
+                    // Note: tournament is already loaded if we are here (isLoading checks)
+                    const isOrganizer = currentUser?.id === (tournament as any)?.organizer_id;
+                    const exclusiveMode = (tournament as any)?.exclusive_organizer_only;
+                    
+                    // Show decklist button only if:
+                    // 1. Not exclusive mode
+                    // 2. OR Exclusive mode AND current user is the organizer
+                    const showDecklistButton = !exclusiveMode || isOrganizer;
 
                     return (
                       <TableRow key={p.id}>
@@ -306,7 +334,7 @@ const TournamentManagementPage = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-start gap-2">
-                            {hasDecks && userDecks && (
+                            {hasDecks && userDecks && showDecklistButton && (
                                <DropdownMenu>
                                <DropdownMenuTrigger asChild>
                                  <Button variant="outline" size="icon">

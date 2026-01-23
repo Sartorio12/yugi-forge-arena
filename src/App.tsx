@@ -43,6 +43,7 @@ import { PresenceProvider } from "./components/PresenceProvider";
 import { ChatProvider } from "./components/chat/ChatProvider";
 import { ChatDock } from "./components/chat/ChatDock";
 import { GlobalChatListener } from "./components/chat/GlobalChatListener";
+import { LevelUpListener } from "./components/LevelUpListener";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -149,7 +150,7 @@ const App = () => {
                             element={<SearchPage user={user} onLogout={handleLogout} />}
                           />
                           <Route
-                            path="/meta/:deckName"
+                            path="/meta/*"
                             element={<MetaDeckExamples user={user} onLogout={handleLogout} />}
                           />
                           <Route
@@ -201,6 +202,7 @@ const App = () => {
                         <ConditionalFooter /> {/* Use the new component */}
                         <ChatDock currentUser={user} />
                         <GlobalChatListener currentUser={user} />
+                        <LevelUpListener user={user} />
                       </ChatProvider>                    </PresenceProvider>
           <SpeedInsights />
           <Analytics />

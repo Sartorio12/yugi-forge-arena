@@ -249,9 +249,9 @@ const TournamentDashboard = () => {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem 
                             onClick={() => handleManageClick(tournament.id)}
-                            disabled={(tournament as any).exclusive_organizer_only && (tournament as any).organizer_id !== currentUserId}
+                            disabled={(tournament as any).exclusive_organizer_only && (tournament as any).organizer_id !== currentUserId && profile?.role !== 'admin'}
                           >
-                            {(tournament as any).exclusive_organizer_only && (tournament as any).organizer_id !== currentUserId ? "Acesso Restrito" : "Gerenciar"}
+                            {(tournament as any).exclusive_organizer_only && (tournament as any).organizer_id !== currentUserId && profile?.role !== 'admin' ? "Acesso Restrito" : "Gerenciar"}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleEditClick(tournament)}

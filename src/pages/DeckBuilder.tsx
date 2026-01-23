@@ -141,7 +141,7 @@ const BanlistIcon = ({ banStatus }: { banStatus: string | undefined | null }) =>
   }
 
   let imageUrl: string | undefined;
-  if (banStatus === "Forbidden") {
+  if (banStatus === "Forbidden" || banStatus === "Banned") {
     imageUrl = "/ban.png";
   } else if (banStatus === "Limited") {
     imageUrl = "/lim1.png";
@@ -288,8 +288,7 @@ const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtra
                   {card.pt_name && card.pt_name.toLowerCase() !== card.name.toLowerCase() && (
                     <p className="text-gray-400 truncate text-xs">{card.pt_name}</p>
                   )}
-                  <p className className="text-muted-foreground text-xs truncate">
-                    {card.attribute ? `${card.attribute} / ` : ''}{card.race}{card.level ? ` / Level ${card.level}` : ''}
+                                     <p className="text-muted-foreground text-xs truncate">                    {card.attribute ? `${card.attribute} / ` : ''}{card.race}{card.level ? ` / Level ${card.level}` : ''}
                   </p>
                   {card.type.includes('Monster') && (
                     <p className="text-xs truncate">ATK/{card.atk ?? '?'} / DEF/{card.def ?? '?'}</p>
@@ -837,7 +836,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     let limit = 3;
     if (!isGenesysMode) {
       const status = card.ban_master_duel;
-      if (status === "Forbidden") {
+      if (status === "Forbidden" || status === "Banned") {
         toast({ title: "Carta Banida", description: `"${card.name}" é proibida.`, variant: "destructive" });
         return;
       }

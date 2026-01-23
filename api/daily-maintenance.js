@@ -125,8 +125,9 @@ export default async function handler(req, res) {
     if (!englishCardsRes.ok) throw new Error(`English API failed: ${englishCardsRes.status}`);
     // Portuguese might fail (optional)
     if (!portugueseCardsRes.ok) console.warn(`Portuguese API failed: ${portugueseCardsRes.status}`);
-    // MD Banlist might fail (optional, but we want it)
-    if (!mdBanlistRes.ok) console.warn(`MD Banlist API failed: ${mdBanlistRes.status}`);
+    
+    const banlistFetchFailed = !mdBanlistRes.ok;
+    if (banlistFetchFailed) console.warn(`MD Banlist API failed: ${mdBanlistRes.status}`);
 
     const englishData = await englishCardsRes.json();
     const allEnglishCards = englishData.data;
@@ -134,8 +135,15 @@ export default async function handler(req, res) {
     const portugueseData = portugueseCardsRes.ok ? await portugueseCardsRes.json() : { data: [] };
     const allPortugueseCards = portugueseData.data || [];
 
-    const mdBanlistData = mdBanlistRes.ok ? await mdBanlistRes.json() : { regulation: {} };
+    const mdBanlistData = !banlistFetchFailed ? await mdBanlistRes.json() : { regulation: {} };
     const mdRegulation = mdBanlistData?.regulation || {};
+
+    // SAFETY CHECK: Ensure regulation list is not empty/suspiciously small
+    if (!banlistFetchFailed && Object.keys(mdRegulation).length < 50) {
+        console.warn(`MD Regulation list is suspiciously small (${Object.keys(mdRegulation).length} items). Aborting banlist update to prevent data loss.`);
+        banlistFetchFailed = true;
+    }
+
     // --- PARALLEL FETCHING END ---
 
     console.log(`Fetched: ${allEnglishCards.length} English Cards, ${allPortugueseCards.length} Portuguese Cards`);
@@ -164,7 +172,7 @@ export default async function handler(req, res) {
     
     for (const card of allEnglishCards) {
         const cardIdStr = String(card.id);
-        const konamiIdStr = String(card.konami_id || card.id);
+        const konamiIdStr = String(card.misc_info?.[0]?.konami_id || card.id);
 
         // Determine Portuguese Name
         let ptName = null;
@@ -174,9 +182,10 @@ export default async function handler(req, res) {
         }
 
         // Determine Master Duel Ban Status
+        // Use the Konami ID to lookup in the MD Regulation map
         const mdStatus = mdBanStatusMap.get(konamiIdStr) || null;
 
-        cardsToUpsert.push({
+        const cardObj = {
             id: cardIdStr,
             konami_id: konamiIdStr,
             name: card.name,
@@ -192,10 +201,15 @@ export default async function handler(req, res) {
             image_url_small: card.card_images?.[0]?.image_url_small || '',
             ban_tcg: card.banlist_info?.ban_tcg || null,
             ban_ocg: card.banlist_info?.ban_ocg || null,
-            ban_master_duel: mdStatus,
             genesys_points: card.misc_info?.[0]?.genesys_points || 0,
             md_rarity: card.misc_info?.[0]?.md_rarity || null,
-        });
+        };
+
+        if (!banlistFetchFailed) {
+            cardObj.ban_master_duel = mdStatus;
+        }
+
+        cardsToUpsert.push(cardObj);
     }
 
     console.log(`Prepared ${cardsToUpsert.length} cards from API.`);
@@ -263,7 +277,7 @@ export default async function handler(req, res) {
         const hasChanged = 
             existing.name !== newCard.name ||
             existing.pt_name !== newCard.pt_name ||
-            existing.ban_master_duel !== newCard.ban_master_duel ||
+            (!banlistFetchFailed && existing.ban_master_duel !== newCard.ban_master_duel) ||
             existing.md_rarity !== newCard.md_rarity ||
             existing.genesys_points !== newCard.genesys_points ||
             existing.image_url !== newCard.image_url;

@@ -11,8 +11,10 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { useEffect, useState } from "react";
 
 interface Tournament {
   id: number;
@@ -24,6 +26,8 @@ interface Tournament {
 }
 
 export const TournamentHero = () => {
+  const [api, setApi] = useState<CarouselApi>();
+  
   const { data: tournaments, isLoading } = useQuery({
     queryKey: ["upcoming-tournaments-hero"],
     queryFn: async () => {
@@ -47,6 +51,18 @@ export const TournamentHero = () => {
       return data as Tournament[];
     },
   });
+
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      api.scrollNext();
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [api]);
 
   if (isLoading) {
     return (
@@ -74,12 +90,12 @@ export const TournamentHero = () => {
 
   return (
     <div className="w-full">
-      <Carousel className="w-full" opts={{ loop: true }}>
+      <Carousel className="w-full" opts={{ loop: true }} setApi={setApi}>
         <CarouselContent>
           {tournaments.map((tournament) => (
             <CarouselItem key={tournament.id}>
               <div className="relative w-full overflow-hidden rounded-lg border border-border group">
-                <AspectRatio ratio={16 / 6} className="bg-[hsl(0_0%_12%)]">
+                <AspectRatio ratio={21 / 9} className="bg-[hsl(0_0%_12%)]">
                   {/* Background Image */}
                   {tournament.banner_image_url ? (
                     <img

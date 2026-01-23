@@ -433,7 +433,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   }
 
   const getBanlistIcon = (banStatus: string | null | undefined) => {
-    if (banStatus === "Banned") return "/ban.png";
+    if (banStatus === "Banned" || banStatus === "Forbidden") return "/ban.png";
     if (banStatus === "Limited") return "/lim1.png";
     if (banStatus === "Semi-Limited") return "/lim2.png";
     return null;
