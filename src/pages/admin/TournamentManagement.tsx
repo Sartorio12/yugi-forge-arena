@@ -50,6 +50,9 @@ interface Participant {
   user_id: string;
   total_wins_in_tournament: number;
   team_selection?: string; // Add optional team_selection
+  clans: {
+    tag: string;
+  } | null;
   profiles: {
     id: string;
     username: string;
@@ -57,11 +60,6 @@ interface Participant {
     banner_url: string | null;
     level: number;
     equipped_frame_url: string | null;
-    clan_members: {
-      clans: {
-        tag: string;
-      } | null;
-    } | null;
   } | null;
 }
 
@@ -132,18 +130,16 @@ const TournamentManagementPage = () => {
           user_id,
           total_wins_in_tournament,
           team_selection,
+          clans (
+            tag
+          ),
           profiles (
             id,
             username,
             avatar_url,
             banner_url,
             level,
-            equipped_frame_url,
-            clan_members (
-              clans (
-                tag
-              )
-            )
+            equipped_frame_url
           )
         `)
         .eq("tournament_id", Number(id));
@@ -309,7 +305,7 @@ const TournamentManagementPage = () => {
                             />
                             <span className="font-medium flex items-center gap-2">
                               <Link to={`/profile/${p.profiles?.id}`}>
-                                <UserDisplay profile={p.profiles || {}} clan={p.profiles?.clan_members?.clans} />
+                                <UserDisplay profile={p.profiles || {}} clan={p.clans} />
                               </Link>
                               {p.team_selection && (
                                 <img
