@@ -82,21 +82,20 @@ const NewsEditorFormPage = ({ user }) => {
         }
 
         // Insert new ones
-      // 3. Handle Featured Decks
-      if (values.featuredDecks && values.featuredDecks.length > 0) {
-        const deckLinks = values.featuredDecks.map(d => ({
-          post_id: postId,
-          deck_id: d.deck_snapshot_id ? null : d.deck_id, // Null if snapshot exists to avoid FK issues
-          deck_snapshot_id: d.deck_snapshot_id || null,
-          placement: d.placement,
-        }));
+        if (featuredDecks && featuredDecks.length > 0) {
+          const deckLinks = featuredDecks.map((d: any) => ({
+            post_id: postId,
+            deck_id: d.deck_snapshot_id ? null : d.deck_id,
+            deck_snapshot_id: d.deck_snapshot_id || null,
+            placement: d.placement,
+          }));
 
-        const { error: decksError } = await supabase
-          .from("news_post_decks")
-          .insert(deckLinks);
+          const { error: decksError } = await supabase
+            .from("news_post_decks")
+            .insert(deckLinks);
 
-        if (decksError) throw decksError;
-      }
+          if (decksError) throw decksError;
+        }
       }
     },
     onSuccess: () => {
