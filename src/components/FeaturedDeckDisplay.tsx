@@ -165,20 +165,21 @@ export const FeaturedDeckDisplay = ({
       }
 
       if (deckCardsError) throw deckCardsError;
-      if (!deckCardsData) return [];
+      if (!deckCardsData || deckCardsData.length === 0) return [];
 
-      const cardApiIds = deckCardsData.map((c) => c.card_api_id);
+      // Get UNIQUE card IDs to avoid large "in" arrays and optimize query
+      const uniqueCardApiIds = [...new Set(deckCardsData.map((c) => c.card_api_id))];
 
       const { data: cardsData, error: cardsError } = await supabase
         .from("cards")
         .select("*")
-        .in("id", cardApiIds);
+        .in("id", uniqueCardApiIds);
 
       if (cardsError) throw cardsError;
 
       return deckCardsData.map((deckCard) => ({
         ...deckCard,
-        cards: cardsData?.find((card) => card.id === deckCard.card_api_id),
+        cards: cardsData?.find((card) => String(card.id) === String(deckCard.card_api_id)),
       })) as DeckCard[];
     },
   });
