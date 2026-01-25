@@ -25,11 +25,14 @@ import {
 } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
 const newsFormSchema = z.object({
   title: z.string().min(5, { message: "O título deve ter pelo menos 5 caracteres." }),
   content: z.string().min(20, { message: "O conteúdo deve ter pelo menos 20 caracteres." }),
   banner: z.any().optional(),
   tournament_id: z.coerce.number().optional(),
+  show_metagame_stats: z.boolean().default(false),
   featuredDecks: z.array(z.object({
     deck_id: z.coerce.number({ required_error: "Selecione um deck." }),
     deck_snapshot_id: z.coerce.number().optional(),
@@ -41,7 +44,10 @@ export type NewsFormValues = z.infer<typeof newsFormSchema>;
 
 interface NewsFormProps {
   formId: string;
-  initialData?: TablesInsert<"news_posts"> & { news_post_decks?: { deck_id: number; deck_snapshot_id?: number | null; placement: string }[] };
+  initialData?: TablesInsert<"news_posts"> & { 
+    news_post_decks?: { deck_id: number; deck_snapshot_id?: number | null; placement: string }[],
+    show_metagame_stats?: boolean 
+  };
   onSubmit: (data: NewsFormValues) => void;
   isLoading?: boolean;
 }
@@ -76,6 +82,7 @@ export const NewsForm = ({ formId, initialData, onSubmit }: NewsFormProps) => {
       title: initialData?.title || "",
       content: initialData?.content || "",
       tournament_id: initialData?.tournament_id || undefined,
+      show_metagame_stats: initialData?.show_metagame_stats || false,
       featuredDecks: initialData?.news_post_decks?.map(d => ({
         ...d,
         deck_snapshot_id: d.deck_snapshot_id ?? undefined
@@ -91,13 +98,10 @@ export const NewsForm = ({ formId, initialData, onSubmit }: NewsFormProps) => {
       if (!selectedTournamentId) return [];
       
       const { data, error } = await supabase
-        .from('tournament_decks')
+        .from('tournament_deck_snapshots')
         .select(`
-          deck_id,
-          deck_snapshot_id,
-          decks (
-            deck_name
-          ),
+          id,
+          deck_name,
           profiles (
             username
           )
@@ -105,7 +109,16 @@ export const NewsForm = ({ formId, initialData, onSubmit }: NewsFormProps) => {
         .eq('tournament_id', selectedTournamentId);
 
       if (error) throw error;
-      return data;
+      
+      // Map to keep the same structure expected by the render logic
+      return data.map(item => ({
+        deck_id: item.id, // Using snapshot ID as deck_id for selection purposes
+        deck_snapshot_id: item.id,
+        decks: {
+          deck_name: item.deck_name
+        },
+        profiles: item.profiles
+      }));
     },
     enabled: !!selectedTournamentId
   });
@@ -182,6 +195,31 @@ export const NewsForm = ({ formId, initialData, onSubmit }: NewsFormProps) => {
             </FormItem>
           )}
         />
+
+        {selectedTournamentId && (
+          <FormField
+            control={form.control}
+            name="show_metagame_stats"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>
+                    Exibir Estatísticas de Metagame
+                  </FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    Ao ativar, um gráfico com a distribuição de arquétipos do torneio será exibido automaticamente na notícia.
+                  </p>
+                </div>
+              </FormItem>
+            )}
+          />
+        )}
 
         <div>
           <h3 className="text-lg font-medium mb-4">Decks em Destaque</h3>

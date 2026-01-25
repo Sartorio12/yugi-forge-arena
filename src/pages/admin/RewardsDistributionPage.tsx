@@ -58,6 +58,7 @@ const AVAILABLE_FRAMES = [
 
 const RewardsDistributionPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string>("all");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   
   // Title State
@@ -71,35 +72,82 @@ const RewardsDistributionPage = () => {
 
   const { toast } = useToast();
 
-  const { data: profiles, isLoading, error } = useQuery({
-    queryKey: ["admin-profiles-search", searchTerm],
+  const { data: tournaments } = useQuery({
+    queryKey: ["admin-tournaments-list"],
     queryFn: async () => {
-      if (!searchTerm) {
+      const { data, error } = await supabase
+        .from("tournaments")
+        .select("id, title")
+        .order("event_date", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: profiles, isLoading, error } = useQuery({
+    queryKey: ["admin-profiles-search", searchTerm, selectedTournamentId],
+    queryFn: async () => {
+      // 1. If Tournament Selected, fetch participants
+      if (selectedTournamentId && selectedTournamentId !== "all") {
         const { data, error } = await supabase
-          .from("profiles")
-          .select("id, username, avatar_url, equipped_frame_url, clan_members(clans(tag))")
-          .limit(20);
+          .from("tournament_participants")
+          .select(`
+            user_id,
+            profiles:user_id (
+              id,
+              username,
+              avatar_url,
+              equipped_frame_url
+            ),
+            clans:clan_id (
+              tag
+            )
+          `)
+          .eq("tournament_id", selectedTournamentId);
           
         if (error) throw error;
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return data.map((p: any) => ({
-          id: p.id,
-          username: p.username,
-          avatar_url: p.avatar_url,
-          equipped_frame_url: p.equipped_frame_url,
-          clan_tag: p.clan_members?.[0]?.clans?.tag || null
+          id: p.profiles?.id,
+          username: p.profiles?.username || "Unknown",
+          avatar_url: p.profiles?.avatar_url,
+          equipped_frame_url: p.profiles?.equipped_frame_url,
+          clan_tag: p.clans?.tag || null
         })) as SearchProfile[];
       }
 
-      const { data, error } = await supabase.rpc("search_profiles_for_admin", {
-        p_search_term: searchTerm
-      });
+      // 2. If Search Term exists
+      if (searchTerm) {
+        const { data, error } = await supabase.rpc("search_profiles_for_admin", {
+          p_search_term: searchTerm
+        });
+        if (error) throw error;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return data.map((p: any) => ({
+          id: p.profile_id,
+          username: p.username,
+          avatar_url: p.avatar_url,
+          equipped_frame_url: p.equipped_frame_url,
+          clan_tag: p.clan_tag
+        })) as SearchProfile[];
+      }
+
+      // 3. Default: latest profiles
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, username, avatar_url, equipped_frame_url, clan_members(clans(tag))")
+        .limit(20);
+        
       if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return data.map((p: any) => ({
-        id: p.profile_id,
+        id: p.id,
         username: p.username,
         avatar_url: p.avatar_url,
         equipped_frame_url: p.equipped_frame_url,
-        clan_tag: p.clan_tag
+        clan_tag: p.clan_members?.[0]?.clans?.tag || null
       })) as SearchProfile[];
     },
     placeholderData: (previousData) => previousData,
@@ -185,14 +233,44 @@ const RewardsDistributionPage = () => {
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-card p-6 rounded-lg border shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Selecionar Jogadores</h2>
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome ou tag do clã..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
+              
+              <div className="space-y-4 mb-4">
+                {/* Tournament Selector */}
+                <div className="space-y-2">
+                  <Label>Filtrar por Torneio</Label>
+                  <Select 
+                    value={selectedTournamentId} 
+                    onValueChange={(val) => {
+                      setSelectedTournamentId(val);
+                      if (val !== "all") setSearchTerm(""); // Clear search if tournament selected
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos os jogadores (Recentes)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os jogadores (Recentes)</SelectItem>
+                      {tournaments?.map((t) => (
+                        <SelectItem key={t.id} value={String(t.id)}>
+                          {t.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou tag do clã..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      if (e.target.value) setSelectedTournamentId("all"); // Clear tournament if searching
+                    }}
+                    className="pl-9"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-between items-center mb-2">

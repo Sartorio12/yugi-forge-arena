@@ -11,6 +11,7 @@ import { NewsLikeButton } from '@/components/likes/NewsLikeButton';
 import { NewsCommentSection } from '@/components/comments/NewsCommentSection';
 import UserDisplay from "@/components/UserDisplay";
 import { FeaturedDeckDisplay } from "@/components/FeaturedDeckDisplay";
+import { MetagameStats } from "@/components/MetagameStats";
 
 interface NewsPostPageProps {
   user: User | null;
@@ -19,7 +20,20 @@ interface NewsPostPageProps {
 
 const fetchNewsPost = async (postId: string | undefined) => {
   if (!postId) throw new Error("Post ID required");
-  const { data, error } = await supabase.from("news_posts").select(`id, title, content, created_at, author_id, profiles (id, username, avatar_url, equipped_frame_url)`).eq("id", postId).single();
+  const { data, error } = await supabase
+    .from("news_posts")
+    .select(`
+        id, 
+        title, 
+        content, 
+        created_at, 
+        author_id, 
+        tournament_id,
+        show_metagame_stats,
+        profiles (id, username, avatar_url, equipped_frame_url)
+    `)
+    .eq("id", postId)
+    .single();
   if (error) throw error;
   return data;
 };
@@ -119,6 +133,10 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
         </header>
         <div className="prose dark:prose-invert max-w-none text-foreground prose-strong:text-primary mb-12" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content || "") }} />
         
+        {post.show_metagame_stats && post.tournament_id && (
+            <MetagameStats tournamentId={post.tournament_id} />
+        )}
+
         {featuredDecks && featuredDecks.length > 0 && (
             <div className="mb-12">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">

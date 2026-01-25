@@ -161,7 +161,10 @@ const NavMenu = ({ user, profile }) => {
               <Link to="/dashboard/titles">Distribuir Títulos</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/dashboard/broadcasts">Gerenciar Lives</Link>
+              <Link to="/dashboard/stats">Estatísticas (Meta)</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/dashboard/broadcasts">Gerenciar Transmissões</Link>
             </DropdownMenuItem>
           </>
         )}

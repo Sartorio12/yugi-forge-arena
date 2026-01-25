@@ -193,6 +193,7 @@ export default async function handler(req, res) {
             type: card.type,
             description: card.desc,
             race: card.race,
+            archetype: card.archetype || null,
             attribute: card.attribute || null,
             atk: card.atk || null,
             def: (card.def !== undefined && card.def !== null && String(card.def).toLowerCase() !== '?') ? Number(card.def) : null,
@@ -227,7 +228,7 @@ export default async function handler(req, res) {
         while (hasMore) {
             const { data, error } = await supabaseAdmin
                 .from('cards')
-                .select('id, name, pt_name, ban_master_duel, md_rarity, genesys_points, image_url')
+                .select('id, name, pt_name, ban_master_duel, md_rarity, genesys_points, image_url, archetype')
                 .range(page * pageSize, (page + 1) * pageSize - 1);
             
             if (error) {
@@ -280,7 +281,8 @@ export default async function handler(req, res) {
             (!banlistFetchFailed && existing.ban_master_duel !== newCard.ban_master_duel) ||
             existing.md_rarity !== newCard.md_rarity ||
             existing.genesys_points !== newCard.genesys_points ||
-            existing.image_url !== newCard.image_url;
+            existing.image_url !== newCard.image_url ||
+            existing.archetype !== newCard.archetype;
 
         return hasChanged;
     });
