@@ -85,6 +85,7 @@ export const NewsForm = ({ formId, initialData, onSubmit }: NewsFormProps) => {
       show_metagame_stats: initialData?.show_metagame_stats || false,
       featuredDecks: initialData?.news_post_decks?.map(d => ({
         ...d,
+        deck_id: d.deck_snapshot_id || d.deck_id, // Use snapshot_id as primary ID if available
         deck_snapshot_id: d.deck_snapshot_id ?? undefined
       })) || [],
     },
@@ -243,7 +244,7 @@ export const NewsForm = ({ formId, initialData, onSubmit }: NewsFormProps) => {
                                  form.setValue(`featuredDecks.${index}.deck_snapshot_id`, undefined);
                              }
                           }} 
-                          defaultValue={String(field.value)}
+                          defaultValue={field.value ? String(field.value) : undefined}
                           disabled={!!selectedTournamentId && (!tournamentDecks || tournamentDecks.length === 0)}
                         >
                             <FormControl>
