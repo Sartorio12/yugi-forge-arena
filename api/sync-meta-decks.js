@@ -38,52 +38,112 @@ async function mapKonamiIdsToInternalIds(konamiIds) {
     return map;
 }
 
+// Helper to decode YDKE string
+function parseYDKE(ydkeString) {
+    if (!ydkeString || !ydkeString.startsWith('ydke://')) return null;
+    try {
+        const parts = ydkeString.replace('ydke://', '').split('!');
+        
+        const decodeSection = (base64) => {
+            if (!base64) return [];
+            const buffer = Buffer.from(base64, 'base64');
+            const ids = [];
+            for (let i = 0; i < buffer.length; i += 4) {
+                ids.push(buffer.readUInt32LE(i));
+            }
+            return ids;
+        };
+
+        return {
+            main: decodeSection(parts[0]),
+            extra: decodeSection(parts[1]),
+            side: decodeSection(parts[2])
+        };
+    } catch (e) {
+        console.error("Error parsing YDKE:", e);
+        return null;
+    }
+}
+
 async function scrapeDeckDetails(deckUrl, archetype) {
     try {
-        const response = await fetch(deckUrl);
-        const html = await response.text();
-
-        // MDM usually embeds a JSON with card data. 
-        // We look for the MongoID or similar structure, OR we parse the visual list.
-        // Actually, the deck page often has a script tag with "window.extractedState" or similar.
-        // Or we can query their internal API if we find the endpoint.
-        // For simplicity/robustness without reverse engineering their full API protection:
-        // We will look for card links or data attributes in the HTML.
+        // Extract slug from URL and ensure lowercase for API
+        const slug = deckUrl.split('/deck-types/')[1].toLowerCase();
         
-        // MDM structure: Cards are often in links like <a href="/cards/Dark%20Magician">
-        // But extracting precise quantities (3x) from HTML text is flaky.
-        
-        // BETTER STRATEGY: Use the public API endpoint used by the frontend if possible.
-        // https://www.masterduelmeta.com/api/v1/deck-types/Snake-Eye/decks?limit=10
-        // Let's try to guess this endpoint pattern.
-        
-        // URL is: https://www.masterduelmeta.com/tier-list/deck-types/Snake-Eye
-        // API often: https://www.masterduelmeta.com/api/v1/deck-types/{slug}/decks?limit=5
-        
-        // Extract slug from URL
-        const slug = deckUrl.split('/deck-types/')[1];
+        // 1. Try API First
         const apiUrl = `https://www.masterduelmeta.com/api/v1/deck-types/${slug}/decks?limit=5&sort=updated&order=desc`;
-        
         const apiRes = await fetch(apiUrl);
-        if (!apiRes.ok) {
-            console.warn(`Failed to fetch API for ${slug}: ${apiRes.status}`);
-            return [];
+        
+        if (apiRes.ok) {
+            const decksData = await apiRes.json();
+            if (Array.isArray(decksData) && decksData.length > 0) {
+                 return decksData.map(d => ({
+                    name: `${archetype} - ${d.author?.username || 'Top Deck'}`, 
+                    author: d.author?.username || 'Unknown',
+                    description: `Deck scraped from Master Duel Meta via API. Rank/Event: ${d.eventName || 'N/A'}.`,
+                    main: d.main || [],
+                    extra: d.extra || [],
+                    side: d.side || [],
+                    url: `https://www.masterduelmeta.com/top-decks/${d._id}` 
+                }));
+            }
+        } else {
+             console.warn(`API failed for ${slug} (${apiRes.status}). Trying HTML fallback...`);
+        }
+
+        // 2. Fallback: Fetch HTML and look for YDKE or embedded data
+        // Note: MDM individual deck pages might have YDKE, but the deck-type page lists multiple.
+        // We will fetch the deck-type page and look for links to individual decks.
+        const pageRes = await fetch(deckUrl);
+        const html = await pageRes.text();
+
+        // Find links to top decks: href="/top-decks/..."
+        const topDeckLinks = [...html.matchAll(/href="\/top-decks\/([^"]*)"/g)]
+            .map(m => `https://www.masterduelmeta.com/top-decks/${m[1]}`)
+            .slice(0, 5); // Take top 5
+
+        const fallbackDecks = [];
+
+        for (const link of topDeckLinks) {
+            try {
+                const deckHtmlRes = await fetch(link);
+                const deckHtml = await deckHtmlRes.text();
+
+                // Look for YDKE string in the HTML (often in input value or script)
+                // Regex for ydke://... until a quote or space
+                const ydkeMatch = deckHtml.match(/ydke:\/\/([a-zA-Z0-9+/=!]+)/);
+                
+                if (ydkeMatch) {
+                    const ydkeString = ydkeMatch[0];
+                    const parsed = parseYDKE(ydkeString);
+                    
+                    if (parsed) {
+                        // Extract author/title from HTML if possible
+                        const titleMatch = deckHtml.match(/<title>(.*?)<\/title>/);
+                        const title = titleMatch ? titleMatch[1].split('|')[0].trim() : `${archetype} Deck`;
+
+                        // Convert YDKE IDs (numbers) to the structure used by the rest of the script (objects with card.konamiID)
+                        const mapIds = (ids) => ids.map(id => ({ card: { konamiID: id }, amount: 1 })); 
+                        // Note: YDKE lists 3 copies as 3 entries, so amount is always 1 per entry in this mapping strategy 
+                        // OR we can aggregate them later. The main script handles aggregation logic (addCards function).
+
+                        fallbackDecks.push({
+                            name: title,
+                            author: 'Community',
+                            description: `Deck scraped from Master Duel Meta via YDKE.`,
+                            main: mapIds(parsed.main),
+                            extra: mapIds(parsed.extra),
+                            side: mapIds(parsed.side),
+                            url: link
+                        });
+                    }
+                }
+            } catch (innerErr) {
+                console.warn(`Error scraping individual deck ${link}:`, innerErr);
+            }
         }
         
-        const decksData = await apiRes.json();
-        
-        // The API returns an array of decks.
-        // Each deck has "main", "extra", "side" (arrays of objects with "card": { "konamiID": ... }, "amount": ... )
-        
-        return decksData.map(d => ({
-            name: `${archetype} - ${d.author?.username || 'Tournament'}`, // Generate a name
-            author: d.author?.username || 'Unknown',
-            description: `Deck scraped from Master Duel Meta. Rank/Event: ${d.eventName || 'N/A'}.`,
-            main: d.main || [],
-            extra: d.extra || [],
-            side: d.side || [],
-            url: `https://www.masterduelmeta.com/top-decks/${d._id}` // Reference
-        }));
+        return fallbackDecks;
 
     } catch (e) {
         console.error(`Error scraping ${deckUrl}:`, e);
