@@ -56,6 +56,7 @@ interface Participant {
   profiles: {
     id: string;
     username: string;
+    discord_username: string | null;
     avatar_url: string | null;
     banner_url: string | null;
     level: number;
@@ -136,6 +137,7 @@ const TournamentManagementPage = () => {
           profiles (
             id,
             username,
+            discord_username,
             avatar_url,
             banner_url,
             level,
@@ -303,17 +305,24 @@ const TournamentManagementPage = () => {
                               username={p.profiles?.username}
                               sizeClassName="h-10 w-10"
                             />
-                            <span className="font-medium flex items-center gap-2">
-                              <Link to={`/profile/${p.profiles?.id}`}>
-                                <UserDisplay profile={p.profiles || {}} clan={p.clans} />
-                              </Link>
-                              {p.team_selection && (
-                                <img
-                                  src={getTeamLogoUrl(p.team_selection)}
-                                  alt={p.team_selection}
-                                  title={`Time: ${p.team_selection}`}
-                                  className="w-6 h-6 object-contain"
-                                />
+                            <span className="font-medium flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <Link to={`/profile/${p.profiles?.id}`}>
+                                  <UserDisplay profile={p.profiles || {}} clan={p.clans} />
+                                </Link>
+                                {p.team_selection && (
+                                  <img
+                                    src={getTeamLogoUrl(p.team_selection)}
+                                    alt={p.team_selection}
+                                    title={`Time: ${p.team_selection}`}
+                                    className="w-6 h-6 object-contain"
+                                  />
+                                )}
+                              </div>
+                              {p.profiles?.discord_username && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                   <span className="text-[#5865F2] font-bold">Discord:</span> {p.profiles.discord_username}
+                                </span>
                               )}
                             </span>
                           </div>

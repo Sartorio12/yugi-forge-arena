@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
-import { Calendar, ExternalLink, Loader2, ArrowLeft, CheckCircle, Layers } from "lucide-react";
+import { Calendar, ExternalLink, Loader2, ArrowLeft, CheckCircle, Layers, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState, useEffect } from "react";
@@ -14,6 +14,8 @@ import { toast } from "@/components/ui/use-toast";
 import { ManageDecklist } from "@/components/ManageDecklist";
 import { ManageMultipleDecklists } from "@/components/ManageMultipleDecklists";
 import { FramedAvatar } from "@/components/FramedAvatar";
+import { BanlistSelector } from "@/components/BanlistSelector";
+import { CustomBanlist } from "@/components/CustomBanlist";
 import { FOOTBALL_TEAMS, getTeamLogoUrl } from "@/constants/teams";
 import {
   Select,
@@ -22,6 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface TournamentDetailProps {
   user: User | null;
@@ -34,6 +42,8 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
   const queryClient = useQueryClient();
   const [isRegistered, setIsRegistered] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<string>("");
+  const [banishmentSelectedCards, setBanishmentSelectedCards] = useState<string[]>([]);
+  const [selectedDeckId, setSelectedDeckId] = useState<string | undefined>();
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
@@ -51,6 +61,20 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
     },
   });
 
+  const { data: userDecks, isLoading: isLoadingUserDecks } = useQuery({
+    queryKey: ["userDecks", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("decks")
+        .select("id, deck_name")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const { data: participants, isLoading: isLoadingParticipants } = useQuery({
     queryKey: ["tournamentParticipants", id],
     queryFn: async () => {
@@ -62,6 +86,20 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
       return data;
     },
     enabled: !!id,
+  });
+
+  const { data: existingBans } = useQuery({
+    queryKey: ["existingBans", id],
+    queryFn: async () => {
+        if (!id) return [];
+        const { data, error } = await supabase
+            .from("tournament_banned_cards")
+            .select("card_id")
+            .eq("tournament_id", Number(id));
+        if (error) throw error;
+        return data.map(b => b.card_id);
+    },
+    enabled: !!id && (tournament as any)?.type === 'banimento',
   });
 
   useEffect(() => {
@@ -79,21 +117,56 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
       if (!id) throw new Error("ID do torneio não encontrado.");
       
       const tournamentType = (tournament as any)?.type || 'standard';
+      
       if (tournamentType === 'liga' && !selectedTeam) {
         throw new Error("Você deve escolher um time para participar da Liga.");
       }
 
-      const { error } = await supabase.from("tournament_participants").insert({
-        user_id: user.id,
-        tournament_id: Number(id),
-        team_selection: tournamentType === 'liga' ? selectedTeam : null
-      });
-
-      if (error) {
-        if (error.code === '23505') {
-          throw new Error("Você já está inscrito neste torneio.");
+      if (tournamentType === 'banimento') {
+        const requiredBans = (tournament as any).banishment_count || 0;
+        if (banishmentSelectedCards.length !== requiredBans) {
+          throw new Error(`Você deve selecionar exatamente ${requiredBans} cartas para banir.`);
         }
-        throw error;
+        
+        if (!selectedDeckId) {
+             throw new Error("Você deve selecionar um deck para se inscrever.");
+        }
+
+        const { error } = await supabase.rpc('register_with_bans', {
+            p_tournament_id: Number(id),
+            p_user_id: user.id,
+            p_card_ids: banishmentSelectedCards
+        });
+        
+        if (error) throw error;
+        
+        // Submit the selected deck
+        const { error: deckError } = await supabase.rpc('submit_deck_to_tournament', {
+            p_tournament_id: Number(id),
+            p_deck_id: parseInt(selectedDeckId, 10),
+        });
+
+        if (deckError) {
+             // In a real production app, we might want to rollback the registration here, 
+             // but for now we will just show the error. The user is registered but deck submission failed.
+             // They can try submitting the deck again through the normal ManageDecklist UI.
+             throw new Error(`Inscrição realizada, mas erro ao enviar deck: ${deckError.message}`);
+        }
+
+      } else {
+        // Standard/Liga Registration
+        const { error } = await supabase.from("tournament_participants").insert({
+            user_id: user.id,
+            tournament_id: Number(id),
+            team_selection: tournamentType === 'liga' ? selectedTeam : null
+        });
+
+        if (error) {
+            if (error.code === '23505') {
+            throw new Error("Você já está inscrito neste torneio.");
+            }
+            throw error;
+        }
       }
     },
     onSuccess: () => {
@@ -294,6 +367,73 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                        <p className="text-xs text-muted-foreground">Times já selecionados por outros jogadores não aparecem na lista.</p>
                      </div>
                    )}
+                </div>
+              )}
+
+              {/* Banishment Mode UI */}
+              {tournamentType === 'banimento' && (
+                <div className="mb-8 p-4 border rounded-lg bg-muted/10">
+                  {!isRegistered ? (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Ban className="h-6 w-6 text-destructive" />
+                            <h3 className="text-xl font-bold">Seleção de Banimento</h3>
+                        </div>
+                        <p className="text-muted-foreground mb-4">
+                            Para participar deste torneio, você deve selecionar <strong>{(tournament as any).banishment_count}</strong> cartas que serão banidas.
+                            As cartas escolhidas por todos os participantes formarão a banlist oficial do evento.
+                        </p>
+                        
+                        <Accordion type="single" collapsible className="w-full border rounded-lg bg-card px-4">
+                          <AccordionItem value="current-bans" className="border-b-0">
+                            <AccordionTrigger className="hover:no-underline">
+                                <span className="font-semibold text-destructive">Ver cartas já banidas ({existingBans?.length || 0})</span>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <CustomBanlist tournamentId={tournament.id} />
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+
+                        <BanlistSelector 
+                            maxSelection={(tournament as any).banishment_count || 0}
+                            selectedCards={banishmentSelectedCards}
+                            onSelectionChange={setBanishmentSelectedCards}
+                            unavailableCards={existingBans || []}
+                        />
+
+                        <div className="pt-4 border-t border-border">
+                            <h3 className="text-lg font-bold mb-2">Selecione seu Deck</h3>
+                            <Select
+                                value={selectedDeckId}
+                                onValueChange={setSelectedDeckId}
+                                disabled={registrationMutation.isPending}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Escolha o deck que usará no torneio..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {userDecks && userDecks.length > 0 ? (
+                                        userDecks.map((deck: any) => (
+                                            <SelectItem key={deck.id} value={deck.id.toString()}>
+                                                {deck.deck_name}
+                                            </SelectItem>
+                                        ))
+                                    ) : (
+                                        <div className="p-4 text-sm text-muted-foreground">
+                                            Você não tem decks salvos. Crie um deck antes de se inscrever.
+                                        </div>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground mt-2">
+                                * Seu deck será enviado automaticamente ao confirmar a inscrição.
+                            </p>
+                        </div>
+                    </div>
+                  ) : (
+                    <CustomBanlist tournamentId={tournament.id} />
+                  )}
                 </div>
               )}
 

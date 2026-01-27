@@ -88,6 +88,12 @@ const UserCardDetails = ({ initialProfile, clan }: { initialProfile: UserDisplay
                     <p className="font-bold text-lg">{level}</p>
                   </div>
                </div>
+
+               {(displayProfile as any).discord_username && (
+                 <div className="text-xs text-muted-foreground mt-2 pb-2">
+                   <span className="text-[#5865F2] font-semibold">Discord:</span> {(displayProfile as any).discord_username}
+                 </div>
+               )}
             </div>
          </div>
     </div>

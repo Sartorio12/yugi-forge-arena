@@ -46,6 +46,7 @@ import { ChatDock } from "./components/chat/ChatDock";
 import { GlobalChatListener } from "./components/chat/GlobalChatListener";
 import { LevelUpListener } from "./components/LevelUpListener";
 import ScrollToTop from "./components/ScrollToTop";
+import { DiscordUsernameModal } from "./components/DiscordUsernameModal";
 
 const queryClient = new QueryClient();
 
@@ -208,6 +209,7 @@ const App = () => {
                         <ChatDock currentUser={user} />
                         <GlobalChatListener currentUser={user} />
                         <LevelUpListener user={user} />
+                        <DiscordUsernameModal userId={user?.id} />
                       </ChatProvider>                    </PresenceProvider>
           <SpeedInsights />
           <Analytics />

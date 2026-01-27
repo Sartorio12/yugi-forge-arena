@@ -41,7 +41,11 @@ const tournamentFormSchema = z.object({
   event_date: z.date({
     required_error: "A data do evento é obrigatória.",
   }),
-  type: z.enum(["standard", "liga"], { required_error: "O tipo de torneio é obrigatório." }).default("standard"),
+  type: z.enum(["standard", "liga", "banimento"], { required_error: "O tipo de torneio é obrigatório." }).default("standard"),
+  banishment_count: z.preprocess(
+    (val) => (val === "" ? 0 : Number(val)),
+    z.number().int().min(0).default(0)
+  ),
   status: z.enum(["Aberto", "Fechado", "Em Andamento"], { required_error: "O status é obrigatório." }),
   registration_link: z.string().url({ message: "URL de inscrição inválida." }).optional().or(z.literal("")),
   is_decklist_required: z.boolean().default(true),
@@ -82,6 +86,7 @@ export const TournamentForm = ({
       description: initialData?.description || "",
       event_date: initialData?.event_date ? new Date(initialData.event_date) : undefined,
       type: (initialData as any)?.type || "standard",
+      banishment_count: (initialData as any)?.banishment_count || 0,
       status: initialData?.status || "Aberto",
       registration_link: initialData?.registration_link || "",
       is_decklist_required: initialData?.is_decklist_required ?? true,
@@ -165,6 +170,7 @@ export const TournamentForm = ({
       event_date: values.event_date.toISOString(),
       max_participants: values.max_participants || null,
       num_decks_allowed: values.num_decks_allowed,
+      banishment_count: values.banishment_count,
     } as any;
     onSubmit(dataToSubmit);
   };
@@ -368,12 +374,36 @@ export const TournamentForm = ({
                 <SelectContent>
                   <SelectItem value="standard">Padrão</SelectItem>
                   <SelectItem value="liga">Liga (Seleção de Times)</SelectItem>
+                  <SelectItem value="banimento">Banimento (Custom Banlist)</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
             </FormItem>
           )}
         />
+        {form.watch("type") === "banimento" && (
+          <FormField
+            control={form.control}
+            name="banishment_count"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cartas a Banir por Jogador</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="Ex: 3" 
+                    {...field} 
+                    onChange={e => field.onChange(Number(e.target.value))} 
+                  />
+                </FormControl>
+                <FormDescription>
+                  Quantas cartas cada jogador deve escolher para a banlist do torneio.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="status"

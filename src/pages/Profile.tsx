@@ -76,6 +76,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const [open, setOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
+  const [discordUsername, setDiscordUsername] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [selectedPresetAvatar, setSelectedPresetAvatar] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -86,6 +87,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
     if (profile) {
       setUsername(profile.username || "");
       setBio(profile.bio || "");
+      setDiscordUsername((profile as any).discord_username || "");
     }
   }, [profile]);
 
@@ -219,7 +221,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         banner_url = `${urlData.publicUrl}?t=${new Date().getTime()}`;
       }
 
-      const updates = { username, bio, avatar_url, banner_url, updated_at: new Date() };
+      const updates = { username, bio, discord_username: discordUsername, avatar_url, banner_url, updated_at: new Date() };
       const { error } = await supabase.from("profiles").update(updates).eq('id', user.id);
       if (error) throw error;
 
@@ -290,6 +292,11 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                     <UserDisplay profile={profile} clan={clan} showTitles={true} />
                   </h1>
                   {profile.bio && <p className="text-muted-foreground">{profile.bio}</p>}
+                  {(profile as any).discord_username && (
+                    <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                      <span className="font-semibold text-[#5865F2]">Discord:</span> {(profile as any).discord_username}
+                    </div>
+                  )}
                   
                   {profile.level !== undefined && profile.xp !== undefined && (
                     <div className="mt-4">
@@ -316,6 +323,10 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                                   <div className="space-y-2">
                                                     <Label htmlFor="username">Nome de Usuário</Label>
                                                     <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                                                  </div>
+                                                  <div className="space-y-2">
+                                                    <Label htmlFor="discordUsername">Discord (Ex: usuario#1234)</Label>
+                                                    <Input id="discordUsername" value={discordUsername} onChange={(e) => setDiscordUsername(e.target.value)} placeholder="Seu nick no Discord" />
                                                   </div>
                                                   <div className="space-y-2">
                                                     <Label htmlFor="bio">Bio</Label>
