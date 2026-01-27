@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "https://mggwlfbajeqbdgkflmqi.supabase.co";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nZ3dsZmJhamVxYmRna2ZsbXFpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjM2NjUxNSwiZXhwIjoyMDc3OTQyNTE1fQ.Ux21IMzLIAwYjpDtNdQtNpxeKMeVtjzoN17pgMmPhUo";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Supabase URL or Service Role Key is not defined.');
@@ -87,21 +87,21 @@ export default async function handler(req, res) {
             }
 
             const deckTypeId = match._id;
-            const officialName = match.name;
-            console.log(`\nProcessing: ${officialName} (ID: ${deckTypeId})`);
+            const archetype = match.name;
+            console.log(`\nProcessing: ${archetype} (ID: ${deckTypeId})`);
 
             // 4. Fetch Top Decks for this ID
             const decksApiUrl = `https://www.masterduelmeta.com/api/v1/top-decks?deckType=${deckTypeId}&limit=5&sort=-created`;
             const decksRes = await fetch(decksApiUrl);
             
             if (!decksRes.ok) {
-                console.warn(`Failed to fetch decks for ${officialName} (${decksRes.status})`);
+                console.warn(`Failed to fetch decks for ${archetype} (${decksRes.status})`);
                 continue;
             }
 
             const decksData = await decksRes.json();
             if (!Array.isArray(decksData) || decksData.length === 0) {
-                console.log(`No decks found for ${officialName}.`);
+                console.log(`No decks found for ${archetype}.`);
                 continue;
             }
 

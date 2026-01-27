@@ -99,7 +99,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         .from("clan_members")
         .select("clans(*)")
         .eq("user_id", id)
-        .single();
+        .maybeSingle(); // Use maybeSingle to avoid error on no rows
       return data?.clans || null;
     },
     enabled: !!id,

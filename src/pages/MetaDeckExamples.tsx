@@ -120,47 +120,61 @@ const MetaDeckExamples = ({ user, onLogout }: MetaDeckExamplesProps) => {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : decks && decks.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="flex flex-col gap-2">
             {decks.map((deck) => (
               <Link to={`/deck/${deck.id}`} key={deck.id}>
-                <Card className="h-full flex flex-col justify-between overflow-hidden group cursor-pointer hover:shadow-glow transition-all duration-300 border-border bg-[hsl(0_0%_12%)] hover:bg-[hsl(0_0%_15%)] hover:border-primary/50 border-t-0 rounded-t-none">
-                  <CardHeader className={deck.featured_card?.image_url_small ? "pb-2 p-0" : "pb-2 pt-4 px-4"}>
-                    {deck.featured_card?.image_url_small && (
-                      <div className="w-full h-[180px] overflow-hidden mb-2">
-                        <img
-                          src={deck.featured_card.image_url_small}
-                          alt={deck.featured_card.name || "Featured Card"}
-                          className="w-full h-full object-cover object-[0%_30%] scale-110 transition-transform duration-300"
-                          loading="lazy"
-                        />
+                <div className="flex items-center gap-4 p-3 rounded-lg border border-border bg-card/50 hover:bg-accent/10 hover:border-primary/50 transition-all group cursor-pointer">
+                  {/* Thumbnail */}
+                  <div className="w-12 h-16 shrink-0 overflow-hidden bg-muted rounded border border-border/50">
+                    {deck.featured_card?.image_url_small ? (
+                      <img
+                        src={deck.featured_card.image_url_small}
+                        alt={deck.featured_card.name || "Featured Card"}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <Layers className="h-6 w-6" />
                       </div>
                     )}
-                    <div className="flex items-start justify-between gap-2 px-4">
-                      <CardTitle className="text-base font-bold group-hover:text-primary transition-colors line-clamp-1">
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-lg group-hover:text-primary transition-colors truncate">
                         {deck.deck_name}
-                      </CardTitle>
+                      </h3>
                       {deck.is_genesys && (
-                        <Badge className="bg-secondary text-[10px] px-1.5 h-5">Genesys</Badge>
+                        <Badge className="bg-secondary text-[10px] px-1.5 h-4">Genesys</Badge>
                       )}
                     </div>
-                  </CardHeader>
-                  <CardContent className="pb-4 px-4">
+                    
                     {deck.profiles ? (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="shrink-0">por</span>
                         <FramedAvatar
                           userId={deck.profiles.id}
                           avatarUrl={deck.profiles.avatar_url}
                           username={deck.profiles.username}
-                          sizeClassName="h-5 w-5"
+                          sizeClassName="h-4 w-4"
                           showFrame={false}
                         />
-                        <UserDisplay profile={deck.profiles} clan={deck.profiles.clan_members?.clans?.tag ? { tag: deck.profiles.clan_members.clans.tag } : null} />
+                        <UserDisplay 
+                          profile={deck.profiles} 
+                          clan={deck.profiles.clan_members?.clans?.tag ? { tag: deck.profiles.clan_members.clans.tag } : null} 
+                        />
                       </div>
                     ) : (
                       <span className="text-xs text-muted-foreground">por Usuário Desconhecido</span>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+
+                  <div className="hidden sm:block text-muted-foreground group-hover:text-primary transition-colors">
+                    <ArrowLeft className="h-5 w-5 rotate-180" />
+                  </div>
+                </div>
               </Link>
             ))}
           </div>

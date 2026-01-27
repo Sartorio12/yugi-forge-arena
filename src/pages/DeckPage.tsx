@@ -226,7 +226,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
         .eq("user_id", deck.user_id)
         .limit(1)
         .maybeSingle();
-      return data?.clans;
+      return data?.clans || null;
     },
     enabled: !!deck?.user_id,
   });
@@ -234,36 +234,71 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   const { data: deckCards, isLoading: isLoadingCards } = useQuery<DeckCard[]>({
     queryKey: ["deck-cards", id, snapshotId],
     queryFn: async () => {
-      let deckCardsData, deckCardsError;
-
+      // If snapshot, we still use the old method (snapshots are separate table)
+      // If live deck, use the robust RPC
       if (snapshotId) {
-        ({ data: deckCardsData, error: deckCardsError } = await supabase
+        const { data: deckCardsData, error: deckCardsError } = await supabase
           .from("tournament_deck_snapshot_cards")
           .select("card_api_id, deck_section")
-          .eq("snapshot_id", snapshotId));
-      } else {
-        ({ data: deckCardsData, error: deckCardsError } = await supabase
-          .from("deck_cards")
-          .select("card_api_id, deck_section")
-          .eq("deck_id", id));
+          .eq("snapshot_id", snapshotId);
+
+        if (deckCardsError) throw deckCardsError;
+        if (!deckCardsData || deckCardsData.length === 0) return [];
+
+        const cardApiIds = [...new Set(deckCardsData.map((c) => String(c.card_api_id).trim()))];
+        const { data: cardsData, error: cardsError } = await supabase
+          .from("cards")
+          .select("*")
+          .in("id", cardApiIds);
+
+        if (cardsError) throw cardsError;
+
+        return deckCardsData.map((deckCard) => ({
+          ...deckCard,
+          cards: cardsData?.find((card) => String(card.id) === String(deckCard.card_api_id).trim()),
+        })).filter(dc => dc.cards) as DeckCard[];
+      } 
+      else {
+        // Live Deck - Use RPC
+        const { data, error } = await supabase.rpc("get_cards_for_deck", {
+            p_deck_id: Number(id)
+        });
+
+        if (error) {
+            console.error("Error fetching cards via RPC:", error);
+            throw error;
+        }
+
+        console.log("RPC Raw Data:", data); // DEBUG
+
+        // Map RPC result to DeckCard structure
+        const mappedData = (data || []).map((row: any) => ({
+            card_api_id: row.card_api_id,
+            deck_section: row.deck_section,
+            cards: {
+                id: row.card_api_id, // Map RPC columns back to CardData interface
+                name: row.name,
+                pt_name: row.pt_name,
+                type: row.type,
+                description: row.description,
+                race: row.race,
+                attribute: row.attribute,
+                atk: row.atk,
+                def: row.def,
+                level: row.level,
+                image_url: row.image_url,
+                image_url_small: row.image_url_small,
+                ban_tcg: row.ban_tcg,
+                ban_ocg: row.ban_ocg,
+                ban_master_duel: row.ban_master_duel,
+                genesys_points: row.genesys_points,
+                md_rarity: row.md_rarity
+            }
+        }));
+        
+        console.log("Mapped Data:", mappedData); // DEBUG
+        return mappedData as DeckCard[];
       }
-
-      if (deckCardsError) throw deckCardsError;
-      if (!deckCardsData) return [];
-
-      const cardApiIds = deckCardsData.map((c) => c.card_api_id);
-
-      const { data: cardsData, error: cardsError } = await supabase
-        .from("cards")
-        .select("*")
-        .in("id", cardApiIds);
-
-      if (cardsError) throw cardsError;
-
-      return deckCardsData.map((deckCard) => ({
-        ...deckCard,
-        cards: cardsData?.find((card) => card.id === deckCard.card_api_id),
-      })) as DeckCard[];
     },
   });
 
@@ -310,9 +345,9 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     enabled: !snapshotId,
   });
 
-  const mainDeck = useMemo(() => deckCards?.filter(c => c.deck_section === 'main' && c.cards).map(c => c.cards!) || [], [deckCards]);
-  const extraDeck = useMemo(() => deckCards?.filter(c => c.deck_section === 'extra' && c.cards).map(c => c.cards!) || [], [deckCards]);
-  const sideDeck = useMemo(() => deckCards?.filter(c => c.deck_section === 'side' && c.cards).map(c => c.cards!) || [], [deckCards]);
+  const mainDeck = useMemo(() => deckCards?.filter(c => c.deck_section?.toLowerCase() === 'main' && c.cards).map(c => c.cards!) || [], [deckCards]);
+  const extraDeck = useMemo(() => deckCards?.filter(c => c.deck_section?.toLowerCase() === 'extra' && c.cards).map(c => c.cards!) || [], [deckCards]);
+  const sideDeck = useMemo(() => deckCards?.filter(c => c.deck_section?.toLowerCase() === 'side' && c.cards).map(c => c.cards!) || [], [deckCards]);
 
   const groupedMainDeck = useMemo(() => groupCards(mainDeck), [mainDeck]);
   const groupedExtraDeck = useMemo(() => groupCards(extraDeck), [extraDeck]);
@@ -455,12 +490,12 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
               )}
             </div>
             {deck.profiles && (
-              <p className="text-lg text-muted-foreground mb-4">
+              <div className="text-lg text-muted-foreground mb-4 flex items-center gap-2">
                 Criado por:{" "}
                 <Link to={`/profile/${deck.user_id}`} className="text-primary hover:underline">
                   <UserDisplay profile={deck.profiles} clan={authorClan} />
                 </Link>
-              </p>
+              </div>
             )}
             <div className="flex flex-wrap items-center gap-2 md:gap-4 text-muted-foreground">
                   {!snapshotId && (
