@@ -30,6 +30,7 @@ const fetchNewsPost = async (postId: string | undefined) => {
         author_id, 
         tournament_id,
         show_metagame_stats,
+        banner_url,
         profiles (id, username, avatar_url, equipped_frame_url)
     `)
     .eq("id", postId)
@@ -131,7 +132,29 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
             <NewsLikeButton postId={post.id} user={user} postAuthorId={post.author_id} postTitle={post.title} />
           </div>
         </header>
-        <div className="prose dark:prose-invert max-w-none text-foreground prose-strong:text-primary mb-12" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content || "") }} />
+
+        {post.banner_url && (
+            <div className="w-full aspect-video relative mb-10 rounded-xl overflow-hidden shadow-2xl border border-white/10">
+                <img 
+                src={post.banner_url} 
+                alt={post.title} 
+                className="w-full h-full object-cover"
+                onError={(e) => e.currentTarget.style.display = 'none'}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-60" />
+            </div>
+        )}
+
+        <div 
+            className="prose dark:prose-invert max-w-none text-foreground prose-strong:text-primary prose-img:rounded-xl prose-img:shadow-lg mb-12" 
+            dangerouslySetInnerHTML={{ 
+                __html: DOMPurify.sanitize(post.content || "", { 
+                    ADD_TAGS: ["img", "iframe", "a", "div", "span"], 
+                    ADD_ATTR: ["src", "style", "alt", "class", "width", "height", "frameborder", "allowfullscreen", "target", "href", "rel"],
+                    FORCE_BODY: true
+                }) 
+            }} 
+        />
         
         {post.show_metagame_stats && post.tournament_id && (
             <MetagameStats tournamentId={post.tournament_id} />
