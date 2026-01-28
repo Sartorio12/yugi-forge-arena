@@ -21,6 +21,7 @@ interface PlayerRanking {
   username: string;
   avatar_url: string;
   total_wins: number;
+  total_points: number;
   level: number;
   clan_tag: string | null;
   equipped_frame_url: string | null;
@@ -105,7 +106,7 @@ export const RankingsWidget = () => {
                   <TableRow className="border-border/50 hover:bg-transparent">
                     <TableHead className="w-[40px] text-center px-1">Rank</TableHead>
                     <TableHead className="text-left px-2">Duelista</TableHead>
-                    <TableHead className="w-[60px] text-center px-1">Vitórias</TableHead>
+                    <TableHead className="w-[60px] text-center px-1">Pontos</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -128,7 +129,7 @@ export const RankingsWidget = () => {
                           </span>
                         </Link>
                       </TableCell>
-                      <TableCell className="text-center font-semibold text-xs px-1">{player.total_wins}</TableCell>
+                      <TableCell className="text-center font-semibold text-xs px-1">{player.total_points}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

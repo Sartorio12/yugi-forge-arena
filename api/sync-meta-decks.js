@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { translate } from 'google-translate-api-x';
 
 // Initialize Supabase client
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "https://mggwlfbajeqbdgkflmqi.supabase.co";
@@ -43,217 +42,6 @@ async function mapCardNamesToInternalIds(cardNames) {
     });
     return map;
 }
-
-// ---------------------------------------------------------
-// HELPER FUNCTIONS (News)
-// ---------------------------------------------------------
-
-const cardIdCache = new Map();
-
-async function getCardId(name) {
-    if (cardIdCache.has(name)) return cardIdCache.get(name);
-    // Reuse the map logic implicitly or just query simple
-    const { data } = await supabaseAdmin.from('cards').select('id').eq('name', name).maybeSingle();
-    if (data) {
-        cardIdCache.set(name, data.id);
-        return data.id;
-    }
-    return null;
-}
-
-async function createDeckFromContainer(deckProps, articleTitle, index) {
-    const deckName = `${articleTitle} - Deck ${index + 1}`;
-    
-    // Create Deck
-    const { data: deck, error: createError } = await supabaseAdmin
-        .from('decks')
-        .insert({
-            user_id: META_BOT_ID,
-            deck_name: deckName,
-            is_private: false,
-            is_genesys: false
-        })
-        .select()
-        .single();
-
-    if (createError) {
-        console.error('Error creating deck:', createError);
-        return null;
-    }
-
-    // Add Cards
-    const deckCardsPayload = [];
-    const processSection = async (list, section) => {
-        if (!list) return;
-        for (const item of list) {
-            const cardName = item.card.name;
-            const amount = item.amount;
-            const cardId = await getCardId(cardName);
-            
-            if (cardId) {
-                for (let i = 0; i < amount; i++) {
-                    deckCardsPayload.push({
-                        deck_id: deck.id,
-                        card_api_id: cardId,
-                        deck_section: section
-                    });
-                }
-            }
-        }
-    };
-
-    await processSection(deckProps.main, 'Main');
-    await processSection(deckProps.extra, 'Extra');
-    await processSection(deckProps.side, 'Side');
-
-    if (deckCardsPayload.length > 0) {
-        const { error: cardsError } = await supabaseAdmin.from('deck_cards').insert(deckCardsPayload);
-        if (cardsError) console.error('Error adding cards to deck:', cardsError);
-    }
-
-    return deck.id;
-}
-
-async function translateText(text) {
-    if (!text || text.trim().length === 0) return text;
-    try {
-        const res = await translate(text, { to: 'pt', forceBatch: false });
-        return res.text;
-    } catch (e) {
-        console.warn('Translation failed, using original:', e.message);
-        return text;
-    }
-}
-
-async function parseNode(node, customComponents, createdDecks, articleTitle) {
-    if (node.type === 'text') {
-        return await translateText(node.content);
-    }
-
-    if (node.type === 'tag') {
-        const tagName = node.name;
-        
-        // Handling component placeholders
-        if (tagName === 'component') {
-            const compId = node.attrs.id;
-            const comp = customComponents[compId];
-            
-            if (comp) {
-                if (comp.type === 'DeckContainer') {
-                    // Create the deck
-                    const deckId = await createDeckFromContainer(comp.props, articleTitle, createdDecks.length); 
-                    if (deckId) {
-                        createdDecks.push(deckId);
-                        return `<div class="bg-secondary/20 p-4 rounded-lg my-4 text-center border border-border">
-                                    <strong>Deck Importado #${createdDecks.length}</strong><br/>
-                                    <span class="text-xs text-muted-foreground">(Veja o deck completo anexado abaixo)</span>
-                                </div>`;
-                    }
-                } else if (comp.type === 'YouTubeVideo') {
-                    return `<div class="aspect-video my-4"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${comp.props.videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
-                } else if (comp.type === 'CardLink') {
-                     return `<strong>${comp.props.name}</strong>`;
-                }
-            }
-            return '';
-        }
-
-        // Standard HTML tags
-        let innerHtml = '';
-        if (node.children) {
-            for (const child of node.children) {
-                innerHtml += await parseNode(child, customComponents, createdDecks, articleTitle);
-            }
-        }
-
-        // Handle Images
-        if (tagName === 'img') {
-            const src = node.attrs.src.startsWith('http') ? node.attrs.src : `${MDM_BASE_URL}${node.attrs.src}`;
-            return `<img src="${src}" alt="${node.attrs.alt || 'image'}" class="rounded-lg my-4 max-w-full h-auto" />`;
-        }
-
-        if (tagName === 'a') {
-             return `<a href="${node.attrs.href}" target="_blank" class="text-primary hover:underline">${innerHtml}</a>`;
-        }
-
-        return `<${tagName}>${innerHtml}</${tagName}>`;
-    }
-    
-    return '';
-}
-
-async function runNewsSync() {
-    console.log("Starting News Sync...");
-    try {
-        const response = await fetch(`${MDM_BASE_URL}/api/v1/articles?limit=20&sort=-date`); // Limit 20 to catch up
-        if (!response.ok) return { imported: 0, error: response.statusText };
-        
-        let articles = await response.json();
-        if (!Array.isArray(articles)) articles = [articles];
-        
-        if (articles.length === 0) return { imported: 0 };
-
-        let importedCount = 0;
-
-        // Process oldest first to maintain order if bulk
-        const reversed = articles.reverse();
-
-        for (const article of reversed) {
-             // Check Duplicate (Loose check by date + title check implicit if needed, but date is safer for now)
-            const { data: existing } = await supabaseAdmin
-                .from('news_posts')
-                .select('id')
-                .eq('created_at', article.date) 
-                .maybeSingle();
-
-            if (existing) continue;
-
-            console.log(`Importing News: ${article.title}`);
-            const translatedTitle = await translateText(article.title);
-            const createdDeckIds = [];
-            let htmlContent = '';
-            
-            if (article.parsedMarkdown && article.parsedMarkdown.htmlTree) {
-                for (const node of article.parsedMarkdown.htmlTree) {
-                    htmlContent += await parseNode(node, article.parsedMarkdown.customComponents || {}, createdDeckIds, translatedTitle);
-                }
-            } else {
-                 htmlContent = `<p>${await translateText(article.description)}</p>`;
-            }
-
-            htmlContent += `<p class="text-xs text-muted-foreground mt-4">Fonte Original: <a href="${MDM_BASE_URL}${article.url}" target="_blank">${MDM_BASE_URL}</a> (Traduzido Automaticamente)</p>`;
-
-            const { data: newPost, error: insertError } = await supabaseAdmin
-                .from('news_posts')
-                .insert({
-                    author_id: META_BOT_ID,
-                    title: translatedTitle,
-                    content: htmlContent,
-                    banner_url: article.image ? `${MDM_BASE_URL}${article.image}` : null,
-                    created_at: article.date
-                })
-                .select()
-                .single();
-
-            if (!insertError && newPost) {
-                importedCount++;
-                if (createdDeckIds.length > 0) {
-                    const pivotData = createdDeckIds.map((deckId, index) => ({
-                        post_id: newPost.id,
-                        deck_id: deckId,
-                        placement: `Deck ${index + 1}`
-                    }));
-                    await supabaseAdmin.from('news_post_decks').insert(pivotData);
-                }
-            }
-        }
-        return { imported: importedCount };
-    } catch (e) {
-        console.error("News Sync Error:", e);
-        return { imported: 0, error: e.message };
-    }
-}
-
 
 // ---------------------------------------------------------
 // MAIN HANDLER
@@ -369,17 +157,14 @@ export default async function handler(req, res) {
             }
         }
 
-        // --- PART 2: NEWS ---
-        // News sync disabled as per user request
-        // const newsResult = await runNewsSync();
-        const newsResult = { imported: 0 };
+        // --- PART 2: NEWS (REMOVED) ---
+        // News sync logic has been completely stripped out.
 
         return res.status(200).json({
             message: `Sync complete.`, 
             stats: {
                 decks: totalImportedDecks,
-                news: newsResult.imported,
-                newsError: newsResult.error
+                news: 0
             }
         });
 

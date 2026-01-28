@@ -12,12 +12,14 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { FramedAvatar } from "./FramedAvatar";
+import UserDisplay from "@/components/UserDisplay";
 
 interface PlayerRanking {
   user_id: string;
   username: string;
   avatar_url: string;
   total_wins: number;
+  total_points: number;
   level: number;
   clan_tag: string | null;
   equipped_frame_url: string | null;
@@ -69,7 +71,7 @@ export const TopRankedPlayers = () => {
                     <TableHead className="w-[40px] text-center px-1">Rank</TableHead>
                     <TableHead className="text-center">Duelista</TableHead>
                     <TableHead className="w-[50px] text-center px-1">Nível</TableHead>
-                    <TableHead className="w-[60px] text-center px-1">Vitórias</TableHead>
+                    <TableHead className="w-[60px] text-center px-1">Pontos</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -93,7 +95,7 @@ export const TopRankedPlayers = () => {
                         </Link>
                       </TableCell>
                       <TableCell className="text-center font-semibold text-base px-1 text-primary">{player.level}</TableCell>
-                      <TableCell className="text-center font-semibold text-sm px-1">{player.total_wins}</TableCell>
+                      <TableCell className="text-center font-semibold text-sm px-1">{player.total_points}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
