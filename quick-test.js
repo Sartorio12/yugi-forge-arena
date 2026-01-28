@@ -1,22 +1,18 @@
 async function test() {
-    const key = "AIzaSyB_rP30kM1ACRMsBVwHf0DK1O44bosmvYA";
-    // Tentar acessar o modelo v1 PRO (não 1.5, não flash)
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${key}`;
+    const key = "AIzaSyCVIjt11Y2OPkE6OgGyNJ9hWI6fhWE-MDU";
+    // TENTANDO O MODELO GEMMA (QUE É MAIS LEVE)
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemma-2b-it:generateContent?key=${key}`;
     
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            contents: [{ parts: [{ text: "Responda apenas 'SIM'." }] }]
+            contents: [{ parts: [{ text: "Oi" }] }]
         })
     });
     
     const data = await response.json();
-    if (data.candidates) {
-        console.log("SUCESSO:", data.candidates[0].content.parts[0].text);
-    } else {
-        console.log("FALHA:", JSON.stringify(data, null, 2));
-    }
+    console.log(JSON.stringify(data, null, 2));
 }
 
 test();
