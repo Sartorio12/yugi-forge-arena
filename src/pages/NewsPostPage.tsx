@@ -110,6 +110,10 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
       <div className="container mx-auto max-w-3xl py-12">
         <header className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">{post.title}</h1>
+          {/* DEBUG VISUAL - REMOVER EM PRODUÇÃO */}
+          <p className="text-xs text-red-400 font-mono mb-2 break-all border border-red-500 p-2 rounded">
+            DEBUG BANNER: {post.banner_url || "NULL"}
+          </p>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-2 text-secondary-foreground">
               {post.profiles && (
@@ -139,7 +143,7 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
                 src={post.banner_url} 
                 alt={post.title} 
                 className="w-full h-full object-cover"
-                onError={(e) => e.currentTarget.style.display = 'none'}
+                // REMOVIDO onError PARA VER O ERRO
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-60" />
             </div>
