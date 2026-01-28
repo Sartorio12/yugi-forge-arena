@@ -1,4 +1,4 @@
-name: MetaBot Social Life
+name: MetaBot Life Cycle
 
 on:
   schedule:
@@ -7,19 +7,28 @@ on:
   workflow_dispatch: # Permite rodar manualmente pelo botão no GitHub
 
 jobs:
-  wake_up_metabot:
-    name: Trigger Social Routine
+  social_interaction:
+    name: Social Routine (Comments)
     runs-on: ubuntu-latest
     steps:
-      - name: Call API
+      - name: Trigger Social API
         run: |
-          # Substitua APP_URL nos Secrets do GitHub ou hardcode aqui
-          # Ex: https://yugi-forge-arena.vercel.app/api/metabot-social
-          
           TARGET_URL="${{ secrets.APP_URL }}/api/metabot-social"
-          
-          echo "Acordando MetaBot em: $TARGET_URL"
-          
+          echo "Disparando Social Bot: $TARGET_URL"
+          curl -X GET "$TARGET_URL" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          --fail \
+          --verbose
+
+  news_reporting:
+    name: News Routine (Journalist)
+    needs: social_interaction # Roda depois do social para não sobrecarregar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger News API
+        run: |
+          TARGET_URL="${{ secrets.APP_URL }}/api/metabot-news"
+          echo "Disparando News Bot: $TARGET_URL"
           curl -X GET "$TARGET_URL" \
           -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
           --fail \
