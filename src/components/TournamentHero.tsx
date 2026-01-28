@@ -13,7 +13,6 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useEffect, useState } from "react";
 
 interface Tournament {
@@ -94,50 +93,54 @@ export const TournamentHero = () => {
         <CarouselContent>
           {tournaments.map((tournament) => (
             <CarouselItem key={tournament.id}>
-              <div className="relative w-full overflow-hidden rounded-lg border border-border group">
-                <AspectRatio ratio={21 / 9} className="bg-[hsl(0_0%_12%)]">
-                  {/* Background Image */}
-                  {tournament.banner_image_url ? (
-                    <img
-                      src={tournament.banner_image_url}
-                      alt={tournament.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-background" />
-                  )}
-                  
-                  {/* Dark Overlay for text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
+              <div className="relative w-full overflow-hidden rounded-lg border border-border group aspect-video md:aspect-[21/9]">
+                {/* Background Image */}
+                {tournament.banner_image_url ? (
+                  <img
+                    src={tournament.banner_image_url}
+                    alt={tournament.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-background" />
+                )}
+                
+                {/* Dark Overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
 
-                  {/* Content */}
-                  <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8 lg:p-10">
-                    <div className="max-w-2xl space-y-4">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center rounded-full border border-primary/50 bg-primary/20 px-2.5 py-0.5 text-xs font-semibold text-primary-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                          Próximo Evento
-                        </span>
-                        <span className="flex items-center text-xs font-medium text-gray-300">
-                          <Calendar className="mr-1 h-3.5 w-3.5" />
-                          {format(new Date(tournament.event_date), "dd 'de' MMMM, HH:mm", { locale: ptBR })}
-                        </span>
-                      </div>
+                {/* Content */}
+                <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-6 md:p-8 lg:p-10">
+                  <div className="max-w-2xl space-y-1.5 sm:space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-primary/50 bg-primary/20 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-primary-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                        Próximo Evento
+                      </span>
+                      <span className="flex items-center text-[10px] sm:text-xs font-medium text-gray-300">
+                        <Calendar className="mr-1 h-3 sm:h-3.5 w-3 sm:w-3.5" />
+                        {format(new Date(tournament.event_date), "dd 'de' MMMM, HH:mm", { locale: ptBR })}
+                      </span>
+                    </div>
 
-                      <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight">
-                        {tournament.title}
-                      </h2>
+                    <h2 className="text-lg sm:text-2xl md:text-4xl font-bold text-white tracking-tight line-clamp-1 sm:line-clamp-2">
+                      {tournament.title}
+                    </h2>
 
-                      <div className="pt-2">
-                        <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-bold" asChild>
-                          <Link to={`/tournaments/${tournament.id}`}>
-                            Inscrever-se Agora
-                            <ChevronRight className="ml-2 h-4 w-4" />
-                          </Link>
-                        </Button>
-                      </div>
+                    <div className="pt-0.5 sm:pt-2">
+                      <Button size="sm" className="sm:hidden h-7 bg-primary hover:bg-primary/90 text-[10px] px-3 font-bold" asChild>
+                        <Link to={`/tournaments/${tournament.id}`}>
+                          Inscrever-se
+                          <ChevronRight className="ml-1 h-3 w-3" />
+                        </Link>
+                      </Button>
+                      <Button size="lg" className="hidden sm:inline-flex bg-primary hover:bg-primary/90 text-white font-bold" asChild>
+                        <Link to={`/tournaments/${tournament.id}`}>
+                          Inscrever-se Agora
+                          <ChevronRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
                     </div>
                   </div>
-                </AspectRatio>
+                </div>
               </div>
             </CarouselItem>
           ))}

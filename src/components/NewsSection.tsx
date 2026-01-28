@@ -70,12 +70,12 @@ export const NewsSection = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : posts && posts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
           {posts.map((post) => (
                         <Link
                           key={post.id}
                           to={`/news/${post.id}`}
-                          className="group relative flex flex-col h-[280px] overflow-hidden rounded-lg border border-border bg-transparent hover:bg-white/5 hover:border-primary/50 transition-all duration-300"
+                          className="group relative flex flex-col h-[180px] sm:h-[220px] md:h-[280px] overflow-hidden rounded-lg border border-border bg-transparent hover:bg-white/5 hover:border-primary/50 transition-all duration-300"
                         >
                           {/* Image Section - now takes full height of the card */}
                           <div className="absolute inset-0 w-full h-full">
@@ -87,39 +87,36 @@ export const NewsSection = () => {
                               />
                             ) : (
                               <div className="w-full h-full bg-secondary/20 flex items-center justify-center">
-                                <Newspaper className="h-12 w-12 text-muted-foreground/20" />
+                                <Newspaper className="h-8 w-8 md:h-12 md:w-12 text-muted-foreground/20" />
                               </div>
                             )}
                             {/* Dark Gradient Overlay for text readability */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
             
                             {/* "Notícia" Badge */}
-                            <div className="absolute top-2 left-2 z-10">
-                              <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-primary/90 text-primary-foreground uppercase tracking-wider shadow-sm">
+                            <div className="absolute top-1.5 left-1.5 md:top-2 md:left-2 z-10">
+                              <span className="inline-block px-1.5 py-0.5 rounded text-[8px] md:text-[10px] font-bold bg-primary/90 text-primary-foreground uppercase tracking-wider shadow-sm">
                                 Notícia
                               </span>
                             </div>
             
                             {/* Content (Title, Author, Date - positioned at the bottom) */}
-                            <div className="absolute inset-x-0 bottom-0 p-4 z-10">
-                              <h3 className="text-base font-bold text-white leading-tight line-clamp-2 group-hover:text-primary transition-colors mb-2">
+                            <div className="absolute inset-x-0 bottom-0 p-2 md:p-4 z-10">
+                              <h3 className="text-xs md:text-base font-bold text-white leading-tight line-clamp-2 group-hover:text-primary transition-colors mb-1 md:mb-2">
                                 {post.title}
                               </h3>
-                              <div className="flex items-center gap-2 text-xs text-gray-300">
+                              <div className="flex items-center gap-1 md:gap-2 text-[9px] md:text-xs text-gray-300">
                                 {/* Author */}
                                 {post.profiles && (
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="flex items-center gap-1 md:gap-1.5">
                                     <FramedAvatar
                                       userId={post.profiles.id}
                                       avatarUrl={post.profiles.avatar_url}
                                       frameUrl={post.profiles.equipped_frame_url}
                                       username={post.profiles.username}
-                                      sizeClassName="h-6 w-6 aspect-square"
+                                      sizeClassName="h-4 w-4 md:h-6 md:w-6 aspect-square"
                                     />
-                                    <span className="font-medium truncate max-w-[100px]">
-                                      {post.profiles.clan_members?.clans?.tag && (
-                                         <span className="text-primary mr-1">[{post.profiles.clan_members.clans.tag}]</span>
-                                      )}
+                                    <span className="font-medium truncate max-w-[60px] md:max-w-[100px]">
                                       {post.profiles.username}
                                     </span>
                                   </div>
