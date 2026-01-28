@@ -1,0 +1,26 @@
+name: MetaBot Social Life
+
+on:
+  schedule:
+    # Roda a cada 4 horas (00:00, 04:00, 08:00, etc.)
+    - cron: '0 */4 * * *'
+  workflow_dispatch: # Permite rodar manualmente pelo botão no GitHub
+
+jobs:
+  wake_up_metabot:
+    name: Trigger Social Routine
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API
+        run: |
+          # Substitua APP_URL nos Secrets do GitHub ou hardcode aqui
+          # Ex: https://yugi-forge-arena.vercel.app/api/metabot-social
+          
+          TARGET_URL="${{ secrets.APP_URL }}/api/metabot-social"
+          
+          echo "Acordando MetaBot em: $TARGET_URL"
+          
+          curl -X GET "$TARGET_URL" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          --fail \
+          --verbose
