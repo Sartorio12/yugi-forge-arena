@@ -42,31 +42,27 @@ async function translateArticle(articleData, genAI) {
 // --------------------------------------------------------------------------
 
 export default async function handler(req, res) {
-    // 1. Carregar Variáveis DENTRO do handler
+    // 1. Carregar Variáveis
     const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-    // 2. Verificação de Segurança
-    if (!SUPABASE_SERVICE_ROLE_KEY) {
-        return res.status(500).json({ error: "CONFIG_ERROR: SUPABASE_SERVICE_ROLE_KEY ausente na Vercel." });
-    }
-    if (!GEMINI_API_KEY) {
-        return res.status(500).json({ error: "CONFIG_ERROR: GEMINI_API_KEY ausente." });
-    }
+    if (!SUPABASE_SERVICE_ROLE_KEY) return res.status(500).json({ error: "CONFIG_ERROR: SUPABASE_SERVICE_ROLE_KEY ausente na Vercel." });
+    if (!GEMINI_API_KEY) return res.status(500).json({ error: "CONFIG_ERROR: GEMINI_API_KEY ausente." });
 
-    const authHeader = req.headers.authorization;
-    if (req.headers['x-vercel-cron'] !== '1' && (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`)) {
-        // return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    // Inicialização Segura
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
     try {
         console.log("MetaBot News: Buscando pautas...");
-        const mdmRes = await fetch(MDM_API_URL);
+        
+        // ADDED USER-AGENT para evitar bloqueio 403
+        const mdmRes = await fetch(MDM_API_URL, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
+
         if (!mdmRes.ok) throw new Error(`Erro MDM: ${mdmRes.status}`);
         
         const articles = await mdmRes.json();

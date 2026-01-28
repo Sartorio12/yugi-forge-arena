@@ -5,7 +5,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // CONFIGURAÇÃO
 // --------------------------------------------------------------------------
 
-// ID do Usuário "MetaBot" no Supabase
 const META_BOT_ID = 'ec2018d3-c57f-42a0-bf15-ebb9a60c8fbd'; 
 
 // --------------------------------------------------------------------------
@@ -53,38 +52,20 @@ async function generateComment(deckName, cardList, tierListSummary, genAI) {
 // --------------------------------------------------------------------------
 
 export default async function handler(req, res) {
-    // 1. Carregar Variáveis DENTRO do handler para evitar crash no boot
     const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
     const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-    // 2. Verificação de Segurança (Variáveis)
-    if (!SUPABASE_SERVICE_ROLE_KEY) {
-        console.error("FATAL: SUPABASE_SERVICE_ROLE_KEY não encontrada nas env vars.");
-        return res.status(500).json( {
-            error: "CONFIG_ERROR: A chave 'SUPABASE_SERVICE_ROLE_KEY' está faltando no painel da Vercel.",
-            solution: "Adicione a chave nas Environment Variables da Vercel e faça Redeploy."
-        });
-    }
+    if (!SUPABASE_SERVICE_ROLE_KEY) return res.status(500).json({ error: "CONFIG_ERROR: SUPABASE_SERVICE_ROLE_KEY ausente." });
+    if (!GEMINI_API_KEY) return res.status(500).json({ error: "CONFIG_ERROR: GEMINI_API_KEY ausente." });
 
-    if (!GEMINI_API_KEY) {
-        return res.status(500).json({ error: "CONFIG_ERROR: GEMINI_API_KEY ausente." });
-    }
-
-    // 3. Verificação de Segurança (Cron Secret)
-    const authHeader = req.headers.authorization;
-    if (req.headers['x-vercel-cron'] !== '1' && (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`)) {
-        // return res.status(401).json({ error: 'Unauthorized' }); // Mantido comentado para facilitar debug inicial
-    }
-
-    // Inicialização Segura
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
     try {
-        console.log("Acordando MetaBot (Powered by Gemini) para interação social...");
+        console.log("Acordando MetaBot Social...");
 
-        // 4. Carregar Contexto
+        // Carregar Contexto
         const { data: tierData } = await supabaseAdmin
             .from('tier_list')
             .select('deck_name, tier')
@@ -95,7 +76,7 @@ export default async function handler(req, res) {
             ? tierData.map(t => `- ${t.deck_name} (Tier ${t.tier})`).join('\n')
             : "Contexto Indisponível (Assuma que Snake-Eye é Tier 1)";
 
-        // 5. Encontrar um Deck Alvo
+        // Buscar decks candidatos (Top 20 recentes)
         const { data: targetDecks } = await supabaseAdmin
             .from('decks')
             .select('id, deck_name, user_id, profiles(username)')
@@ -108,67 +89,59 @@ export default async function handler(req, res) {
             return res.status(200).json({ message: "Nenhum deck novo para analisar." });
         }
 
-        const targetDeck = targetDecks[Math.floor(Math.random() * targetDecks.length)];
-        
-        // Double Check
-        const { data: existingComment } = await supabaseAdmin
-            .from('deck_comments')
-            .select('id')
-            .eq('deck_id', targetDeck.id)
-            .eq('user_id', META_BOT_ID)
-            .maybeSingle();
+        // Embaralhar para tentar encontrar um válido
+        const shuffledDecks = targetDecks.sort(() => 0.5 - Math.random());
 
-        if (existingComment) {
-            return res.status(200).json({ message: `Já comentei no deck ${targetDeck.deck_name}, pulando.` });
-        }
-
-        // 6. Ler cartas
-        const { data: deckCards } = await supabaseAdmin
-            .from('deck_cards')
-            .select('cards(name)')
-            .eq('deck_id', targetDeck.id);
-        
-        if (!deckCards || deckCards.length === 0) {
-            return res.status(200).json({ message: "Deck vazio, ignorando." });
-        }
-
-        const cardList = deckCards.map(d => d.cards?.name).filter(Boolean);
-
-        // 7. O CÉREBRO TRABALHANDO
-        console.log(`Gemini analisando deck: ${targetDeck.deck_name}...`);
-        const aiComment = await generateComment(targetDeck.deck_name, cardList, tierListSummary, genAI);
-
-        if (aiComment) {
-            // 8. AÇÃO SOCIAL
-            const { error: commentError } = await supabaseAdmin
+        for (const targetDeck of shuffledDecks) {
+            // Check duplicidade
+            const { data: existingComment } = await supabaseAdmin
                 .from('deck_comments')
-                .insert({
-                    deck_id: targetDeck.id,
-                    user_id: META_BOT_ID,
-                    content: aiComment
+                .select('id')
+                .eq('deck_id', targetDeck.id)
+                .eq('user_id', META_BOT_ID)
+                .maybeSingle();
+
+            if (existingComment) continue; // Pula este deck
+
+            // Check cartas
+            const { data: deckCards } = await supabaseAdmin
+                .from('deck_cards')
+                .select('cards(name)')
+                .eq('deck_id', targetDeck.id);
+            
+            if (!deckCards || deckCards.length < 5) {
+                console.log(`Deck ${targetDeck.deck_name} tem poucas cartas (${deckCards?.length}), pulando.`);
+                continue; // Deck vazio ou incompleto, pula
+            }
+
+            const cardList = deckCards.map(d => d.cards?.name).filter(Boolean);
+
+            // ACHAMOS UM DECK VÁLIDO!
+            console.log(`Analisando deck: ${targetDeck.deck_name}...`);
+            const aiComment = await generateComment(targetDeck.deck_name, cardList, tierListSummary, genAI);
+
+            if (aiComment) {
+                await supabaseAdmin
+                    .from('deck_comments')
+                    .insert({ deck_id: targetDeck.id, user_id: META_BOT_ID, content: aiComment });
+
+                await supabaseAdmin
+                    .from('deck_likes')
+                    .insert({ deck_id: targetDeck.id, user_id: META_BOT_ID })
+                    .ignore();
+
+                return res.status(200).json({ 
+                    success: true, 
+                    deck: targetDeck.deck_name,
+                    comment: aiComment
                 });
-
-            if (commentError) throw commentError;
-
-            await supabaseAdmin
-                .from('deck_likes')
-                .insert({
-                    deck_id: targetDeck.id,
-                    user_id: META_BOT_ID
-                })
-                .ignore();
-
-            return res.status(200).json( {
-                success: true, 
-                deck: targetDeck.deck_name,
-                comment: aiComment
-            });
-        } else {
-            return res.status(500).json({ error: "Gemini não retornou resposta válida." });
+            }
         }
+
+        return res.status(200).json({ message: "Nenhum deck válido encontrado na lista recente (todos comentados ou vazios)." });
 
     } catch (error) {
-        console.error("Erro fatal no MetaBot Social:", error);
+        console.error("Erro fatal:", error);
         return res.status(500).json({ error: error.message });
     }
 }
