@@ -134,11 +134,14 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
         </header>
 
         {post.banner_url && (
-            <img 
-              src={post.banner_url} 
-              alt={post.title} 
-              className="w-full rounded-xl shadow-lg mb-10 border border-white/10"
-            />
+            <div className="w-full h-64 md:h-96 relative mb-10 rounded-xl overflow-hidden shadow-2xl border border-white/10 group">
+                <img 
+                src={post.banner_url} 
+                alt={post.title} 
+                className="w-full h-full object-cover object-[center_25%] scale-125 transition-transform duration-700 group-hover:scale-135"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-80" />
+            </div>
         )}
 
         <div 

@@ -7,18 +7,25 @@ const HF_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistra
 async function translateArticle(articleData, hfToken, retries = 3) {
     const rawContent = JSON.stringify(articleData).substring(0, 1500); 
 
-    // PROMPT REFINADO: COMENTARISTA
-    const prompt = `<s>[INST] Você é o MetaBot, Editor de Yu-Gi-Oh.
-Tarefa: Traduza e resuma esta notícia para Português Brasil.
-Estilo Visual: O site tem fundo escuro. Você DEVE usar estilos inline no HTML para garantir legibilidade.
-- Parágrafos: <p style="color: #e2e8f0; font-size: 1.1rem; line-height: 1.7; margin-bottom: 1.2rem;">
-- Títulos: <h2 style="color: #60a5fa; font-size: 1.8rem; font-weight: bold; margin-top: 2rem;">
-- Listas: <ul style="color: #cbd5e1; list-style-type: disc; padding-left: 20px;">
+    // PROMPT REFINADO: DETALHADO E ENXUTO
+    const prompt = `<s>[INST] Você é o MetaBot, Especialista e Comentarista de Yu-Gi-Oh!.
+TAREFA: Escreva um artigo DETALHADO sobre a notícia abaixo para o seu blog.
+REQUISITOS DE CONTEÚDO:
+- Explique a estratégia central (Intro).
+- Detalhe as cartas principais e por que são boas.
+- Mencione possíveis combos ou interações.
+- Aponte os pontos fracos ou como jogar contra.
+- Use gírias (staple, engine, brick, tier).
+
+ESTILO VISUAL (OBRIGATÓRIO):
+- Texto padrão: <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.8rem;">
+- Títulos: <h2 style="color: #60a5fa; font-size: 1.4rem; font-weight: bold; margin-top: 1.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid #1e293b;">
+- Listas: <ul style="color: #94a3b8; font-size: 0.9rem; list-style-type: square; padding-left: 15px;">
 - Negrito: <b style="color: #f472b6;">
 
-Formato Saída: APENAS JSON válido neste formato: { "title_pt": "...", "content_html": "..." }.
+FORMATO SAÍDA: APENAS JSON: { "title_pt": "...", "content_html": "..." }.
 
-Notícia Original:
+DADOS ORIGINAIS:
 ${rawContent} [/INST]`;
 
     for (let i = 0; i < retries; i++) {
