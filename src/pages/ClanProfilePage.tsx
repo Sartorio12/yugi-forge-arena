@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ClanAnalyticsDashboard } from "@/components/clans/ClanAnalyticsDashboard";
 
 interface ClanProfilePageProps {
   user: User | null;
@@ -329,13 +330,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
               </Card>
             </div>
             <div className="lg:col-span-1">
-              {/* Placeholder for future content like clan stats, recent activity, etc. */}
-              <Card>
-                <CardHeader><CardTitle>Atividade</CardTitle></CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground text-center">Em breve...</p>
-                </CardContent>
-              </Card>
+              <ClanAnalyticsDashboard clanId={clanId} />
             </div>
           </div>
         </div>

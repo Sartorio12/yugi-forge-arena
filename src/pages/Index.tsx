@@ -14,6 +14,8 @@ import { CardOfTheDay } from "@/components/CardOfTheDay";
 import { DiscordWidget } from "@/components/DiscordWidget";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
 import { TierListWidget } from "@/components/TierListWidget";
+import { WinStreakWidget } from "@/components/analytics/WinStreakWidget";
+import { TopRivalriesWidget } from "@/components/analytics/TopRivalriesWidget";
 
 interface IndexProps {
   user: User | null;
@@ -56,7 +58,11 @@ const Index = ({ user, onLogout }: IndexProps) => {
             {/* A. Widget de Rankings (Tabs) */}
             <RankingsWidget />
 
-            {/* B. Card do Dia */}
+            {/* B. Analytics Widgets */}
+            <WinStreakWidget />
+            <TopRivalriesWidget />
+
+            {/* C. Card do Dia */}
             <CardOfTheDay />
 
             {/* C. Widget do Discord */}

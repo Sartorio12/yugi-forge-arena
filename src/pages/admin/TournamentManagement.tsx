@@ -66,6 +66,8 @@ interface Participant {
 
 
 
+import { MatchReporter } from "@/components/admin/MatchReporter";
+
 const TournamentManagementPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -249,6 +251,8 @@ const TournamentManagementPage = () => {
             Voltar ao Dashboard
           </Button>
         </Link>
+
+        {id && <MatchReporter tournamentId={id} />}
 
         <Card className="bg-gradient-card border-border">
           <CardHeader>

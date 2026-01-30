@@ -47,6 +47,7 @@ import { GlobalChatListener } from "./components/chat/GlobalChatListener";
 import { LevelUpListener } from "./components/LevelUpListener";
 import ScrollToTop from "./components/ScrollToTop";
 import { DiscordUsernameModal } from "./components/DiscordUsernameModal";
+import RivalryPage from "./pages/RivalryPage";
 
 const queryClient = new QueryClient();
 
@@ -154,6 +155,10 @@ const App = () => {
                           <Route
                             path="/meta/*"
                             element={<MetaDeckExamples user={user} onLogout={handleLogout} />}
+                          />
+                          <Route 
+                            path="/rivalry" 
+                            element={<RivalryPage user={user} onLogout={handleLogout} />} 
                           />
                           <Route
                             path="/messages"

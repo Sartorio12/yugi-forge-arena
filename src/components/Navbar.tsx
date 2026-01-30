@@ -142,6 +142,9 @@ const NavMenu = ({ user, profile }) => {
         <DropdownMenuItem asChild>
           <Link to="/ranking">Ranking</Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/rivalry">Rivalidades</Link>
+        </DropdownMenuItem>
         {user && (
           <DropdownMenuItem asChild>
             <Link to="/deck-builder">Deck Builder</Link>
