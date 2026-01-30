@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Flame, Loader2 } from "lucide-react";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export const WinStreakWidget = () => {
+  const { t } = useTranslation();
   const { data: streaks, isLoading } = useQuery({
     queryKey: ["winStreaks"],
     queryFn: async () => {
@@ -23,7 +25,7 @@ export const WinStreakWidget = () => {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg text-orange-500">
           <Flame className="fill-orange-500 h-5 w-5" />
-          Win Streaks 2026
+          {t('win_streaks.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>

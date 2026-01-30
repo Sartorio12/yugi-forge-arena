@@ -4,39 +4,28 @@ import { Loader2, UserPlus, ShieldPlus, Trophy, BookOpen, MessageSquare, Heart, 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS, es } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 
 interface Activity {
   id: string;
   type: "user_registration" | "clan_creation" | "tournament_registration" | "public_deck" | "news_post" | "deck_comment" | "news_comment" | "deck_like";
-  message: string;
   timestamp: string;
-  link?: string; // Optional link to the related item
-  profile?: {
-    username: string;
-    clan_members?: {
-      clans: {
-        tag: string;
-      } | null;
-    };
-  };
-  tournament?: {
-    title: string;
-    id: number;
-  };
-  deck?: {
-    deck_name: string;
-    id: number;
-  };
-  news_post?: {
-    title: string;
-    id: number;
-  };
+  link?: string;
+  data: any; // Dynamic data for translations
 }
 
 export const ActivityTimeline = () => {
+  const { t, i18n } = useTranslation();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const localeMap: { [key: string]: any } = {
+    pt: ptBR,
+    en: enUS,
+    es: es,
+  };
+  const currentLocale = localeMap[i18n.language] || ptBR;
 
   useEffect(() => {
     const fetchInitialActivities = async () => {
@@ -45,385 +34,181 @@ export const ActivityTimeline = () => {
         const allActivities: Activity[] = [];
 
         // Fetch recent user registrations
-        const { data: users, error: userError } = await supabase
+        const { data: users } = await supabase
           .from("profiles")
           .select("id, username, updated_at")
           .order("updated_at", { ascending: false })
           .limit(5);
-        if (userError) console.error("Error fetching users:", userError);
         (users || []).forEach((user) =>
           allActivities.push({
             id: `user-${user.id}`,
             type: "user_registration",
-            message: `Novo usuário: ${user.username}`,
             timestamp: user.updated_at,
             link: `/profile/${user.id}`,
+            data: { username: user.username },
           })
         );
 
         // Fetch recent clan creations
-        const { data: clans, error: clanError } = await supabase
+        const { data: clans } = await supabase
           .from("clans")
           .select("id, name, tag, created_at")
           .order("created_at", { ascending: false })
           .limit(5);
-        if (clanError) console.error("Error fetching clans:", clanError);
         (clans || []).forEach((clan) =>
           allActivities.push({
             id: `clan-${clan.id}`,
             type: "clan_creation",
-            message: `Novo clã: ${clan.name} [${clan.tag}]`,
             timestamp: clan.created_at,
             link: `/clans/${clan.id}`,
+            data: { name: clan.name, tag: clan.tag },
           })
         );
 
         // Fetch recent tournament registrations
-        const { data: tournamentParticipants, error: tpError } = await supabase
+        const { data: tournamentParticipants } = await supabase
           .from("tournament_participants")
           .select("id, created_at, profiles(username, clan_members(clans(tag))), tournaments(title, id)")
           .order("created_at", { ascending: false })
           .limit(5);
-        if (tpError) console.error("Error fetching tournament participants:", tpError);
         (tournamentParticipants || []).forEach((tp) =>
           allActivities.push({
             id: `tp-${tp.id}`,
             type: "tournament_registration",
-            message: `${tp.profiles?.clan_members?.clans?.tag ? `[${tp.profiles.clan_members.clans.tag}] ` : ''}${tp.profiles?.username} se inscreveu no torneio: ${tp.tournaments?.title}`,
             timestamp: tp.created_at,
             link: `/tournaments/${tp.tournaments?.id}`,
+            data: { 
+                username: tp.profiles?.username, 
+                tag: tp.profiles?.clan_members?.clans?.tag ? `[${tp.profiles.clan_members.clans.tag}] ` : '',
+                title: tp.tournaments?.title 
+            },
           })
         );
 
         // Fetch recent public decks
-        const { data: publicDecks, error: deckError } = await supabase
+        const { data: publicDecks } = await supabase
           .from("decks")
           .select("id, deck_name, created_at, profiles(username, clan_members(clans(tag)))")
           .eq("is_private", false)
           .order("created_at", { ascending: false })
           .limit(5);
-        if (deckError) console.error("Error fetching public decks:", deckError);
         (publicDecks || []).forEach((deck) =>
           allActivities.push({
             id: `deck-${deck.id}`,
             type: "public_deck",
-            message: `Novo deck público: "${deck.deck_name}" por ${deck.profiles?.clan_members?.clans?.tag ? `[${deck.profiles.clan_members.clans.tag}] ` : ''}${deck.profiles?.username}`,
             timestamp: deck.created_at,
             link: `/deck/${deck.id}`,
+            data: { 
+                deck_name: deck.deck_name,
+                username: deck.profiles?.username,
+                tag: deck.profiles?.clan_members?.clans?.tag ? `[${deck.profiles.clan_members.clans.tag}] ` : ''
+            },
           })
         );
 
-        // Fetch recent news posts
-        const { data: newsPosts, error: newsError } = await supabase
+        // News posts, comments, likes...
+        const { data: newsPosts } = await supabase
           .from("news_posts")
           .select("id, title, created_at, profiles(username, clan_members(clans(tag)))")
           .order("created_at", { ascending: false })
           .limit(5);
-        if (newsError) console.error("Error fetching news posts:", newsError);
         (newsPosts || []).forEach((post) =>
           allActivities.push({
             id: `news-${post.id}`,
             type: "news_post",
-            message: `Nova notícia: "${post.title}" por ${post.profiles?.clan_members?.clans?.tag ? `[${post.profiles.clan_members.clans.tag}] ` : ''}${post.profiles?.username}`,
             timestamp: post.created_at,
             link: `/news/${post.id}`,
+            data: {
+                title: post.title,
+                username: post.profiles?.username,
+                tag: post.profiles?.clan_members?.clans?.tag ? `[${post.profiles.clan_members.clans.tag}] ` : ''
+            }
           })
         );
 
-        // Fetch recent deck comments
-        const { data: deckComments, error: dcError } = await supabase
+        const { data: deckComments } = await supabase
           .from("deck_comments")
-          .select("id, comment_text, created_at, profiles(username, clan_members(clans(tag))), decks(deck_name, id)")
+          .select("id, created_at, profiles(username, clan_members(clans(tag))), decks(deck_name, id)")
           .order("created_at", { ascending: false })
           .limit(5);
-        if (dcError) console.error("Error fetching deck comments:", dcError);
         (deckComments || []).forEach((comment) =>
           allActivities.push({
             id: `dcomment-${comment.id}`,
             type: "deck_comment",
-            message: `${comment.profiles?.clan_members?.clans?.tag ? `[${comment.profiles.clan_members.clans.tag}] ` : ''}${comment.profiles?.username} comentou no deck "${comment.decks?.deck_name}"`,
             timestamp: comment.created_at,
             link: `/deck/${comment.decks?.id}`,
+            data: {
+                username: comment.profiles?.username,
+                tag: comment.profiles?.clan_members?.clans?.tag ? `[${comment.profiles.clan_members.clans.tag}] ` : '',
+                deck_name: comment.decks?.deck_name
+            }
           })
         );
 
-        // Fetch recent news comments
-        const { data: newsComments, error: ncError } = await supabase
+        const { data: newsComments } = await supabase
           .from("news_comments")
-          .select("id, comment_text, created_at, profiles(username, clan_members(clans(tag))), news_posts(title, id)")
+          .select("id, created_at, profiles(username, clan_members(clans(tag))), news_posts(title, id)")
           .order("created_at", { ascending: false })
           .limit(5);
-        if (ncError) console.error("Error fetching news comments:", ncError);
         (newsComments || []).forEach((comment) =>
           allActivities.push({
             id: `ncomment-${comment.id}`,
             type: "news_comment",
-            message: `${comment.profiles?.clan_members?.clans?.tag ? `[${comment.profiles.clan_members.clans.tag}] ` : ''}${comment.profiles?.username} comentou na notícia "${comment.news_posts?.title}"`,
             timestamp: comment.created_at,
             link: `/news/${comment.news_posts?.id}`,
+            data: {
+                username: comment.profiles?.username,
+                tag: comment.profiles?.clan_members?.clans?.tag ? `[${comment.profiles.clan_members.clans.tag}] ` : '',
+                title: comment.news_posts?.title
+            }
           })
         );
 
-        // Fetch recent deck likes
-        const { data: deckLikes, error: dlError } = await supabase
+        const { data: deckLikes } = await supabase
           .from("deck_likes")
           .select("id, created_at, profiles(username, clan_members(clans(tag))), decks(deck_name, id)")
           .order("created_at", { ascending: false })
           .limit(5);
-        if (dlError) console.error("Error fetching deck likes:", dlError);
         (deckLikes || []).forEach((like) =>
           allActivities.push({
             id: `dlike-${like.id}`,
             type: "deck_like",
-            message: `${like.profiles?.clan_members?.clans?.tag ? `[${like.profiles.clan_members.clans.tag}] ` : ''}${like.profiles?.username} curtiu o deck "${like.decks?.deck_name}"`,
             timestamp: like.created_at,
             link: `/deck/${like.decks?.id}`,
+            data: {
+                username: like.profiles?.username,
+                tag: like.profiles?.clan_members?.clans?.tag ? `[${like.profiles.clan_members.clans.tag}] ` : '',
+                deck_name: like.decks?.deck_name
+            }
           })
         );
 
         const combinedActivities = allActivities
           .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-          .slice(0, 10); // Show up to 10 initial activities
+          .slice(0, 10);
 
         setActivities(combinedActivities);
       } catch (error) {
-        console.error("Error fetching initial activities:", error);
+        console.error("Error fetching activities:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchInitialActivities();
-
-    // Set up Realtime subscriptions
-    const userSubscription = supabase
-      .channel("public:profiles")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "profiles" },
-        (payload) => {
-          const newUser = payload.new as { id: string; username: string; created_at: string };
-          setActivities((prev) =>
-            [
-              {
-                id: `user-${newUser.id}`,
-                type: "user_registration",
-                message: `Novo usuário: ${newUser.username}`,
-                timestamp: newUser.created_at,
-                link: `/profile/${newUser.id}`,
-              },
-              ...prev,
-            ].slice(0, 10) // Keep the list to a reasonable size
-          );
-        }
-      )
-      .subscribe();
-
-    const clanSubscription = supabase
-      .channel("public:clans")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "clans" },
-        (payload) => {
-          const newClan = payload.new as { id: number; name: string; tag: string; created_at: string };
-          setActivities((prev) =>
-            [
-              {
-                id: `clan-${newClan.id}`,
-                type: "clan_creation",
-                message: `Novo clã: ${newClan.name} [${newClan.tag}]`,
-                timestamp: newClan.created_at,
-                link: `/clans/${newClan.id}`,
-              },
-              ...prev,
-            ].slice(0, 10) // Keep the list to a reasonable size
-          );
-        }
-      )
-      .subscribe();
-
-    const tournamentRegistrationSubscription = supabase
-      .channel("public:tournament_participants")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "tournament_participants" },
-        async (payload) => {
-          const newTp = payload.new as { id: number; user_id: string; tournament_id: number; created_at: string };
-          const { data: profileData } = await supabase.from('profiles').select('username, clan_members(clans(tag))').eq('id', newTp.user_id).single();
-          const { data: tournamentData } = await supabase.from('tournaments').select('title').eq('id', newTp.tournament_id).single();
-
-          if (profileData && tournamentData) {
-            setActivities((prev) =>
-              [
-                {
-                  id: `tp-${newTp.id}`,
-                  type: "tournament_registration",
-                  message: `${profileData.clan_members?.clans?.tag ? `[${profileData.clan_members.clans.tag}] ` : ''}${profileData.username} se inscreveu no torneio: ${tournamentData.title}`,
-                  timestamp: newTp.created_at,
-                  link: `/tournaments/${newTp.tournament_id}`,
-                },
-                ...prev,
-              ].slice(0, 10)
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    const publicDeckSubscription = supabase
-      .channel("public:decks")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "decks", filter: "is_private=eq.false" },
-        async (payload) => {
-          const newDeck = payload.new as { id: number; deck_name: string; user_id: string; created_at: string };
-          const { data: profileData } = await supabase.from('profiles').select('username, clan_members(clans(tag))').eq('id', newDeck.user_id).single();
-
-          if (profileData) {
-            setActivities((prev) =>
-              [
-                {
-                  id: `deck-${newDeck.id}`,
-                  type: "public_deck",
-                  message: `Novo deck público: "${newDeck.deck_name}" por ${profileData.clan_members?.clans?.tag ? `[${profileData.clan_members.clans.tag}] ` : ''}${profileData.username}`,
-                  timestamp: newDeck.created_at,
-                  link: `/deck/${newDeck.id}`,
-                },
-                ...prev,
-              ].slice(0, 10)
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    const newsPostSubscription = supabase
-      .channel("public:news_posts")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "news_posts" },
-        async (payload) => {
-          const newPost = payload.new as { id: number; title: string; author_id: string; created_at: string };
-          const { data: profileData } = await supabase.from('profiles').select('username, clan_members(clans(tag))').eq('id', newPost.author_id).single();
-
-          if (profileData) {
-            setActivities((prev) =>
-              [
-                {
-                  id: `news-${newPost.id}`,
-                  type: "news_post",
-                  message: `Nova notícia: "${newPost.title}" por ${profileData.clan_members?.clans?.tag ? `[${profileData.clan_members.clans.tag}] ` : ''}${profileData.username}`,
-                  timestamp: newPost.created_at,
-                  link: `/news/${newPost.id}`,
-                },
-                ...prev,
-              ].slice(0, 10)
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    const deckCommentSubscription = supabase
-      .channel("public:deck_comments")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "deck_comments" },
-        async (payload) => {
-          const newComment = payload.new as { id: number; user_id: string; deck_id: number; created_at: string };
-          const { data: profileData } = await supabase.from('profiles').select('username, clan_members(clans(tag))').eq('id', newComment.user_id).single();
-          const { data: deckData } = await supabase.from('decks').select('deck_name').eq('id', newComment.deck_id).single();
-
-          if (profileData && deckData) {
-            setActivities((prev) =>
-              [
-                {
-                  id: `dcomment-${newComment.id}`,
-                  type: "deck_comment",
-                  message: `${profileData.clan_members?.clans?.tag ? `[${profileData.clan_members.clans.tag}] ` : ''}${profileData.username} comentou no deck "${deckData.deck_name}"`,
-                  timestamp: newComment.created_at,
-                  link: `/deck/${newComment.deck_id}`,
-                },
-                ...prev,
-              ].slice(0, 10)
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    const newsCommentSubscription = supabase
-      .channel("public:news_comments")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "news_comments" },
-        async (payload) => {
-          const newComment = payload.new as { id: number; user_id: string; post_id: number; created_at: string };
-          const { data: profileData } = await supabase.from('profiles').select('username, clan_members(clans(tag))').eq('id', newComment.user_id).single();
-          const { data: newsData } = await supabase.from('news_posts').select('title').eq('id', newComment.post_id).single();
-
-          if (profileData && newsData) {
-            setActivities((prev) =>
-              [
-                {
-                  id: `ncomment-${newComment.id}`,
-                  type: "news_comment",
-                  message: `${profileData.clan_members?.clans?.tag ? `[${profileData.clan_members.clans.tag}] ` : ''}${profileData.username} comentou na notícia "${newsData.title}"`,
-                  timestamp: newComment.created_at,
-                  link: `/news/${newComment.post_id}`,
-                },
-                ...prev,
-              ].slice(0, 10)
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    const deckLikeSubscription = supabase
-      .channel("public:deck_likes")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "deck_likes" },
-        async (payload) => {
-          const newLike = payload.new as { id: number; user_id: string; deck_id: number; created_at: string };
-          const { data: profileData } = await supabase.from('profiles').select('username, clan_members(clans(tag))').eq('id', newLike.user_id).single();
-          const { data: deckData } = await supabase.from('decks').select('deck_name').eq('id', newLike.deck_id).single();
-
-          if (profileData && deckData) {
-            setActivities((prev) =>
-              [
-                {
-                  id: `dlike-${newLike.id}`,
-                  type: "deck_like",
-                  message: `${profileData.clan_members?.clans?.tag ? `[${profileData.clan_members.clans.tag}] ` : ''}${profileData.username} curtiu o deck "${deckData.deck_name}"`,
-                  timestamp: newLike.created_at,
-                  link: `/deck/${newLike.deck_id}`,
-                },
-                ...prev,
-              ].slice(0, 10)
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(userSubscription);
-      supabase.removeChannel(clanSubscription);
-      supabase.removeChannel(tournamentRegistrationSubscription);
-      supabase.removeChannel(publicDeckSubscription);
-      supabase.removeChannel(newsPostSubscription);
-      supabase.removeChannel(deckCommentSubscription);
-      supabase.removeChannel(newsCommentSubscription);
-      supabase.removeChannel(deckLikeSubscription);
-    };
   }, []);
+
+  const renderActivityMessage = (activity: Activity) => {
+    return t(`activity_timeline.${activity.type}`, {
+        ...activity.data,
+        username: activity.data.username || t('activity_timeline.unknown_user')
+    });
+  };
 
   return (
     <Card className="bg-[hsl(0_0%_5%)] border-border">
       <CardHeader>
-        <CardTitle className="text-xl font-bold">Atividade Recente</CardTitle>
+        <CardTitle className="text-xl font-bold">{t('activity_timeline.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -458,10 +243,10 @@ export const ActivityTimeline = () => {
                   )}
                   <div className="flex-1">
                     <p className="text-sm text-muted-foreground">
-                      {activity.message}
+                      {renderActivityMessage(activity)}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true, locale: ptBR })}
+                      {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true, locale: currentLocale })}
                     </p>
                   </div>
                 </li>

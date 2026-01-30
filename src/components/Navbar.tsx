@@ -18,6 +18,8 @@ import { GlobalSearch } from "./GlobalSearch";
 import UserDisplay from "./UserDisplay";
 import { NotificationBell } from "./notifications/NotificationBell";
 import { MessageBell } from "./chat/MessageBell";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 interface NavbarProps {
   user: User | null;
@@ -56,6 +58,7 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
           </div>
 
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             {user && <MessageBell user={user} />}
             {user && <NotificationBell user={user} />}
             {user && <UserDropdown user={user} onLogout={onLogout} profile={profile} clan={clan} />}
@@ -68,6 +71,7 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
 };
 
 const UserDropdown = ({ user, onLogout, profile, clan }) => {
+  const { t } = useTranslation();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -93,7 +97,7 @@ const UserDropdown = ({ user, onLogout, profile, clan }) => {
         <DropdownMenuItem asChild>
           <Link to={`/profile/${user.id}`}>
             <UserIcon className="mr-2 h-4 w-4" />
-            <span>Meu Perfil</span>
+            <span>{t('navbar.my_profile')}</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -101,20 +105,20 @@ const UserDropdown = ({ user, onLogout, profile, clan }) => {
           <DropdownMenuItem asChild>
             <Link to={`/clans/${clan.id}`}>
               <Shield className="mr-2 h-4 w-4" />
-              <span>Meu Clã</span>
+              <span>{t('navbar.my_clan')}</span>
             </Link>
           </DropdownMenuItem>
         ) : (
           <DropdownMenuItem asChild>
             <Link to="/clans/create">
               <Swords className="mr-2 h-4 w-4" />
-              <span>Criar Clã</span>
+              <span>{t('navbar.create_clan')}</span>
             </Link>
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={onLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Sair</span>
+          <span>{t('navbar.logout')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -122,6 +126,7 @@ const UserDropdown = ({ user, onLogout, profile, clan }) => {
 };
 
 const NavMenu = ({ user, profile }) => {
+  const { t } = useTranslation();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -133,41 +138,41 @@ const NavMenu = ({ user, profile }) => {
         <DropdownMenuItem asChild className="md:hidden">
           <Link to="/search" className="flex items-center">
             <Search className="mr-2 h-4 w-4" />
-            <span>Buscar</span>
+            <span>{t('navbar.search')}</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/tournaments">Torneios</Link>
+          <Link to="/tournaments">{t('navbar.tournaments')}</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/ranking">Ranking</Link>
+          <Link to="/ranking">{t('navbar.ranking')}</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/rivalry">Rivalidades</Link>
+          <Link to="/rivalry">{t('navbar.rivalry')}</Link>
         </DropdownMenuItem>
         {user && (
           <DropdownMenuItem asChild>
-            <Link to="/deck-builder">Deck Builder</Link>
+            <Link to="/deck-builder">{t('navbar.deck_builder')}</Link>
           </DropdownMenuItem>
         )}
         {user && (profile?.role === "admin" || profile?.role === "organizer") && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Admin</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('navbar.admin')}</DropdownMenuLabel>
             <DropdownMenuItem asChild>
-              <Link to="/dashboard/tournaments">Gerenciar Torneios</Link>
+              <Link to="/dashboard/tournaments">{t('navbar.manage_tournaments')}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/dashboard/news">Gerenciar Notícias</Link>
+              <Link to="/dashboard/news">{t('navbar.manage_news')}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/dashboard/titles">Distribuir Títulos</Link>
+              <Link to="/dashboard/titles">{t('navbar.distribute_titles')}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/dashboard/stats">Estatísticas (Meta)</Link>
+              <Link to="/dashboard/stats">{t('navbar.stats')}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/dashboard/broadcasts">Gerenciar Transmissões</Link>
+              <Link to="/dashboard/broadcasts">{t('navbar.manage_broadcasts')}</Link>
             </DropdownMenuItem>
           </>
         )}
@@ -177,7 +182,7 @@ const NavMenu = ({ user, profile }) => {
             <DropdownMenuItem asChild>
               <Link to="/auth">
                 <Button variant="default" className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
-                  Entrar
+                  {t('navbar.login')}
                 </Button>
               </Link>
             </DropdownMenuItem>

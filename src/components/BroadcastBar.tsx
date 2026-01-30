@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { X, MessageSquare, MessageSquareOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 interface Broadcast {
   id: number;
@@ -13,6 +14,7 @@ interface Broadcast {
 }
 
 export const BroadcastBar = () => {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(true);
   const [showChat, setShowChat] = useState(true);
   const [hostname, setHostname] = useState("");
@@ -117,40 +119,27 @@ export const BroadcastBar = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
             </span>
-            <span className="text-red-500 font-bold text-sm tracking-wider">AO VIVO</span>
+            <span className="text-red-500 font-bold text-sm tracking-wider">{t('broadcast_bar.live')}</span>
           </div>
 
           {/* Center/Right: Title */}
           <div className="flex-1 text-center md:text-left md:pl-4 truncate px-2">
             <span className="text-white font-medium text-sm md:text-base">
-              {title || "Transmissão Especial"}
+              {title || t('broadcast_bar.special')}
             </span>
           </div>
 
           {/* Right: Actions */}
           <div className="flex items-center gap-1">
-            {platform === 'twitch' && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10"
-                onClick={() => setShowChat(!showChat)}
-                title={showChat ? "Ocultar Chat" : "Mostrar Chat"}
-              >
-                {showChat ? <MessageSquareOff className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
-              </Button>
-            )}
-            {platform === 'youtube' && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10"
-                onClick={() => setShowChat(!showChat)}
-                title={showChat ? "Ocultar Chat" : "Mostrar Chat"}
-              >
-                {showChat ? <MessageSquareOff className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:text-white hover:bg-white/10"
+              onClick={() => setShowChat(!showChat)}
+              title={showChat ? t('broadcast_bar.hide_chat') : t('broadcast_bar.show_chat')}
+            >
+              {showChat ? <MessageSquareOff className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+            </Button>
             <Button 
               variant="ghost" 
               size="icon" 

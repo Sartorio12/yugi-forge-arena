@@ -22,6 +22,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import UserDisplay from "@/components/UserDisplay";
+import { useTranslation } from "react-i18next";
 
 interface RankingPageProps {
   user: User | null;
@@ -48,6 +49,7 @@ interface ClanRanking {
 }
 
 const RankingPage = ({ user, onLogout }: RankingPageProps) => {
+  const { t } = useTranslation();
   const { data: playerRankings, isLoading: isLoadingPlayers } = useQuery({
     queryKey: ["playerRankings"],
     queryFn: async () => {
@@ -95,10 +97,10 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
               <Trophy className="h-8 w-8 text-primary" />
               <div>
                 <CardTitle className="text-3xl bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
-                  Ranking
+                  {t('ranking_page.title')}
                 </CardTitle>
                 <CardDescription>
-                  Os melhores duelistas e clãs do servidor.
+                  {t('ranking_page.subtitle')}
                 </CardDescription>
               </div>
             </div>
@@ -108,11 +110,11 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
               <TabsList className="grid w-full grid-cols-2 bg-black/40 mb-6">
                 <TabsTrigger value="players" className="flex items-center gap-2">
                   <Swords className="h-4 w-4" />
-                  Duelistas
+                  {t('ranking_page.players_tab')}
                 </TabsTrigger>
                 <TabsTrigger value="clans" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Clãs
+                  {t('ranking_page.clans_tab')}
                 </TabsTrigger>
               </TabsList>
 
@@ -125,9 +127,9 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[100px] text-center">Rank</TableHead>
-                        <TableHead>Jogador</TableHead>
-                        <TableHead className="text-right">Pontos</TableHead>
+                        <TableHead className="w-[100px] text-center">{t('ranking_page.rank')}</TableHead>
+                        <TableHead>{t('ranking_page.player')}</TableHead>
+                        <TableHead className="text-right">{t('ranking_page.points')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -158,7 +160,7 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
                 ) : (
                   <div className="text-center py-20">
                     <p className="text-muted-foreground text-lg">
-                      O ranking ainda está vazio. Nenhum jogador marcou pontos.
+                      {t('ranking_page.no_players')}
                     </p>
                   </div>
                 )}
@@ -173,9 +175,9 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[100px] text-center">Rank</TableHead>
-                        <TableHead>Clã</TableHead>
-                        <TableHead className="text-right">Pontos</TableHead>
+                        <TableHead className="w-[100px] text-center">{t('ranking_page.rank')}</TableHead>
+                        <TableHead>{t('ranking_page.clan')}</TableHead>
+                        <TableHead className="text-right">{t('ranking_page.points')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -209,7 +211,7 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
                 ) : (
                   <div className="text-center py-20">
                     <p className="text-muted-foreground text-lg">
-                      Nenhum clã encontrado.
+                      {t('ranking_page.no_clans')}
                     </p>
                   </div>
                 )}

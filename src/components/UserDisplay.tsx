@@ -3,6 +3,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { FramedAvatar } from "./FramedAvatar";
 import { Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 interface UserDisplayProps {
   // Allow partial profile to support current usages where only some fields are fetched
@@ -12,6 +13,7 @@ interface UserDisplayProps {
 }
 
 const UserCardDetails = ({ initialProfile, clan }: { initialProfile: UserDisplayProps['profile'], clan: UserDisplayProps['clan'] }) => {
+  const { t } = useTranslation();
   // Fetch full profile details when this component is mounted (on hover)
   // This ensures we have the latest banner, titles, etc. without over-fetching in lists
   const { profile: fullProfile } = useProfile(initialProfile.id);
@@ -19,7 +21,7 @@ const UserCardDetails = ({ initialProfile, clan }: { initialProfile: UserDisplay
   // Merge initial profile with full profile (full profile takes precedence if loaded)
   const displayProfile = fullProfile || initialProfile;
 
-  const username = displayProfile.username || "Usuário desconhecido";
+  const username = displayProfile.username || t('user_display.unknown');
   const avatarUrl = displayProfile.avatar_url;
   const level = (displayProfile as any).level || 1;
   const bannerUrl = (displayProfile as any).banner_url;
@@ -84,7 +86,7 @@ const UserCardDetails = ({ initialProfile, clan }: { initialProfile: UserDisplay
                <div className="flex items-center p-2 bg-secondary/20 rounded-md">
                   <Trophy className="mr-3 h-5 w-5 text-yellow-500" />
                   <div>
-                    <p className="text-xs text-muted-foreground font-medium">Nível de Duelista</p>
+                    <p className="text-xs text-muted-foreground font-medium">{t('user_display.duelist_level')}</p>
                     <p className="font-bold text-lg">{level}</p>
                   </div>
                </div>
@@ -101,12 +103,13 @@ const UserCardDetails = ({ initialProfile, clan }: { initialProfile: UserDisplay
 };
 
 const UserDisplay = ({ profile, clan, showTitles = false }: UserDisplayProps) => {
+  const { t } = useTranslation();
   if (!profile) {
     return null;
   }
 
   const clanTag = clan?.tag;
-  const username = profile.username || "Usuário desconhecido";
+  const username = profile.username || t('user_display.unknown');
   const equippedTitles = profile.equipped_titles || [];
 
   return (

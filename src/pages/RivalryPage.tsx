@@ -8,8 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import { Loader2, Swords, Calendar } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS, es } from "date-fns/locale";
 import { MatchHistoryList } from "@/components/MatchHistoryList";
+import { useTranslation } from "react-i18next";
 
 interface RivalryPageProps {
   user: User | null;
@@ -17,8 +18,16 @@ interface RivalryPageProps {
 }
 
 export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
+  const { t, i18n } = useTranslation();
   const [player1, setPlayer1] = useState<{id: string, username: string, avatar_url: string} | null>(null);
   const [player2, setPlayer2] = useState<{id: string, username: string, avatar_url: string} | null>(null);
+
+  const localeMap: { [key: string]: any } = {
+    pt: ptBR,
+    en: enUS,
+    es: es,
+  };
+  const currentLocale = localeMap[i18n.language] || ptBR;
 
   const { data: history, isLoading } = useQuery({
     queryKey: ["rivalry", player1?.id, player2?.id],
@@ -44,9 +53,9 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
         
         <header className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
-                <Swords className="h-10 w-10 text-primary" /> Histórico de Rivalidades
+                <Swords className="h-10 w-10 text-primary" /> {t('rivalry_page.title')}
             </h1>
-            <p className="text-muted-foreground">Compare o desempenho entre dois duelistas ou veja o histórico individual.</p>
+            <p className="text-muted-foreground">{t('rivalry_page.subtitle')}</p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 items-center">
@@ -57,12 +66,12 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
                         <div className="flex flex-col items-center text-center">
                             <FramedAvatar userId={player1.id} avatarUrl={player1.avatar_url} sizeClassName="h-24 w-24 mb-4" />
                             <h2 className="text-2xl font-bold">{player1.username}</h2>
-                            <button onClick={() => setPlayer1(null)} className="text-xs text-muted-foreground hover:text-destructive mt-2">Alterar</button>
+                            <button onClick={() => setPlayer1(null)} className="text-xs text-muted-foreground hover:text-destructive mt-2">{t('rivalry_page.change')}</button>
                         </div>
                     ) : (
                         <div className="text-center">
-                            <h3 className="text-lg font-medium mb-2">Duelista 1</h3>
-                            <UserSelector onSelect={setPlayer1} excludeIds={player2 ? [player2.id] : []} placeholder="Pesquisar..." />
+                            <h3 className="text-lg font-medium mb-2">{t('rivalry_page.duelist_1')}</h3>
+                            <UserSelector onSelect={setPlayer1} excludeIds={player2 ? [player2.id] : []} placeholder={t('rivalry_page.search_placeholder')} />
                         </div>
                     )}
                 </div>
@@ -80,12 +89,12 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
                         <div className="flex flex-col items-center text-center">
                             <FramedAvatar userId={player2.id} avatarUrl={player2.avatar_url} sizeClassName="h-24 w-24 mb-4" />
                             <h2 className="text-2xl font-bold">{player2.username}</h2>
-                            <button onClick={() => setPlayer2(null)} className="text-xs text-muted-foreground hover:text-destructive mt-2">Alterar</button>
+                            <button onClick={() => setPlayer2(null)} className="text-xs text-muted-foreground hover:text-destructive mt-2">{t('rivalry_page.change')}</button>
                         </div>
                     ) : (
                         <div className="text-center">
-                            <h3 className="text-lg font-medium mb-2">Duelista 2</h3>
-                            <UserSelector onSelect={setPlayer2} excludeIds={player1 ? [player1.id] : []} placeholder="Pesquisar..." />
+                            <h3 className="text-lg font-medium mb-2">{t('rivalry_page.duelist_2')}</h3>
+                            <UserSelector onSelect={setPlayer2} excludeIds={player1 ? [player1.id] : []} placeholder={t('rivalry_page.search_placeholder')} />
                         </div>
                     )}
                 </div>
@@ -110,10 +119,10 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
 
                         {/* Match List */}
                         <Card>
-                            <CardHeader><CardTitle>Histórico de Confrontos Diretos</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>{t('rivalry_page.head_to_head_title')}</CardTitle></CardHeader>
                             <CardContent>
                                 {history.length === 0 ? (
-                                    <div className="text-center py-8 text-muted-foreground">Nenhum confronto registrado entre estes jogadores.</div>
+                                    <div className="text-center py-8 text-muted-foreground">{t('rivalry_page.no_matches_vs')}</div>
                                 ) : (
                                     <div className="space-y-4">
                                         {history.map((match: any) => (
@@ -122,11 +131,11 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
                                                     <span className="font-bold text-lg">{match.tournament_title}</span>
                                                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                         <Calendar className="h-3 w-3" />
-                                                        {format(new Date(match.tournament_date), "dd 'de' MMMM, yyyy", { locale: ptBR })} • {match.round_name}
+                                                        {format(new Date(match.tournament_date), t('rivalry_page.date_format'), { locale: currentLocale })} • {match.round_name}
                                                     </span>
                                                 </div>
                                                 <div className="text-right">
-                                                    <span className="text-xs uppercase text-muted-foreground block mb-1">Vencedor</span>
+                                                    <span className="text-xs uppercase text-muted-foreground block mb-1">{t('rivalry_page.winner')}</span>
                                                     <div className="flex items-center gap-2 justify-end font-semibold text-green-500">
                                                         {match.winner_name}
                                                         <FramedAvatar userId={match.winner_id} avatarUrl={match.winner_avatar} sizeClassName="h-6 w-6" />
@@ -146,7 +155,7 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <h2 className="text-2xl font-bold mb-6 text-center flex items-center justify-center gap-2">
                             <Swords className="h-6 w-6 text-primary" />
-                            Histórico de Partidas: {player1.username}
+                            {t('rivalry_page.match_history_for', { username: player1.username })}
                         </h2>
                         <MatchHistoryList userId={player1.id} />
                     </div>
@@ -157,7 +166,7 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                          <h2 className="text-2xl font-bold mb-6 text-center flex items-center justify-center gap-2">
                             <Swords className="h-6 w-6 text-primary" />
-                            Histórico de Partidas: {player2.username}
+                            {t('rivalry_page.match_history_for', { username: player2.username })}
                          </h2>
                          <MatchHistoryList userId={player2.id} />
                     </div>
@@ -166,8 +175,8 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
                 {/* CASE 4: NO SELECTION */}
                 {!player1 && !player2 && (
                     <div className="text-center py-12 opacity-50 border-2 border-dashed rounded-lg">
-                        <p className="text-lg">Selecione um jogador para ver seu histórico individual.</p>
-                        <p className="text-sm">Ou selecione dois para comparar.</p>
+                        <p className="text-lg">{t('rivalry_page.select_one')}</p>
+                        <p className="text-sm">{t('rivalry_page.select_two')}</p>
                     </div>
                 )}
             </>

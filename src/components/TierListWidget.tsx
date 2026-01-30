@@ -61,7 +61,10 @@ const DeckThumbnail = ({ deckName, initialUrl }: { deckName: string, initialUrl?
   );
 };
 
+import { useTranslation } from "react-i18next";
+
 export function TierListWidget() {
+  const { t } = useTranslation();
   const { data: tiers, isLoading } = useQuery({
     queryKey: ["tier-list"],
     queryFn: async () => {
@@ -131,7 +134,7 @@ export function TierListWidget() {
     <div className="rounded-lg border bg-card/50 backdrop-blur-sm overflow-hidden">
       <div className="px-3 py-2 border-b bg-muted/20 flex justify-between items-center">
          <h3 className="font-bold text-sm uppercase flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" /> Meta
+            <TrendingUp className="h-4 w-4 text-primary" /> {t('tier_list.title')}
          </h3>
          <span className="text-[10px] text-muted-foreground">MDM</span>
       </div>
@@ -140,7 +143,7 @@ export function TierListWidget() {
         {/* Tier 1 */}
         {tier1.length > 0 && (
           <div className="flex flex-col gap-1.5">
-             <span className="text-[10px] font-bold text-red-500 uppercase">Tier 1</span>
+             <span className="text-[10px] font-bold text-red-500 uppercase">{t('tier_list.tier_1')}</span>
              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
                {tier1.map(deck => (
                  <CompactDeckCard key={deck.id} deck={deck} rankColor="bg-red-600" />
@@ -152,7 +155,7 @@ export function TierListWidget() {
         {/* Tier 2 */}
         {tier2.length > 0 && (
           <div className="flex flex-col gap-1.5">
-             <span className="text-[10px] font-bold text-orange-500 uppercase">Tier 2</span>
+             <span className="text-[10px] font-bold text-orange-500 uppercase">{t('tier_list.tier_2')}</span>
              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
                {tier2.map(deck => (
                  <CompactDeckCard key={deck.id} deck={deck} rankColor="bg-orange-600" />
@@ -164,7 +167,7 @@ export function TierListWidget() {
         {/* Tier 3 */}
         {tier3.length > 0 && (
           <div className="flex flex-col gap-1.5">
-             <span className="text-[10px] font-bold text-yellow-500 uppercase">Tier 3 (Top 3)</span>
+             <span className="text-[10px] font-bold text-yellow-500 uppercase">{t('tier_list.tier_3')}</span>
              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
                {tier3.map(deck => (
                  <CompactDeckCard key={deck.id} deck={deck} rankColor="bg-yellow-600" />

@@ -13,6 +13,7 @@ import { Tables } from "@/integrations/supabase/types";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 // Interfaces
 interface CardData {
@@ -154,6 +155,7 @@ const groupCards = (cards: CardData[]) => {
 };
 
 const DeckPage = ({ user, onLogout }: DeckPageProps) => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const snapshotId = searchParams.get('snapshot_id');
@@ -392,7 +394,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
         .from("deck_likes")
         .insert({ deck_id: Number(id), user_id: user.id });
       if (error) {
-        toast({ title: "Erro", description: "Não foi possível curtir o deck.", variant: "destructive" });
+        toast({ title: "Erro", description: "Não foi possível curtir the deck.", variant: "destructive" });
       } else {
         queryClient.invalidateQueries({ queryKey: ["deck-likes-count", id] });
         queryClient.invalidateQueries({ queryKey: ["user-has-liked-deck", id, user.id] });
@@ -413,7 +415,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     if (!deck) return;
 
     const deckData = {
-        deckName: `Cópia de ${deck.deck_name}`,
+        deckName: `${t('deck_page.copy_prefix')}${deck.deck_name}`,
         mainDeck: mainDeck,
         extraDeck: extraDeck,
         sideDeck: sideDeck,
@@ -423,8 +425,8 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
 
     localStorage.setItem('importDeckData', JSON.stringify(deckData));
     toast({
-        title: "Deck Copiado",
-        description: "Redirecionando para o Deck Builder...",
+        title: t('deck_page.copy_success_title'),
+        description: t('deck_page.copy_success_desc'),
     });
     navigate('/deck-builder');
   };
@@ -444,10 +446,10 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   if (!deck) {
     return (
       <div className="min-h-screen bg-background text-center py-20">
-        <p className="text-2xl text-destructive">{snapshotId ? "Snapshot de deck não encontrado." : "Esse deck é privado ou não existe."}</p>
+        <p className="text-2xl text-destructive">{snapshotId ? t('deck_page.snapshot_not_found') : t('deck_page.not_found')}</p>
         <Button asChild variant="link" className="mt-4">
           <Link to="/">
-            <Home className="mr-2 h-4 w-4" /> Voltar para a Home
+            <Home className="mr-2 h-4 w-4" /> {t('clan_profile.back_home')}
           </Link>
         </Button>
       </div>
@@ -457,10 +459,10 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   if (deck.is_private && deck.user_id !== user?.id && currentUserRole !== 'admin' && currentUserRole !== 'organizer') {
     return (
         <div className="min-h-screen bg-background text-center py-20">
-            <p className="text-2xl text-destructive">Este deck é privado.</p>
+            <p className="text-2xl text-destructive">{t('deck_page.private_deck')}</p>
             <Button asChild variant="link" className="mt-4">
                 <Link to="/">
-                    <Home className="mr-2 h-4 w-4" /> Voltar para a Home
+                    <Home className="mr-2 h-4 w-4" /> {t('clan_profile.back_home')}
                 </Link>
             </Button>
         </div>
@@ -491,7 +493,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
             </div>
             {deck.profiles && (
               <div className="text-lg text-muted-foreground mb-4 flex items-center gap-2">
-                Criado por:{" "}
+                {t('deck_page.created_by')}{" "}
                 <Link to={`/profile/${deck.user_id}`} className="text-primary hover:underline">
                   <UserDisplay profile={deck.profiles} clan={authorClan} />
                 </Link>
@@ -502,24 +504,24 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                       <>
                         <Button variant="ghost" size="sm" onClick={toggleLike} disabled={!user}>
                             <Heart className={`h-5 w-5 mr-2 ${userHasLiked ? 'text-red-500 fill-current' : ''}`} />
-                            <span>{likeCount} Likes</span>
+                            <span>{likeCount} {t('deck_page.likes')}</span>
                         </Button>
                         <Button variant="ghost" size="sm" onClick={scrollToComments}>
                             <MessageSquare className="h-5 w-5 mr-2" />
-                            <span>{commentCount} Comentários</span>
+                            <span>{commentCount} {t('deck_page.comments')}</span>
                         </Button>
                       </>
                   )}
                   <Button variant="ghost" size="sm" onClick={handleCopyDeck}>
                       <Copy className="h-5 w-5 mr-2" />
-                      <span>Copiar Deck</span>
+                      <span>{t('deck_page.copy_deck')}</span>
                   </Button>
             </div>
           </CardHeader>
           <CardContent className="bg-card/50 rounded-b-lg">
             <div className="space-y-2">
               <div>
-                <h2 className="text-2xl font-bold mb-4">Main Deck ({mainDeck.length})</h2>
+                <h2 className="text-2xl font-bold mb-4">{t('deck_page.main_deck', { count: mainDeck.length })}</h2>
                 <div className="grid grid-cols-7 md:grid-cols-15 gap-x-1 gap-y-5">
                   {groupedMainDeck.map(({ card, count }) => {
                     const banlistIcon = getBanlistIcon(card.ban_master_duel);
@@ -530,7 +532,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                 </div>
               </div>
               <div>
-                <h2 className="text-2xl font-bold mb-4">Extra Deck ({extraDeck.length})</h2>
+                <h2 className="text-2xl font-bold mb-4">{t('deck_page.extra_deck', { count: extraDeck.length })}</h2>
                 <div className="grid grid-cols-7 md:grid-cols-15 gap-x-1 gap-y-5">
                   {groupedExtraDeck.map(({ card, count }) => {
                     const banlistIcon = getBanlistIcon(card.ban_master_duel);
@@ -542,7 +544,7 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
               </div>
               {sideDeck.length > 0 && (
                 <div>
-                  <h2 className="text-2xl font-bold mb-4">Side Deck ({sideDeck.length})</h2>
+                  <h2 className="text-2xl font-bold mb-4">{t('deck_page.side_deck', { count: sideDeck.length })}</h2>
                   <div className="grid grid-cols-7 md:grid-cols-15 gap-x-1 gap-y-5">
                     {groupedSideDeck.map(({ card, count }) => {
                       const banlistIcon = getBanlistIcon(card.ban_master_duel);

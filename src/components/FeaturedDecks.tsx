@@ -7,6 +7,7 @@ import { FramedAvatar } from "./FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserDisplay from "./UserDisplay";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 interface Deck {
   id: number;
@@ -24,6 +25,7 @@ interface Deck {
 }
 
 export const FeaturedDecks = () => {
+  const { t } = useTranslation();
   const { data: decks, isLoading } = useQuery({
     queryKey: ["featuredDecks"],
     queryFn: async () => {
@@ -44,10 +46,10 @@ export const FeaturedDecks = () => {
       <div className="flex items-center justify-between mb-6 px-1">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <Layers className="h-5 w-5 text-primary" />
-          Decks Recentes
+          {t('featured_decks.title')}
         </h2>
         <Link to="/community-decks" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-          Ver todos
+          {t('featured_decks.view_all')}
         </Link>
       </div>
 
@@ -82,7 +84,7 @@ export const FeaturedDecks = () => {
                       <UserDisplay profile={deck.profiles} clan={deck.profiles.clan_members?.clans?.tag ? { tag: deck.profiles.clan_members.clans.tag } : null} />
                     </div>
                   ) : (
-                    <span className="text-xs text-muted-foreground">por Usuário Desconhecido</span>
+                    <span className="text-xs text-muted-foreground">{t('featured_decks.by_unknown')}</span>
                   )}
                 </CardContent>
               </Card>
@@ -91,7 +93,7 @@ export const FeaturedDecks = () => {
         </div>
       ) : (
         <div className="text-center text-muted-foreground py-12 border-2 border-dashed border-border rounded-lg bg-[hsl(0_0%_12%)]">
-          <p>Nenhum deck recente para exibir. Crie o seu primeiro!</p>
+          <p>{t('featured_decks.no_decks')}</p>
         </div>
       )}
     </section>

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ClanAnalyticsDashboard } from "@/components/clans/ClanAnalyticsDashboard";
+import { useTranslation } from "react-i18next";
 
 interface ClanProfilePageProps {
   user: User | null;
@@ -20,6 +21,7 @@ interface ClanProfilePageProps {
 }
 
 const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const clanId = Number(id);
   const { toast } = useToast();
@@ -101,7 +103,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-primary">
         <Loader2 className="h-8 w-8 animate-spin mr-4" />
-        Carregando Clã...
+        {t('clan_profile.loading')}
       </div>
     );
   }
@@ -120,12 +122,12 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
     try {
       const { error } = await supabase.rpc('apply_to_clan', { p_clan_id: clanId });
       if (error) throw new Error(error.message);
-      toast({ title: "Sucesso!", description: "Sua candidatura foi enviada." });
+      toast({ title: "Sucesso!", description: t('clan_profile.apply_success') });
       queryClient.invalidateQueries({ queryKey: ["clanApplication", clanId, user.id] });
     } catch (error: any) {
       toast({
         title: "Erro na Candidatura",
-        description: error.message || "Não foi possível enviar sua candidatura.",
+        description: error.message || t('clan_profile.apply_error'),
         variant: "destructive",
       });
     } finally {
@@ -168,8 +170,8 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
   if (!clan) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-red-500">
-        <p className="text-2xl mb-4">Clã não encontrado.</p>
-        <Button asChild><Link to="/">Voltar para a Home</Link></Button>
+        <p className="text-2xl mb-4">{t('clan_profile.not_found')}</p>
+        <Button asChild><Link to="/">{t('clan_profile.back_home')}</Link></Button>
       </div>
     );
   }
@@ -214,7 +216,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                   <Button asChild variant="outline">
                     <Link to={`/clans/${clanId}/manage`}>
                       <Settings className="mr-2 h-4 w-4" />
-                      Gerenciar Clã
+                      {t('clan_profile.manage_clan')}
                     </Link>
                   </Button>
                 )}
@@ -222,12 +224,12 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                   <>
                     {hasPendingApplication ? (
                       <Button variant="outline" disabled>
-                        Candidatura Pendente
+                        {t('clan_profile.pending_application')}
                       </Button>
                     ) : (
                       <Button onClick={handleApply} disabled={isApplying}>
                         {isApplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                        Candidatar-se
+                        {t('clan_profile.apply')}
                       </Button>
                     )}
                   </>
@@ -239,17 +241,17 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
           {invitation && (
             <Alert className="mb-8 border-primary bg-primary/10">
               <Mail className="h-4 w-4" />
-              <AlertTitle>Convite Pendente</AlertTitle>
+              <AlertTitle>{t('clan_profile.invitation_title')}</AlertTitle>
               <AlertDescription className="flex items-center justify-between mt-2">
-                <span>Você foi convidado para participar deste clã.</span>
+                <span>{t('clan_profile.invitation_desc')}</span>
                 <div className="flex gap-2">
                   <Button size="sm" onClick={() => handleRespondToInvitation('ACCEPTED')} disabled={isResponding}>
                     {isResponding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
-                    Aceitar
+                    {t('clan_profile.accept')}
                   </Button>
                   <Button size="sm" variant="destructive" onClick={() => handleRespondToInvitation('REJECTED')} disabled={isResponding}>
                     {isResponding ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4 mr-2" />}
-                    Recusar
+                    {t('clan_profile.refuse')}
                   </Button>
                 </div>
               </AlertDescription>
@@ -260,7 +262,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Membros ({members?.length || 0})</CardTitle>
+                  <CardTitle>{t('clan_profile.members', { count: members?.length || 0 })}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Leader */}
@@ -280,7 +282,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                       </Link>
                       <div className="flex items-center gap-2 text-yellow-400">
                         <ShieldCheck className="h-5 w-5" />
-                        <span className="font-semibold">Líder</span>
+                        <span className="font-semibold">{t('clan_profile.leader')}</span>
                       </div>
                     </div>
                   )}
@@ -301,7 +303,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                        </Link>
                        <div className="flex items-center gap-2 text-blue-400"> {/* Use a different color for strategists */}
                          <ShieldCheck className="h-5 w-5" />
-                         <span className="font-semibold">Estrategista</span>
+                         <span className="font-semibold">{t('clan_profile.strategist')}</span>
                        </div>
                      </div>
                   ))}
@@ -322,7 +324,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                        </Link>
                        <div className="flex items-center gap-2 text-muted-foreground">
                          <Shield className="h-5 w-5" />
-                         <span>Membro</span>
+                         <span>{t('clan_profile.member')}</span>
                        </div>
                      </div>
                   ))}

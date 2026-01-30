@@ -48,6 +48,7 @@ import { LevelUpListener } from "./components/LevelUpListener";
 import ScrollToTop from "./components/ScrollToTop";
 import { DiscordUsernameModal } from "./components/DiscordUsernameModal";
 import RivalryPage from "./pages/RivalryPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -170,6 +171,7 @@ const App = () => {
                           <Route path="/atualizar-senha" element={<UpdatePasswordPage />} />
                           <Route path="/about" element={<About />} />
                           <Route path="/contact" element={<Contact />} />
+                          <Route path="/privacy" element={<PrivacyPolicy user={user} onLogout={handleLogout} />} />
           
                           {/* Admin Routes */}
                           <Route element={<AdminRoute user={user} onLogout={handleLogout} />}>

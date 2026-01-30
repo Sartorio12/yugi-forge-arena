@@ -1,7 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export const DiscordWidget = () => {
+  const { t } = useTranslation();
   // SUBSTITUA PELO ID DO SEU SERVIDOR DISCORD
   // Para pegar o ID: Configurações do Servidor -> Widget -> ID do Servidor
   // Certifique-se de que a opção "Habilitar Widget do Servidor" está marcada.
@@ -13,6 +15,12 @@ export const DiscordWidget = () => {
   
   return (
     <Card className="bg-[hsl(0_0%_12%)] border-border">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <MessageSquare className="h-5 w-5 text-primary" />
+          {t('discord_widget.title')}
+        </CardTitle>
+      </CardHeader>
       <CardContent className="p-0 overflow-hidden rounded-b-lg">
         <iframe 
           src={`https://discord.com/widget?id=${discordServerId}&theme=dark`} 

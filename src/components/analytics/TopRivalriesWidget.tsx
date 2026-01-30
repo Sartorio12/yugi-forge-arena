@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Swords, Loader2 } from "lucide-react";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export const TopRivalriesWidget = () => {
+  const { t } = useTranslation();
   const { data: rivalries, isLoading } = useQuery({
     queryKey: ["topRivalries"],
     queryFn: async () => {
@@ -23,7 +25,7 @@ export const TopRivalriesWidget = () => {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg text-red-500">
           <Swords className="fill-red-500/20 h-5 w-5" />
-          Rivalidades 2026
+          {t('top_rivalries.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>

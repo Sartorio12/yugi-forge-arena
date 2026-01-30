@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/popover";
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS, es } from 'date-fns/locale';
 import { FramedAvatar } from '../FramedAvatar';
+import { useTranslation } from "react-i18next";
+import { Trans } from 'react-i18next';
 
 interface NotificationBellProps {
     user: User;
@@ -34,8 +36,16 @@ const fetchNotifications = async (userId: string) => {
 };
 
 export const NotificationBell = ({ user }: NotificationBellProps) => {
+    const { t, i18n } = useTranslation();
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
+
+    const localeMap: { [key: string]: any } = {
+        pt: ptBR,
+        en: enUS,
+        es: es,
+    };
+    const currentLocale = localeMap[i18n.language] || ptBR;
 
     const { data: notifications, isLoading } = useQuery({
         queryKey: ['notifications', user.id],
@@ -97,27 +107,79 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
 
     const renderNotificationText = (notification) => {
         const { type, data } = notification;
-        const actor = <strong>{data.actor_username || 'Alguém'}</strong>;
+        const actorName = data.actor_username || t('notifications.someone');
+
+        // Helper components for Trans
+        const strong = <strong />;
+        const em = <em />;
 
         switch (type) {
             case 'new_deck_comment':
-                return <>{actor} comentou no seu deck: <em>{data.deck_name}</em></>;
+                return (
+                    <Trans 
+                        i18nKey="notifications.new_deck_comment" 
+                        values={{ actor: actorName, deck_name: data.deck_name }}
+                        components={{ 0: strong, 1: em }}
+                    />
+                );
             case 'new_news_comment':
-                return <>{actor} comentou na sua notícia: <em>{data.post_title}</em></>;
+                return (
+                    <Trans 
+                        i18nKey="notifications.new_news_comment" 
+                        values={{ actor: actorName, post_title: data.post_title }}
+                        components={{ 0: strong, 1: em }}
+                    />
+                );
             case 'new_comment_reply':
-                return <>{actor} respondeu ao seu comentário.</>;
+                return (
+                    <Trans 
+                        i18nKey="notifications.new_comment_reply" 
+                        values={{ actor: actorName }}
+                        components={{ 0: strong }}
+                    />
+                );
             case 'new_deck_like':
-                return <>{actor} curtiu seu deck: <em>{data.deck_name}</em></>;
+                return (
+                    <Trans 
+                        i18nKey="notifications.new_deck_like" 
+                        values={{ actor: actorName, deck_name: data.deck_name }}
+                        components={{ 0: strong, 1: em }}
+                    />
+                );
             case 'new_news_like':
-                return <>{actor} curtiu sua notícia: <em>{data.post_title}</em></>;
+                return (
+                    <Trans 
+                        i18nKey="notifications.new_news_like" 
+                        values={{ actor: actorName, post_title: data.post_title }}
+                        components={{ 0: strong, 1: em }}
+                    />
+                );
             case 'new_comment_like':
-                return <>{actor} curtiu seu comentário.</>;
+                return (
+                    <Trans 
+                        i18nKey="notifications.new_comment_like" 
+                        values={{ actor: actorName }}
+                        components={{ 0: strong }}
+                    />
+                );
             case 'new_clan_member':
-                return <>Um novo membro, <strong>{data.new_member_username}</strong>, entrou no seu clã: <em>{data.clan_name}</em></>;
+                return (
+                    <Trans 
+                        i18nKey="notifications.new_clan_member" 
+                        values={{ username: data.new_member_username, clan_name: data.clan_name }}
+                        components={{ 0: strong, 1: em }}
+                    />
+                );
             case 'clan_invitation':
-                return <>{actor} te convidou para o clã <strong>{data.clan_name}</strong>.</>;
+                return (
+                    <Trans 
+                        i18nKey="notifications.clan_invitation" 
+                        values={{ actor: actorName, clan_name: data.clan_name }}
+                        components={{ 0: strong, 1: em }}
+                    />
+                );
             default:
-                return 'Nova notificação';
+                return t('notifications.default');
         }
     };
 
@@ -136,7 +198,7 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
             </PopoverTrigger>
             <PopoverContent className="w-96">
                 <div className="p-2">
-                    <h4 className="font-medium leading-none mb-4">Notificações</h4>
+                    <h4 className="font-medium leading-none mb-4">{t('notifications.title')}</h4>
                     {isLoading ? (
                         <div className="flex justify-center items-center h-24">
                             <Loader2 className="h-6 w-6 animate-spin" />
@@ -163,7 +225,7 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
                                                 <p className="text-sm text-foreground/90">
                                                     {renderNotificationText(n)}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground mt-1">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: ptBR })}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: currentLocale })}</p>
                                             </div>
                                         </div>
                                     </Link>
@@ -171,7 +233,7 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
                             })}
                         </div>
                     ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">Nenhuma notificação ainda.</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">{t('notifications.empty')}</p>
                     )}
                 </div>
             </PopoverContent>

@@ -43,6 +43,7 @@ import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
+import { useTranslation } from "react-i18next";
 
 const CARD_TYPE_GROUPS = {
   "Monstros de Efeito": ["Effect Monster", "Flip Effect Monster", "Tuner Monster", "Pendulum Effect Monster"],
@@ -256,6 +257,7 @@ const sortCards = (cards: CardData[]): CardData[] => {
 };
 
 const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCard, isDeckLocked }: { card: CardData, isGenesysMode: boolean, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, isDeckLocked: boolean }) => {
+  const { t } = useTranslation();
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: ItemTypes.CARD,
     item: { card },
@@ -295,8 +297,8 @@ const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtra
                   )}
                 </div>
                 <div className="flex flex-col gap-1 ml-2">
-                  <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}}>Add</Button>
-                  <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, 'side')}}>Side</Button>
+                  <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}}>{t('deck_builder.add_btn')}</Button>
+                  <Button size="sm" className="h-5 px-2 text-xs" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, 'side')}}>{t('deck_builder.side_btn')}</Button>
                 </div>
               </div>
             </div>
@@ -482,6 +484,7 @@ Se você não conseguir usar o Kiwi Browser:
 > **💡 Dica:** O formato **YDKE** é uma sequência de texto (ex: 'ydke://...'). É o método mais rápido para colar diretamente no nosso formulário de envio!`;
 
 const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -837,7 +840,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     if (!isGenesysMode) {
       const status = card.ban_master_duel;
       if (status === "Forbidden" || status === "Banned") {
-        toast({ title: "Carta Banida", description: `"${card.name}" é proibida.`, variant: "destructive" });
+        toast({ title: t('deck_builder.toast.banned'), description: t('deck_builder.toast.banned_desc', { name: card.name }), variant: "destructive" });
         return;
       }
       if (status === "Limited") limit = 1;
@@ -846,7 +849,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
     const currentCopies = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.id === card.id).length;
     if (currentCopies >= limit) {
-      toast({ title: "Limite de Cópias", description: `Você já possui ${currentCopies} de "${card.name}". O limite é ${limit}.`, variant: "destructive" });
+      toast({ title: t('deck_builder.toast.limit'), description: t('deck_builder.toast.limit_desc', { current: currentCopies, name: card.name, limit: limit }), variant: "destructive" });
       return;
     }
 
@@ -860,7 +863,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     const targetDeck = deckMap[targetSection];
 
     if (targetDeck.deck.length >= targetDeck.limit) {
-      toast({ title: "Limite atingido", description: `O ${targetDeck.name} não pode ter mais de ${targetDeck.limit} cartas.`, variant: "destructive" });
+      toast({ title: t('deck_builder.toast.max_size'), description: t('deck_builder.toast.max_size_desc', { section: targetDeck.name, limit: targetDeck.limit }), variant: "destructive" });
       return;
     }
     targetDeck.setter([...targetDeck.deck, card]);
@@ -882,14 +885,14 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     setEditingDeckId(null);
     localStorage.removeItem('deck_builder_draft');
     setHasUnsavedChanges(false);
-    toast({ title: "Deck Limpo", description: "Todas as cartas foram removidas." });
+    toast({ title: t('deck_builder.toast.cleared'), description: t('deck_builder.toast.cleared_desc') });
   };
 
   const handleSortDeck = () => {
     setMainDeck(sortCards(mainDeck));
     setExtraDeck(sortCards(extraDeck));
     setSideDeck(sortCards(sideDeck));
-    toast({ title: "Deck Reordenado", description: "As cartas foram reordenadas." });
+    toast({ title: t('deck_builder.toast.reordered'), description: t('deck_builder.toast.reordered_desc') });
   };
 
   const exportYdke = () => {
@@ -1042,9 +1045,9 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   };
 
   const saveDeck = async () => {
-    if (!user) { toast({ title: "Erro", description: "Você precisa estar logado.", variant: "destructive" }); return; }
-    if (!deckName.trim()) { toast({ title: "Erro", description: "Digite um nome para o deck.", variant: "destructive" }); return; }
-    if (mainDeck.length < 40) { toast({ title: "Erro", description: "O Main Deck precisa ter no mínimo 40 cartas.", variant: "destructive" }); return; }
+    if (!user) { toast({ title: t('deck_builder.toast.save_error'), description: t('deck_builder.toast.save_error_login'), variant: "destructive" }); return; }
+    if (!deckName.trim()) { toast({ title: t('deck_builder.toast.save_error'), description: t('deck_builder.toast.save_error_name'), variant: "destructive" }); return; }
+    if (mainDeck.length < 40) { toast({ title: t('deck_builder.toast.save_error'), description: t('deck_builder.toast.save_error_min'), variant: "destructive" }); return; }
     setIsSaving(true);
     try {
       const allCardsToInsert = [
@@ -1060,7 +1063,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         const cardsWithDeckId = allCardsToInsert.map(c => ({ ...c, deck_id: editingDeckId }));
         const { error: insertError } = await supabase.from('deck_cards').insert(cardsWithDeckId);
         if (insertError) throw insertError;
-        toast({ title: "Sucesso!", description: `Deck "${deckName.trim()}" atualizado!` });
+        toast({ title: t('deck_builder.toast.save_success'), description: t('deck_builder.toast.save_success_desc', { name: deckName.trim() }) });
         localStorage.removeItem('deck_builder_draft');
         setHasUnsavedChanges(false);
         navigate(`/profile/${user.id}`);
@@ -1071,14 +1074,14 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         const cardsWithDeckId = allCardsToInsert.map(c => ({ ...c, deck_id: deck.id }));
         const { error: cardsError } = await supabase.from("deck_cards").insert(cardsWithDeckId);
         if (cardsError) throw cardsError;
-        toast({ title: "Sucesso!", description: `Deck "${deckName.trim()}" salvo!` });
+        toast({ title: t('deck_builder.toast.save_success'), description: t('deck_builder.toast.save_success_desc', { name: deckName.trim() }) });
         localStorage.removeItem('deck_builder_draft');
         setHasUnsavedChanges(false);
         navigate(`/profile/${user.id}`);
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      toast({ title: "Erro ao Salvar", description: errorMessage, variant: "destructive" });
+      toast({ title: t('deck_builder.toast.save_error'), description: errorMessage, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -1088,7 +1091,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-4 text-lg">Carregando deck...</p>
+        <p className="ml-4 text-lg">{t('deck_builder.loading_deck')}</p>
       </div>
     );
   }
@@ -1102,13 +1105,13 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
           {!user && (
             <div className="flex items-center gap-2 text-sm text-yellow-400 bg-yellow-900/30 p-2 rounded-md">
               <AlertTriangle className="h-4 w-4" />
-              Você deve estar logado para salvar um deck.
+              {t('deck_builder.login_warning')}
             </div>
           )}
           {isDeckLocked && (
             <div className="flex items-center gap-2 text-sm text-red-500 bg-red-900/30 p-3 rounded-md mb-4">
               <AlertTriangle className="h-4 w-4" />
-              Este deck está travado e não pode ser editado pois está vinculado a um torneio que já começou.
+              {t('deck_builder.locked_warning')}
             </div>
           )}
           <div className="flex flex-wrap items-center gap-2">
@@ -1116,13 +1119,13 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" disabled={isDeckLocked}>
                   <FileUp className="h-4 w-4 mr-2" />
-                  Importar
+                  {t('deck_builder.import')}
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={handleImportYdkClick} disabled={isDeckLocked}>Importar YDK</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleYdkeImport} disabled={isDeckLocked}>Importar YDKE</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleImportYdkClick} disabled={isDeckLocked}>{t('deck_builder.import_ydk')}</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleYdkeImport} disabled={isDeckLocked}>{t('deck_builder.import_ydke')}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -1130,48 +1133,48 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
                   <FileDown className="h-4 w-4 mr-2" />
-                  Exportar
+                  {t('deck_builder.export')}
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={exportDeck}>Exportar YDK</DropdownMenuItem>
-                <DropdownMenuItem onClick={exportYdke}>Exportar YDKE</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportDeck}>{t('deck_builder.export_ydk')}</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportYdke}>{t('deck_builder.export_ydke')}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="outline" onClick={handleSortDeck} disabled={isDeckLocked}><ArrowDown className="h-4 w-4 mr-2" /> Re-ordenar</Button>
+            <Button variant="outline" onClick={handleSortDeck} disabled={isDeckLocked}><ArrowDown className="h-4 w-4 mr-2" /> {t('deck_builder.reorder')}</Button>
             {editingDeckId && hasUnsavedChanges && (
               <Button variant="secondary" onClick={discardChanges} disabled={isDeckLocked}>
-                <RotateCcw className="h-4 w-4 mr-2" /> Reverter
+                <RotateCcw className="h-4 w-4 mr-2" /> {t('deck_builder.revert')}
               </Button>
             )}
-            <Button variant="destructive" onClick={clearDeck} disabled={isDeckLocked}><Trash2 className="h-4 w-4 mr-2" /> Limpar</Button>
+            <Button variant="destructive" onClick={clearDeck} disabled={isDeckLocked}><Trash2 className="h-4 w-4 mr-2" /> {t('deck_builder.clear')}</Button>
             <div className="flex-grow md:flex-grow-0"></div>
             <Button onClick={saveDeck} disabled={isSaving || isDeckLocked} className="bg-blue-600 hover:bg-blue-700 md:ml-auto mt-2 md:mt-0">
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-              {isDeckLocked ? "Deck Travado" : (editingDeckId ? 'Atualizar Deck' : 'Salvar Deck')}
+              {isDeckLocked ? t('deck_builder.locked_btn') : (editingDeckId ? t('deck_builder.update') : t('deck_builder.save'))}
             </Button>
           </div>
           <div>
-            <Label htmlFor="deck-name" className="text-sm font-bold mb-2 block">Deck Name</Label>
-            <Input id="deck-name" placeholder="Dê um nome ao seu Deck" className="text-lg" value={deckName} onChange={(e) => setDeckName(e.target.value)} disabled={isDeckLocked} />
+            <Label htmlFor="deck-name" className="text-sm font-bold mb-2 block">{t('deck_builder.deck_name_label')}</Label>
+            <Input id="deck-name" placeholder={t('deck_builder.deck_name_placeholder')} className="text-lg" value={deckName} onChange={(e) => setDeckName(e.target.value)} disabled={isDeckLocked} />
           </div>
           <div className="flex items-center justify-between mt-2">
             <div className="flex-1 flex justify-start">
               <div className="flex items-center space-x-2">
                 <Switch id="is-private" checked={isPrivate} onCheckedChange={setIsPrivate} />
-                <Label htmlFor="is-private">Tornar Deck Privado</Label>
+                <Label htmlFor="is-private">{t('deck_builder.private_switch')}</Label>
               </div>
             </div>
             <div className="flex-1 flex justify-center">
               <div className="flex items-center space-x-2">
                 <Switch id="genesys-mode" checked={isGenesysMode} onCheckedChange={setIsGenesysMode} />
-                <Label htmlFor="genesys-mode">Modo Genesys</Label>
+                <Label htmlFor="genesys-mode">{t('deck_builder.genesys_switch')}</Label>
               </div>
             </div>
             <div className="flex-1 flex justify-end">
               <div className={`text-lg font-bold ${!isGenesysMode ? 'invisible' : ''}`}>
-                Pontos Genesys: <span className="text-primary">{totalGenesysPoints}</span>
+                {t('deck_builder.genesys_points')} <span className="text-primary">{totalGenesysPoints}</span>
               </div>
             </div>
           </div>
@@ -1184,7 +1187,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               <div className="flex gap-2">
                 <Input 
                   id="search" 
-                  placeholder="Buscar pelo nome da carta..." 
+                  placeholder={t('deck_builder.search_placeholder')} 
                   className="bg-stone-800 border-stone-700 w-full"
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)} 
@@ -1200,35 +1203,35 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                     <DialogTrigger asChild>
                       <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 border-0">
                         <Filter className="h-4 w-4 mr-2" />
-                        Filtros Avançados
+                        {t('deck_builder.filters_btn')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-stone-900 border-stone-800 text-white max-w-2xl">
                       <DialogHeader>
-                        <DialogTitle>Filtros Avançados e Ordenação</DialogTitle>
+                        <DialogTitle>{t('deck_builder.filters_modal_title')}</DialogTitle>
                       </DialogHeader>
                       {isMobile ? (
                         <div className="max-h-[70vh] overflow-y-auto pr-4">
                           <Accordion type="multiple" className="w-full">
                             {/* Sorting */}
                             <AccordionItem value="item-1">
-                              <AccordionTrigger>Ordenação</AccordionTrigger>
+                              <AccordionTrigger>{t('deck_builder.sort_label')}</AccordionTrigger>
                               <AccordionContent>
                                 <div className="flex items-center gap-2 pt-2">
                                   <Select value={sortBy} onValueChange={setSortBy}>
                                     <SelectTrigger className="flex-grow bg-stone-800 border-stone-700">
-                                      <SelectValue placeholder="Ordenar por..." />
+                                      <SelectValue placeholder={t('deck_builder.sort_placeholder')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="popularity_desc">Popularidade</SelectItem>
-                                      <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
-                                      <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
-                                      <SelectItem value="atk_asc">ATK (Crescente)</SelectItem>
-                                      <SelectItem value="atk_desc">ATK (Decrescente)</SelectItem>
-                                      <SelectItem value="def_asc">DEF (Crescente)</SelectItem>
-                                      <SelectItem value="def_desc">DEF (Decrescente)</SelectItem>
-                                      <SelectItem value="level_asc">Nível (Crescente)</SelectItem>
-                                      <SelectItem value="level_desc">Nível (Decrescente)</SelectItem>
+                                      <SelectItem value="popularity_desc">{t('deck_builder.sort_options.popularity')}</SelectItem>
+                                      <SelectItem value="name_asc">{t('deck_builder.sort_options.name_asc')}</SelectItem>
+                                      <SelectItem value="name_desc">{t('deck_builder.sort_options.name_desc')}</SelectItem>
+                                      <SelectItem value="atk_asc">{t('deck_builder.sort_options.atk_asc')}</SelectItem>
+                                      <SelectItem value="atk_desc">{t('deck_builder.sort_options.atk_desc')}</SelectItem>
+                                      <SelectItem value="def_asc">{t('deck_builder.sort_options.def_asc')}</SelectItem>
+                                      <SelectItem value="def_desc">{t('deck_builder.sort_options.def_desc')}</SelectItem>
+                                      <SelectItem value="level_asc">{t('deck_builder.sort_options.level_asc')}</SelectItem>
+                                      <SelectItem value="level_desc">{t('deck_builder.sort_options.level_desc')}</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -1237,7 +1240,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
                             {/* Card Type Filters */}
                             <AccordionItem value="item-2">
-                              <AccordionTrigger>Tipo de Carta</AccordionTrigger>
+                              <AccordionTrigger>{t('deck_builder.card_type_label')}</AccordionTrigger>
                               <AccordionContent>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
                                     {Object.keys(CARD_TYPE_GROUPS).map(group => (
@@ -1258,7 +1261,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
                             {/* Attribute Filters */}
                             <AccordionItem value="item-3">
-                              <AccordionTrigger>Atributo</AccordionTrigger>
+                              <AccordionTrigger>{t('deck_builder.attribute_label')}</AccordionTrigger>
                               <AccordionContent>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-2">
                                     {ATTRIBUTES.map(attr => (
@@ -1279,7 +1282,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
                             {/* Monster Race Filters */}
                             <AccordionItem value="item-4">
-                                <AccordionTrigger>Tipo de Monstro</AccordionTrigger>
+                                <AccordionTrigger>{t('deck_builder.monster_type_label')}</AccordionTrigger>
                                 <AccordionContent>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
                                       {MONSTER_RACES.map(race => (
@@ -1300,7 +1303,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
                             {/* Spell Race Filters */}
                             <AccordionItem value="item-5">
-                              <AccordionTrigger>Tipo de Magia</AccordionTrigger>
+                              <AccordionTrigger>{t('deck_builder.spell_type_label')}</AccordionTrigger>
                               <AccordionContent>
                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
                                     {SPELL_RACES.map(race => (
@@ -1321,7 +1324,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                             
                             {/* Trap Race Filters */}
                             <AccordionItem value="item-6">
-                               <AccordionTrigger>Tipo de Armadilha</AccordionTrigger>
+                               <AccordionTrigger>{t('deck_builder.trap_type_label')}</AccordionTrigger>
                                <AccordionContent>
                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
                                     {TRAP_RACES.map(race => (
@@ -1342,7 +1345,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
                             {/* Genesys Points Filter */}
                             <AccordionItem value="item-7">
-                              <AccordionTrigger>Pontos Genesys</AccordionTrigger>
+                              <AccordionTrigger>{t('deck_builder.genesys_filter_label')}</AccordionTrigger>
                               <AccordionContent>
                                 <div className="flex items-center gap-2 pt-2">
                                     <Select value={genesysPointsOperator} onValueChange={(value: 'gte' | 'lte') => setGenesysPointsOperator(value)}>
@@ -1350,8 +1353,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="gte">Maior ou igual a</SelectItem>
-                                            <SelectItem value="lte">Menor ou igual a</SelectItem>
+                                            <SelectItem value="gte">{t('deck_builder.gte')}</SelectItem>
+                                            <SelectItem value="lte">{t('deck_builder.lte')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <Input 
@@ -1370,22 +1373,22 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                         <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-4">
                             {/* Sorting */}
                             <div className="space-y-2">
-                                <Label>Ordenação</Label>
+                                <Label>{t('deck_builder.sort_label')}</Label>
                                 <div className="flex items-center gap-2">
                                     <Select value={sortBy} onValueChange={setSortBy}>
                                         <SelectTrigger className="flex-grow bg-stone-800 border-stone-700">
-                                            <SelectValue placeholder="Ordenar por..." />
+                                            <SelectValue placeholder={t('deck_builder.sort_placeholder')} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="popularity_desc">Popularidade</SelectItem>
-                                            <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
-                                            <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
-                                            <SelectItem value="atk_asc">ATK (Crescente)</SelectItem>
-                                            <SelectItem value="atk_desc">ATK (Decrescente)</SelectItem>
-                                            <SelectItem value="def_asc">DEF (Crescente)</SelectItem>
-                                            <SelectItem value="def_desc">DEF (Decrescente)</SelectItem>
-                                            <SelectItem value="level_asc">Nível (Crescente)</SelectItem>
-                                            <SelectItem value="level_desc">Nível (Decrescente)</SelectItem>
+                                            <SelectItem value="popularity_desc">{t('deck_builder.sort_options.popularity')}</SelectItem>
+                                            <SelectItem value="name_asc">{t('deck_builder.sort_options.name_asc')}</SelectItem>
+                                            <SelectItem value="name_desc">{t('deck_builder.sort_options.name_desc')}</SelectItem>
+                                            <SelectItem value="atk_asc">{t('deck_builder.sort_options.atk_asc')}</SelectItem>
+                                            <SelectItem value="atk_desc">{t('deck_builder.sort_options.atk_desc')}</SelectItem>
+                                            <SelectItem value="def_asc">{t('deck_builder.sort_options.def_asc')}</SelectItem>
+                                            <SelectItem value="def_desc">{t('deck_builder.sort_options.def_desc')}</SelectItem>
+                                            <SelectItem value="level_asc">{t('deck_builder.sort_options.level_asc')}</SelectItem>
+                                            <SelectItem value="level_desc">{t('deck_builder.sort_options.level_desc')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1393,7 +1396,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
                             {/* Card Type Filters */}
                             <div className="space-y-2">
-                                <Label>Tipo de Carta</Label>
+                                <Label>{t('deck_builder.card_type_label')}</Label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2">
                                     {Object.keys(CARD_TYPE_GROUPS).map(group => (
                                         <div key={group} className="flex items-center space-x-2">
@@ -1412,7 +1415,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
                             {/* Attribute Filters */}
                             <div className="space-y-2">
-                                <Label>Atributo</Label>
+                                <Label>{t('deck_builder.attribute_label')}</Label>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 gap-2">
                                     {ATTRIBUTES.map(attr => (
                                          <div key={attr} className="flex items-center space-x-2">
@@ -1431,7 +1434,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
                             {/* Monster Race Filters */}
                             <div className="space-y-2">
-                                <Label>Tipo de Monstro</Label>
+                                <Label>{t('deck_builder.monster_type_label')}</Label>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2">
                                     {MONSTER_RACES.map(race => (
                                          <div key={race} className="flex items-center space-x-2">
@@ -1450,7 +1453,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
                             {/* Spell Race Filters */}
                             <div className="space-y-2">
-                                <Label>Tipo de Magia</Label>
+                                <Label>{t('deck_builder.spell_type_label')}</Label>
                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2">
                                     {SPELL_RACES.map(race => (
                                          <div key={`spell_${race}`} className="flex items-center space-x-2">
@@ -1469,7 +1472,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                             
                             {/* Trap Race Filters */}
                             <div className="space-y-2">
-                                <Label>Tipo de Armadilha</Label>
+                                <Label>{t('deck_builder.trap_type_label')}</Label>
                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2">
                                     {TRAP_RACES.map(race => (
                                          <div key={`trap_${race}`} className="flex items-center space-x-2">
@@ -1488,7 +1491,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
                             {/* Genesys Points Filter */}
                             <div className="space-y-2">
-                                <Label>Pontos Genesys</Label>
+                                <Label>{t('deck_builder.genesys_filter_label')}</Label>
                                 <div className="flex items-center gap-2">
                                     <Select value={genesysPointsOperator} onValueChange={(value: 'gte' | 'lte') => setGenesysPointsOperator(value)}>
                                         <SelectTrigger className="w-[180px] bg-stone-800 border-stone-700">
@@ -1512,7 +1515,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                       )}
                       <Button onClick={() => searchCards(true)} disabled={isSearching} className="w-full mt-4" variant="destructive">
                         {isSearching ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
-                        Buscar
+                        {t('deck_builder.search_btn')}
                       </Button>
                     </DialogContent>                  </Dialog>
               <div className="h-[75vh] rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
@@ -1528,11 +1531,11 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             <DeckDropZone section="main" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
               <div>
                                                 <div className="flex justify-between items-center mb-2">
-                                                                                                    <h2 className="text-xl font-bold">Main Deck</h2>
+                                                                                                    <h2 className="text-xl font-bold">{t('deck_builder.main_deck')}</h2>
                                                                                                     <Dialog>
                                                                                                       <DialogTrigger asChild>
                                                                                                         <span className="text-sm text-blue-400 hover:underline cursor-pointer">
-                                                                                                          Como exportar meu deck do Master Duel?
+                                                                                                          {t('deck_builder.how_to_export')}
                                                                                                         </span>
                                                                                                       </DialogTrigger>
                                                                                                       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -1545,7 +1548,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                                                                                                                                                       </ReactMarkdown>
                                                                                                                                                     </div>                                                      </DialogContent>
                                                                                                     </Dialog>
-                                                                                                  <span className="text-muted-foreground">{mainDeck.length} Cartas</span>
+                                                                                                  <span className="text-muted-foreground">{t('deck_builder.cards_count', { count: mainDeck.length })}</span>
                                                                                                   </div>                <div className="rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
                                                                     <div className="bg-stone-900/50 p-4 rounded-lg min-h-[200px]">
                                                                       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-x-2 gap-y-4">                      {mainDeck.map((card, index) => (
@@ -1568,8 +1571,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             <DeckDropZone section="extra" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-xl font-bold">Extra Deck</h2>
-                  <span className="text-muted-foreground">{extraDeck.length} Cartas</span>
+                  <h2 className="text-xl font-bold">{t('deck_builder.extra_deck')}</h2>
+                  <span className="text-muted-foreground">{t('deck_builder.cards_count', { count: extraDeck.length })}</span>
                 </div>
                 <div className="rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
                   <div className="bg-indigo-950/50 p-4 rounded-lg min-h-[100px]">
@@ -1594,8 +1597,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             <DeckDropZone section="side" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-xl font-bold">Side Deck</h2>
-                  <span className="text-muted-foreground">{sideDeck.length} Cartas</span>
+                  <h2 className="text-xl font-bold">{t('deck_builder.side_deck')}</h2>
+                  <span className="text-muted-foreground">{t('deck_builder.cards_count', { count: sideDeck.length })}</span>
                 </div>
                 <div className="rounded-lg bg-cover bg-center" style={{ backgroundImage: "url('/bg-main.png')" }}>
                   <div className="bg-emerald-950/50 p-4 rounded-lg min-h-[100px]">

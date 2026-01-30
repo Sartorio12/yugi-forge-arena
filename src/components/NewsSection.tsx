@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Loader2, Newspaper } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS, es } from "date-fns/locale";
 import { FramedAvatar } from "./FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTranslation } from "react-i18next";
 
 interface NewsPost {
   id: number;
@@ -26,6 +27,15 @@ interface NewsPost {
 }
 
 export const NewsSection = () => {
+  const { t, i18n } = useTranslation();
+  
+  const localeMap: { [key: string]: any } = {
+    pt: ptBR,
+    en: enUS,
+    es: es,
+  };
+  const currentLocale = localeMap[i18n.language] || ptBR;
+
   const { data: posts, isLoading } = useQuery({
     queryKey: ["newsPosts"],
     queryFn: async () => {
@@ -60,10 +70,10 @@ export const NewsSection = () => {
       <div className="flex items-center justify-between mb-6 px-1">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <Newspaper className="h-5 w-5 text-primary" />
-          Últimas Notícias
+          {t('news_section.title')}
         </h2>
         <Link to="/news" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-          Ver todas
+          {t('news_section.view_all')}
         </Link>
       </div>
       
@@ -98,7 +108,7 @@ export const NewsSection = () => {
                             {/* "Notícia" Badge */}
                             <div className="absolute top-1.5 left-1.5 md:top-2 md:left-2 z-10">
                               <span className="inline-block px-1.5 py-0.5 rounded text-[8px] md:text-[10px] font-bold bg-primary/90 text-primary-foreground uppercase tracking-wider shadow-sm">
-                                {post.label || "Notícia"}
+                                {post.label || t('news_section.default_label')}
                               </span>
                             </div>
             
@@ -124,7 +134,7 @@ export const NewsSection = () => {
                                   </div>
                                 )}
                                 <span className="text-gray-500">•</span>
-                                <span>{format(new Date(post.created_at), "d MMM", { locale: ptBR })}</span>
+                                <span>{format(new Date(post.created_at), t('news_section.date_format'), { locale: currentLocale })}</span>
                               </div>
                             </div>
                           </div>
@@ -133,7 +143,7 @@ export const NewsSection = () => {
       ) : (
         <div className="text-center text-muted-foreground py-12 border-2 border-dashed border-border rounded-lg bg-transparent">
           <Newspaper className="mx-auto h-12 w-12 mb-4 opacity-20" />
-          <p>Nenhuma notícia encontrada.</p>
+          <p>{t('news_section.no_news')}</p>
         </div>
       )}
     </section>

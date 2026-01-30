@@ -15,6 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FramedAvatar } from "./FramedAvatar";
 import UserDisplay from "./UserDisplay";
+import { useTranslation } from "react-i18next";
 
 interface SearchResult {
   id: string;
@@ -25,6 +26,7 @@ interface SearchResult {
 }
 
 export const GlobalSearch = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
   const [isOpen, setIsOpen] = useState(false);
@@ -70,7 +72,7 @@ export const GlobalSearch = () => {
     <div className="relative w-full">
       <Command className="relative overflow-visible">
         <CommandInput
-          placeholder="Buscar usuários ou clãs..."
+          placeholder={t('global_search.placeholder')}
           value={searchTerm}
           onValueChange={setSearchTerm}
           onFocus={() => setIsOpen(true)}
@@ -84,7 +86,7 @@ export const GlobalSearch = () => {
               </div>
             )}
             {!isLoading && debouncedSearchTerm && !results?.length && (
-              <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
+              <CommandEmpty>{t('global_search.no_results')}</CommandEmpty>
             )}
             {results && results.length > 0 && (
               <CommandGroup>

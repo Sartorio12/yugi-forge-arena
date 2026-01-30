@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import { User } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface TournamentsProps {
   user: User | null;
@@ -12,6 +13,7 @@ interface TournamentsProps {
 }
 
 const Tournaments = ({ user, onLogout }: TournamentsProps) => {
+  const { t } = useTranslation();
   const { data: tournaments, isLoading } = useQuery({
     queryKey: ["tournaments"],
     queryFn: async () => {
@@ -33,10 +35,10 @@ const Tournaments = ({ user, onLogout }: TournamentsProps) => {
       <main className="container mx-auto px-4 py-12">
         <div className="mb-12 text-center">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
-            Torneios
+            {t('tournaments_page.title')}
           </h1>
           <p className="text-muted-foreground text-lg">
-            Participe dos próximos eventos de Yu-Gi-Oh!
+            {t('tournaments_page.subtitle')}
           </p>
         </div>
 
@@ -60,7 +62,7 @@ const Tournaments = ({ user, onLogout }: TournamentsProps) => {
         ) : (
           <div className="text-center py-20">
             <p className="text-muted-foreground text-lg">
-              Nenhum torneio disponível no momento.
+              {t('tournaments_page.no_tournaments')}
             </p>
           </div>
         )}

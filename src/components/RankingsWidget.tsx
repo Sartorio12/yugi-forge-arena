@@ -15,6 +15,7 @@ import { FramedAvatar } from "./FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserDisplay from "./UserDisplay";
+import { useTranslation } from "react-i18next";
 
 interface PlayerRanking {
   user_id: string;
@@ -36,6 +37,7 @@ interface ClanRanking {
 }
 
 export const RankingsWidget = () => {
+  const { t } = useTranslation();
   const { data: players, isLoading: isLoadingPlayers } = useQuery({
     queryKey: ["topRankedPlayersWidget"],
     queryFn: async () => {
@@ -79,7 +81,7 @@ export const RankingsWidget = () => {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-xl">
           <Trophy className="h-5 w-5 text-primary" />
-          Rankings
+          {t('rankings_widget.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -87,11 +89,11 @@ export const RankingsWidget = () => {
           <TabsList className="grid w-full grid-cols-2 bg-black/40">
             <TabsTrigger value="players" className="flex items-center gap-2">
               <Swords className="h-4 w-4" />
-              Duelistas
+              {t('rankings_widget.duelists')}
             </TabsTrigger>
             <TabsTrigger value="clans" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Clãs
+              {t('rankings_widget.clans')}
             </TabsTrigger>
           </TabsList>
 
@@ -104,9 +106,9 @@ export const RankingsWidget = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="border-border/50 hover:bg-transparent">
-                    <TableHead className="w-[40px] text-center px-1">Rank</TableHead>
-                    <TableHead className="text-left px-2">Duelista</TableHead>
-                    <TableHead className="w-[60px] text-center px-1">Pontos</TableHead>
+                    <TableHead className="w-[40px] text-center px-1">{t('rankings_widget.rank')}</TableHead>
+                    <TableHead className="text-left px-2">{t('rankings_widget.duelist')}</TableHead>
+                    <TableHead className="w-[60px] text-center px-1">{t('rankings_widget.points')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -137,13 +139,13 @@ export const RankingsWidget = () => {
             ) : (
               <div className="text-center py-8 text-muted-foreground bg-black/20 rounded-lg border border-dashed border-border/50">
                 <Trophy className="mx-auto h-10 w-10 mb-2 opacity-20" />
-                <p className="text-sm font-medium">A temporada iniciará em breve</p>
-                <p className="text-xs text-muted-foreground/60">Seja o primeiro a pontuar!</p>
+                <p className="text-sm font-medium">{t('rankings_widget.season_soon')}</p>
+                <p className="text-xs text-muted-foreground/60">{t('rankings_widget.be_first')}</p>
               </div>
             )}
             <div className="mt-4 text-center">
               <Link to="/ranking" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-                Ver Ranking Completo
+                {t('rankings_widget.view_full')}
               </Link>
             </div>
           </TabsContent>
@@ -157,9 +159,9 @@ export const RankingsWidget = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="border-border/50 hover:bg-transparent">
-                    <TableHead className="w-[40px] text-center px-1">Rank</TableHead>
-                    <TableHead className="text-left px-2">Clã</TableHead>
-                    <TableHead className="w-[60px] text-center px-1">Pontos</TableHead>
+                    <TableHead className="w-[40px] text-center px-1">{t('rankings_widget.rank')}</TableHead>
+                    <TableHead className="text-left px-2">{t('rankings_widget.clan')}</TableHead>
+                    <TableHead className="w-[60px] text-center px-1">{t('rankings_widget.points')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -188,13 +190,13 @@ export const RankingsWidget = () => {
             ) : (
               <div className="text-center py-8 text-muted-foreground bg-black/20 rounded-lg border border-dashed border-border/50">
                 <Users className="mx-auto h-10 w-10 mb-2 opacity-20" />
-                <p className="text-sm font-medium">A temporada de Clãs iniciará em breve</p>
-                <p className="text-xs text-muted-foreground/60">Reúna seus aliados!</p>
+                <p className="text-sm font-medium">{t('rankings_widget.season_clans_soon')}</p>
+                <p className="text-xs text-muted-foreground/60">{t('rankings_widget.gather_allies')}</p>
               </div>
             )}
             <div className="mt-4 text-center">
               <Link to="/ranking" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-                Ver Ranking Completo
+                {t('rankings_widget.view_full')}
               </Link>
             </div>
           </TabsContent>

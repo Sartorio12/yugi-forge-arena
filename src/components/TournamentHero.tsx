@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Loader2, Calendar, Trophy, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS, es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import {
   Carousel,
@@ -14,6 +14,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Tournament {
   id: number;
@@ -26,7 +27,15 @@ interface Tournament {
 
 export const TournamentHero = () => {
   const [api, setApi] = useState<CarouselApi>();
+  const { t, i18n } = useTranslation();
   
+  const localeMap: { [key: string]: any } = {
+    pt: ptBR,
+    en: enUS,
+    es: es,
+  };
+  const currentLocale = localeMap[i18n.language] || ptBR;
+
   const { data: tournaments, isLoading } = useQuery({
     queryKey: ["upcoming-tournaments-hero"],
     queryFn: async () => {
@@ -76,12 +85,12 @@ export const TournamentHero = () => {
     return (
       <div className="w-full relative rounded-lg border border-border bg-[hsl(0_0%_12%)] flex flex-col items-center justify-center text-center p-6 h-[300px] sm:h-auto sm:aspect-[16/5]">
         <Trophy className="h-12 w-12 text-muted-foreground/20 mb-4" />
-        <h2 className="text-xl font-bold mb-2">Sem Torneios Agendados</h2>
+        <h2 className="text-xl font-bold mb-2">{t('tournament_hero.no_tournaments')}</h2>
         <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-          Fique ligado! Novos torneios serão anunciados em breve.
+          {t('tournament_hero.stay_tuned')}
         </p>
         <Button variant="outline" asChild>
-          <Link to="/tournaments">Ver Todos os Torneios</Link>
+          <Link to="/tournaments">{t('tournament_hero.view_all')}</Link>
         </Button>
       </div>
     );
@@ -113,11 +122,11 @@ export const TournamentHero = () => {
                   <div className="max-w-2xl space-y-1.5 sm:space-y-4">
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center rounded-full border border-primary/50 bg-primary/20 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-primary-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                        Próximo Evento
+                        {t('tournament_hero.next_event')}
                       </span>
                       <span className="flex items-center text-[10px] sm:text-xs font-medium text-gray-300">
                         <Calendar className="mr-1 h-3 sm:h-3.5 w-3 sm:w-3.5" />
-                        {format(new Date(tournament.event_date), "dd 'de' MMMM, HH:mm", { locale: ptBR })}
+                        {format(new Date(tournament.event_date), t('tournament_hero.date_format'), { locale: currentLocale })}
                       </span>
                     </div>
 
@@ -128,13 +137,13 @@ export const TournamentHero = () => {
                     <div className="pt-0.5 sm:pt-2">
                       <Button size="sm" className="sm:hidden h-7 bg-primary hover:bg-primary/90 text-[10px] px-3 font-bold" asChild>
                         <Link to={`/tournaments/${tournament.id}`}>
-                          Inscrever-se
+                          {t('tournament_hero.register')}
                           <ChevronRight className="ml-1 h-3 w-3" />
                         </Link>
                       </Button>
                       <Button size="lg" className="hidden sm:inline-flex bg-primary hover:bg-primary/90 text-white font-bold" asChild>
                         <Link to={`/tournaments/${tournament.id}`}>
-                          Inscrever-se Agora
+                          {t('tournament_hero.register_now')}
                           <ChevronRight className="ml-2 h-4 w-4" />
                         </Link>
                       </Button>

@@ -21,6 +21,7 @@ import { useChat } from "@/components/chat/ChatProvider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PROFILE_AVATARS } from "@/constants/profileAvatars";
 import { MatchHistoryList } from "@/components/MatchHistoryList"; // Import MatchHistoryList
+import { useTranslation } from "react-i18next";
 
 interface Deck {
   id: number;
@@ -44,6 +45,7 @@ interface ProfileProps {
 }
 
 const Profile = ({ user, onLogout }: ProfileProps) => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -65,7 +67,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
 
       if (error) {
         console.error("Error fetching profile:", error);
-        toast({ title: "Erro", description: "Perfil não encontrado.", variant: "destructive" });
+        toast({ title: t('profile_page.edit_modal.error'), description: t('profile_page.not_found'), variant: "destructive" });
         return null;
       }
       return data as Profile;
@@ -141,7 +143,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
     try {
       const { error: deckError } = await supabase.from("decks").delete().eq("id", deckId);
       if (deckError) throw deckError;
-      toast({ title: "Sucesso", description: "Deck deletado com sucesso." });
+      toast({ title: t('profile_page.edit_modal.success'), description: "Deck deletado com sucesso." });
       queryClient.invalidateQueries({ queryKey: ["user-decks", id] });
     } catch (error: any) {
       console.error("Error deleting deck:", error);
@@ -167,7 +169,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         
       if (error) throw error;
       
-      toast({ title: "Sucesso", description: "Banner removido." });
+      toast({ title: t('profile_page.edit_modal.success'), description: "Banner removido." });
       queryClient.invalidateQueries({ queryKey: ["user-tournament-banners", id] });
     } catch (error: any) {
       toast({ title: "Erro", description: error.message || "Falha ao remover banner.", variant: "destructive" });
@@ -181,13 +183,9 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
       const { error } = await supabase.from("profiles").update({ banner_url: null }).eq('id', user.id);
       if (error) throw error;
       
-      toast({ title: "Sucesso!", description: "Banner removido." });
+      toast({ title: t('profile_page.edit_modal.success'), description: "Banner removido." });
       queryClient.invalidateQueries({ queryKey: ["profile", id] });
       setBannerFile(null);
-      // Also close the dialog if desired, or keep it open to show change? 
-      // Usually closing is fine, or keeping it open to edit other things.
-      // I'll keep it open but maybe I should update the local state 'profile' if I wasn't invalidating?
-      // Invalidation is best.
     } catch (error: any) {
       toast({ title: "Erro", description: error.message || "Falha ao remover o banner.", variant: "destructive" });
     } finally {
@@ -226,14 +224,14 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
       const { error } = await supabase.from("profiles").update(updates).eq('id', user.id);
       if (error) throw error;
 
-      toast({ title: "Sucesso!", description: "Perfil atualizado." });
+      toast({ title: t('profile_page.edit_modal.success'), description: t('profile_page.edit_modal.success') });
       // queryClient.invalidateQueries({ queryKey: ["profile", id] });
       setOpen(false);
       setAvatarFile(null);
       setSelectedPresetAvatar(null); // Reset selection
       setBannerFile(null);
     } catch (error: Error) {
-      toast({ title: "Erro", description: error.message || "Falha ao atualizar o perfil.", variant: "destructive" });
+      toast({ title: "Erro", description: error.message || t('profile_page.edit_modal.error'), variant: "destructive" });
     } finally {
       setIsUpdating(false);
     }
@@ -302,8 +300,8 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                   {profile.level !== undefined && profile.xp !== undefined && (
                     <div className="mt-4">
                       <div className="flex justify-between items-center mb-1 text-sm">
-                        <span className="font-bold text-primary">Nível de Duelista: {profile.level}</span>
-                        <span className="text-muted-foreground">{profile.xp % 50} / 50 XP</span>
+                        <span className="font-bold text-primary">{t('profile_page.duelist_level')}: {profile.level}</span>
+                        <span className="text-muted-foreground">{profile.xp % 50} / 50 {t('profile_page.xp')}</span>
                       </div>
                       <Progress value={profile.xp % 50} className="h-2" />
                     </div>
@@ -315,30 +313,30 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
               <div className="flex items-center gap-2 self-center md:self-end pb-4">
                 {isProfileOwner && (
                   <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogTrigger asChild><Button variant="outline"><Pencil className="h-4 w-4 mr-2" /> Editar Perfil</Button></DialogTrigger>
+                    <DialogTrigger asChild><Button variant="outline"><Pencil className="h-4 w-4 mr-2" /> {t('profile_page.edit_profile')}</Button></DialogTrigger>
                                           <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-                                            <DialogHeader><DialogTitle>Editar Perfil</DialogTitle></DialogHeader>
+                                            <DialogHeader><DialogTitle>{t('profile_page.edit_modal.title')}</DialogTitle></DialogHeader>
                                             <div className="flex-1 overflow-y-auto py-4 pr-2">
                                               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                                 <div className="space-y-6 md:border-r md:border-border md:pr-10">
                                                   <div className="space-y-2">
-                                                    <Label htmlFor="username">Nome de Usuário</Label>
+                                                    <Label htmlFor="username">{t('profile_page.edit_modal.username')}</Label>
                                                     <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
                                                   </div>
                                                   <div className="space-y-2">
-                                                    <Label htmlFor="discordUsername">Discord (Ex: usuario#1234)</Label>
-                                                    <Input id="discordUsername" value={discordUsername} onChange={(e) => setDiscordUsername(e.target.value)} placeholder="Seu nick no Discord" />
+                                                    <Label htmlFor="discordUsername">{t('profile_page.edit_modal.discord')}</Label>
+                                                    <Input id="discordUsername" value={discordUsername} onChange={(e) => setDiscordUsername(e.target.value)} placeholder={t('profile_page.edit_modal.discord_placeholder')} />
                                                   </div>
                                                   <div className="space-y-2">
-                                                    <Label htmlFor="bio">Bio</Label>
+                                                    <Label htmlFor="bio">{t('profile_page.edit_modal.bio')}</Label>
                                                     <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} />
                                                   </div>
                                                   <div className="space-y-2">
-                                                    <Label htmlFor="avatar">Avatar</Label>
+                                                    <Label htmlFor="avatar">{t('profile_page.edit_modal.avatar')}</Label>
                                                     <Tabs defaultValue="upload" className="w-full">
                                                       <TabsList className="grid w-full grid-cols-2">
-                                                        <TabsTrigger value="upload">Upload</TabsTrigger>
-                                                        <TabsTrigger value="gallery">Galeria</TabsTrigger>
+                                                        <TabsTrigger value="upload">{t('profile_page.edit_modal.upload_tab')}</TabsTrigger>
+                                                        <TabsTrigger value="gallery">{t('profile_page.edit_modal.gallery_tab')}</TabsTrigger>
                                                       </TabsList>
                                                       <TabsContent value="upload" className="space-y-2">
                                                         <Input id="avatar" type="file" accept="image/*" onChange={(e) => {
@@ -359,7 +357,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                                           setAvatarFile(file);
                                                           setSelectedPresetAvatar(null); // Clear preset if file is uploaded
                                                         }} />
-                                                        <p className="text-xs text-muted-foreground">Selecione uma imagem do seu dispositivo (Max 10MB).</p>
+                                                        <p className="text-xs text-muted-foreground">{t('profile_page.edit_modal.upload_hint')}</p>
                                                       </TabsContent>
                                                       <TabsContent value="gallery">
                                                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 h-64 overflow-y-auto p-2 border rounded-md bg-black/20">
@@ -380,7 +378,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                                         </div>
                                                         {selectedPresetAvatar && (
                                                           <p className="text-xs text-primary mt-2 flex items-center gap-1">
-                                                            <Image className="h-3 w-3" /> Imagem da galeria selecionada
+                                                            <Image className="h-3 w-3" /> {t('profile_page.edit_modal.gallery_selected')}
                                                           </p>
                                                         )}
                                                       </TabsContent>
@@ -388,7 +386,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                                   </div>
                                                   <div className="space-y-2">
                                                     <div className="flex justify-between items-center mb-2">
-                                                      <Label htmlFor="banner">Banner (Max 10MB)</Label>
+                                                      <Label htmlFor="banner">{t('profile_page.edit_modal.banner')}</Label>
                                                       {profile.banner_url && (
                                                         <Button 
                                                           type="button" 
@@ -397,7 +395,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                                           onClick={handleRemoveBanner}
                                                           disabled={isUpdating}
                                                         >
-                                                          <Trash2 className="h-3 w-3 mr-1" /> Remover
+                                                          <Trash2 className="h-3 w-3 mr-1" /> {t('profile_page.edit_modal.remove')}
                                                         </Button>
                                                       )}
                                                     </div>
@@ -423,7 +421,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
 
                                                 <div className="space-y-6">
                                                   <div className="space-y-2">
-                                                    <Label>Moldura</Label>
+                                                    <Label>{t('profile_page.edit_modal.frame')}</Label>
                                                     <div className="border rounded-lg p-4 bg-card">
                                                       <FrameInventory 
                                                         userId={user.id} 
@@ -434,7 +432,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                                   </div>
 
                                                   <div className="space-y-2">
-                                                    <Label>Títulos</Label>
+                                                    <Label>{t('profile_page.edit_modal.titles')}</Label>
                                                     <div className="border rounded-lg p-4 bg-card">
                                                       <TitleInventory 
                                                         userId={user.id} 
@@ -446,15 +444,15 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                               </div>
                                             </div>
                                             <DialogFooter>
-                                              <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
-                                              <Button onClick={handleProfileUpdate} disabled={isUpdating}>{isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar Alterações</Button>
+                                              <DialogClose asChild><Button variant="ghost">{t('profile_page.edit_modal.cancel')}</Button></DialogClose>
+                                              <Button onClick={handleProfileUpdate} disabled={isUpdating}>{isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {t('profile_page.edit_modal.save')}</Button>
                                             </DialogFooter>
                                           </DialogContent>                  </Dialog>
                 )}
                 {canSendMessage && (
                   <Button variant="outline" onClick={() => openChat(profile.id)}>
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    Enviar Mensagem
+                    {t('profile_page.send_message')}
                   </Button>
                 )}
               </div>
@@ -462,17 +460,17 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
             <div className="mt-12 md:mt-20">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-3xl font-bold tracking-tight">
-                  Meus Decks
+                  {t('profile_page.my_decks')}
                 </h2>
                 {isProfileOwner && ( 
                   <Button asChild>
                     <Link to="/deck-builder">
-                      <Plus className="mr-2 h-4 w-4" /> Novo Deck
+                      <Plus className="mr-2 h-4 w-4" /> {t('profile_page.new_deck')}
                     </Link>
                   </Button>
                 )}
               </div>
-              <h3 className="text-2xl font-bold mb-6">Decks Públicos</h3>
+              <h3 className="text-2xl font-bold mb-6">{t('profile_page.public_decks')}</h3>
               {publicDecks.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {publicDecks.map((deck) => (
@@ -490,13 +488,13 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                 </div>
               ) : (
                 <div className="text-center py-12 border-2 border-dashed border-border rounded-lg"><p className="text-muted-foreground">
-                  {user?.id === profile.id ? "Você não tem decks públicos." : "Este usuário não tem decks públicos."}
+                  {user?.id === profile.id ? t('profile_page.no_public_decks_owner') : t('profile_page.no_public_decks_visitor')}
                 </p></div>
               )}
 
               {isProfileOwner && ( 
                 <div className="mt-12">
-                  <h3 className="text-2xl font-bold mb-6">Decks Privados</h3>
+                  <h3 className="text-2xl font-bold mb-6">{t('profile_page.private_decks')}</h3>
                   {privateDecks.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {privateDecks.map((deck) => (
@@ -513,7 +511,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-12 border-2 border-dashed border-border rounded-lg"><p className="text-muted-foreground">Você não tem decks privados.</p></div>
+                    <div className="text-center py-12 border-2 border-dashed border-border rounded-lg"><p className="text-muted-foreground">{t('profile_page.no_private_decks')}</p></div>
                   )}
                 </div>
               )}
@@ -522,12 +520,12 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
               <div className="mt-12">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-3xl font-bold tracking-tight">
-                    Banners de Torneio
+                    {t('profile_page.tournament_banners')}
                   </h2>
                   {isProfileOwner && user && ( // Ensure user is not null before accessing user.id
                     <Dialog open={isBannerUploadDialogOpen} onOpenChange={setIsBannerUploadDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button><Plus className="mr-2 h-4 w-4" /> Adicionar Banner</Button>
+                        <Button><Plus className="mr-2 h-4 w-4" /> {t('profile_page.add_banner')}</Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader><DialogTitle>Adicionar Novo Banner de Torneio</DialogTitle></DialogHeader>
@@ -559,7 +557,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
               {/* Match History Section */}
               <div className="mt-12 mb-20">
                 <h2 className="text-3xl font-bold tracking-tight mb-6">
-                  Histórico de Partidas
+                  {t('profile_page.match_history')}
                 </h2>
                 <div className="bg-card/30 rounded-xl p-4 md:p-6 border border-border">
                    <MatchHistoryList userId={profile.id} />
@@ -569,7 +567,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
           </div>
         </main>
       ) : (
-        <div className="container mx-auto px-4 py-20 text-center"><p className="text-muted-foreground text-lg">Perfil não encontrado.</p></div>
+        <div className="container mx-auto px-4 py-20 text-center"><p className="text-muted-foreground text-lg">{t('profile_page.not_found')}</p></div>
       )}
     </div>
   );
