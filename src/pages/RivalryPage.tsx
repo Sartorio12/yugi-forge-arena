@@ -9,6 +9,7 @@ import { FramedAvatar } from "@/components/FramedAvatar";
 import { Loader2, Swords, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { MatchHistoryList } from "@/components/MatchHistoryList";
 
 interface RivalryPageProps {
   user: User | null;
@@ -45,7 +46,7 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
             <h1 className="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
                 <Swords className="h-10 w-10 text-primary" /> Histórico de Rivalidades
             </h1>
-            <p className="text-muted-foreground">Compare o desempenho entre dois duelistas.</p>
+            <p className="text-muted-foreground">Compare o desempenho entre dois duelistas ou veja o histórico individual.</p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 items-center">
@@ -69,7 +70,7 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
 
             {/* VS Badge (Desktop) */}
             <div className="hidden md:flex justify-center">
-                <div className="bg-destructive text-white font-black text-2xl rounded-full h-16 w-16 flex items-center justify-center shadow-lg border-4 border-background z-10">VS</div>
+                <div className={`font-black text-2xl rounded-full h-16 w-16 flex items-center justify-center shadow-lg border-4 border-background z-10 transition-colors ${player1 && player2 ? 'bg-destructive text-white' : 'bg-muted text-muted-foreground'}`}>VS</div>
             </div>
 
             {/* Player 2 Selector */}
@@ -94,51 +95,82 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
         {/* Results Area */}
         {isLoading ? (
             <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
-        ) : history && player1 && player2 ? (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                
-                {/* Scoreboard */}
-                <div className="flex items-center justify-center gap-8 md:gap-16 text-4xl md:text-6xl font-black tabular-nums">
-                    <div className={p1Wins > p2Wins ? "text-green-500" : "text-muted-foreground"}>{p1Wins}</div>
-                    <div className="text-muted-foreground/30 text-2xl">-</div>
-                    <div className={p2Wins > p1Wins ? "text-green-500" : "text-muted-foreground"}>{p2Wins}</div>
-                </div>
-
-                {/* Match List */}
-                <Card>
-                    <CardHeader><CardTitle>Histórico de Confrontos</CardTitle></CardHeader>
-                    <CardContent>
-                        {history.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">Nenhum confronto registrado entre estes jogadores.</div>
-                        ) : (
-                            <div className="space-y-4">
-                                {history.map((match: any) => (
-                                    <div key={match.id} className="flex items-center justify-between p-4 bg-secondary/20 rounded-lg border hover:bg-secondary/40 transition-colors">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-lg">{match.tournament_title}</span>
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                <Calendar className="h-3 w-3" />
-                                                {format(new Date(match.tournament_date), "dd 'de' MMMM, yyyy", { locale: ptBR })} • {match.round_name}
-                                            </span>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="text-xs uppercase text-muted-foreground block mb-1">Vencedor</span>
-                                            <div className="flex items-center gap-2 justify-end font-semibold text-green-500">
-                                                {match.winner_name}
-                                                <FramedAvatar userId={match.winner_id} avatarUrl={match.winner_avatar} sizeClassName="h-6 w-6" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
         ) : (
-            <div className="text-center py-12 opacity-50">
-                Selecione dois jogadores para ver o histórico.
-            </div>
+            <>
+                {/* CASE 1: HEAD TO HEAD (Both Selected) */}
+                {player1 && player2 && history && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        
+                        {/* Scoreboard */}
+                        <div className="flex items-center justify-center gap-8 md:gap-16 text-4xl md:text-6xl font-black tabular-nums">
+                            <div className={p1Wins > p2Wins ? "text-green-500" : "text-muted-foreground"}>{p1Wins}</div>
+                            <div className="text-muted-foreground/30 text-2xl">-</div>
+                            <div className={p2Wins > p1Wins ? "text-green-500" : "text-muted-foreground"}>{p2Wins}</div>
+                        </div>
+
+                        {/* Match List */}
+                        <Card>
+                            <CardHeader><CardTitle>Histórico de Confrontos Diretos</CardTitle></CardHeader>
+                            <CardContent>
+                                {history.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground">Nenhum confronto registrado entre estes jogadores.</div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {history.map((match: any) => (
+                                            <div key={match.id} className="flex items-center justify-between p-4 bg-secondary/20 rounded-lg border hover:bg-secondary/40 transition-colors">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-lg">{match.tournament_title}</span>
+                                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3" />
+                                                        {format(new Date(match.tournament_date), "dd 'de' MMMM, yyyy", { locale: ptBR })} • {match.round_name}
+                                                    </span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-xs uppercase text-muted-foreground block mb-1">Vencedor</span>
+                                                    <div className="flex items-center gap-2 justify-end font-semibold text-green-500">
+                                                        {match.winner_name}
+                                                        <FramedAvatar userId={match.winner_id} avatarUrl={match.winner_avatar} sizeClassName="h-6 w-6" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
+                {/* CASE 2: SINGLE PLAYER HISTORY (Only P1 Selected) */}
+                {player1 && !player2 && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <h2 className="text-2xl font-bold mb-6 text-center flex items-center justify-center gap-2">
+                            <Swords className="h-6 w-6 text-primary" />
+                            Histórico de Partidas: {player1.username}
+                        </h2>
+                        <MatchHistoryList userId={player1.id} />
+                    </div>
+                )}
+
+                {/* CASE 3: SINGLE PLAYER HISTORY (Only P2 Selected) */}
+                {!player1 && player2 && (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                         <h2 className="text-2xl font-bold mb-6 text-center flex items-center justify-center gap-2">
+                            <Swords className="h-6 w-6 text-primary" />
+                            Histórico de Partidas: {player2.username}
+                         </h2>
+                         <MatchHistoryList userId={player2.id} />
+                    </div>
+                )}
+                
+                {/* CASE 4: NO SELECTION */}
+                {!player1 && !player2 && (
+                    <div className="text-center py-12 opacity-50 border-2 border-dashed rounded-lg">
+                        <p className="text-lg">Selecione um jogador para ver seu histórico individual.</p>
+                        <p className="text-sm">Ou selecione dois para comparar.</p>
+                    </div>
+                )}
+            </>
         )}
 
       </div>

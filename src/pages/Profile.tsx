@@ -20,6 +20,7 @@ import { FrameInventory } from "@/components/FrameInventory";
 import { useChat } from "@/components/chat/ChatProvider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PROFILE_AVATARS } from "@/constants/profileAvatars";
+import { MatchHistoryList } from "@/components/MatchHistoryList"; // Import MatchHistoryList
 
 interface Deck {
   id: number;
@@ -553,6 +554,16 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                     onDelete={handleDeleteTournamentBanner}
                   />
                 )}
+              </div>
+
+              {/* Match History Section */}
+              <div className="mt-12 mb-20">
+                <h2 className="text-3xl font-bold tracking-tight mb-6">
+                  Histórico de Partidas
+                </h2>
+                <div className="bg-card/30 rounded-xl p-4 md:p-6 border border-border">
+                   <MatchHistoryList userId={profile.id} />
+                </div>
               </div>
             </div>
           </div>
