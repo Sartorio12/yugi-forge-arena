@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface NewsPost {
   id: number;
   title: string;
+  label?: string | null;
   content: string | null;
   created_at: string;
   banner_url: string | null;
@@ -33,6 +34,7 @@ export const NewsSection = () => {
         .select(`
           id,
           title,
+          label,
           created_at,
           banner_url,
           profiles (
@@ -96,7 +98,7 @@ export const NewsSection = () => {
                             {/* "Notícia" Badge */}
                             <div className="absolute top-1.5 left-1.5 md:top-2 md:left-2 z-10">
                               <span className="inline-block px-1.5 py-0.5 rounded text-[8px] md:text-[10px] font-bold bg-primary/90 text-primary-foreground uppercase tracking-wider shadow-sm">
-                                Notícia
+                                {post.label || "Notícia"}
                               </span>
                             </div>
             

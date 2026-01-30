@@ -29,6 +29,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 const newsFormSchema = z.object({
   title: z.string().min(5, { message: "O título deve ter pelo menos 5 caracteres." }),
+  label: z.string().optional(),
   content: z.string().min(20, { message: "O conteúdo deve ter pelo menos 20 caracteres." }),
   banner: z.any().optional(),
   tournament_id: z.coerce.number().optional(),
@@ -44,7 +45,7 @@ export type NewsFormValues = z.infer<typeof newsFormSchema>;
 
 interface NewsFormProps {
   formId: string;
-  initialData?: TablesInsert<"news_posts"> & { 
+  initialData?: (TablesInsert<"news_posts"> & { label?: string | null }) & { 
     news_post_decks?: { deck_id: number; deck_snapshot_id?: number | null; placement: string }[],
     show_metagame_stats?: boolean 
   };
@@ -80,6 +81,7 @@ export const NewsForm = ({ formId, initialData, onSubmit }: NewsFormProps) => {
     resolver: zodResolver(newsFormSchema),
     defaultValues: {
       title: initialData?.title || "",
+      label: initialData?.label || "Notícia",
       content: initialData?.content || "",
       tournament_id: initialData?.tournament_id || undefined,
       show_metagame_stats: initialData?.show_metagame_stats || false,
@@ -143,6 +145,17 @@ export const NewsForm = ({ formId, initialData, onSubmit }: NewsFormProps) => {
             <FormItem>
               <FormLabel>Título da Postagem</FormLabel>
               <FormControl><Input placeholder="Ex: Novo formato, banlist, etc." {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="label"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Etiqueta</FormLabel>
+              <FormControl><Input placeholder="Ex: Notícia, Guia, Entrevista" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
