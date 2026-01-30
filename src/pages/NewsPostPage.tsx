@@ -12,6 +12,7 @@ import { NewsCommentSection } from '@/components/comments/NewsCommentSection';
 import UserDisplay from "@/components/UserDisplay";
 import { FeaturedDeckDisplay } from "@/components/FeaturedDeckDisplay";
 import { MetagameStats } from "@/components/MetagameStats";
+import { PollWidget } from "@/components/polls/PollWidget";
 
 interface NewsPostPageProps {
   user: User | null;
@@ -158,6 +159,8 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
         {post.show_metagame_stats && post.tournament_id && (
             <MetagameStats tournamentId={post.tournament_id} />
         )}
+
+        <PollWidget newsPostId={Number(post.id)} user={user} />
 
         {featuredDecks && featuredDecks.length > 0 && (
             <div className="mb-12">

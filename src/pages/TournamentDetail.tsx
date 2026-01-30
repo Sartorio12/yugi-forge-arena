@@ -128,7 +128,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
           throw new Error(`Você deve selecionar exatamente ${requiredBans} cartas para banir.`);
         }
         
-        if (!selectedDeckId) {
+        if (tournament.is_decklist_required && !selectedDeckId) {
              throw new Error("Você deve selecionar um deck para se inscrever.");
         }
 
@@ -140,17 +140,19 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
         
         if (error) throw error;
         
-        // Submit the selected deck
-        const { error: deckError } = await supabase.rpc('submit_deck_to_tournament', {
-            p_tournament_id: Number(id),
-            p_deck_id: parseInt(selectedDeckId, 10),
-        });
+        // Submit the selected deck if required
+        if (tournament.is_decklist_required && selectedDeckId) {
+            const { error: deckError } = await supabase.rpc('submit_deck_to_tournament', {
+                p_tournament_id: Number(id),
+                p_deck_id: parseInt(selectedDeckId, 10),
+            });
 
-        if (deckError) {
-             // In a real production app, we might want to rollback the registration here, 
-             // but for now we will just show the error. The user is registered but deck submission failed.
-             // They can try submitting the deck again through the normal ManageDecklist UI.
-             throw new Error(`Inscrição realizada, mas erro ao enviar deck: ${deckError.message}`);
+            if (deckError) {
+                 // In a real production app, we might want to rollback the registration here, 
+                 // but for now we will just show the error. The user is registered but deck submission failed.
+                 // They can try submitting the deck again through the normal ManageDecklist UI.
+                 throw new Error(`Inscrição realizada, mas erro ao enviar deck: ${deckError.message}`);
+            }
         }
 
       } else {
@@ -402,6 +404,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                             unavailableCards={existingBans || []}
                         />
 
+                        {tournament.is_decklist_required && (
                         <div className="pt-4 border-t border-border">
                             <h3 className="text-lg font-bold mb-2">Selecione seu Deck</h3>
                             <Select
@@ -430,6 +433,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                                 * Seu deck será enviado automaticamente ao confirmar a inscrição.
                             </p>
                         </div>
+                        )}
                     </div>
                   ) : (
                     <CustomBanlist tournamentId={tournament.id} />

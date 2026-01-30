@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, PlusCircle, Trash2, FilePenLine } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, FilePenLine, BarChart } from 'lucide-react';
 import { format } from 'date-fns';
+import { PollManagerModal } from '@/components/admin/PollManagerModal';
+import { useState } from 'react';
 
 const fetchNews = async () => {
   const { data, error } = await supabase.from('news_posts').select('id, title, created_at').order('created_at', { ascending: false });
@@ -18,6 +20,14 @@ const fetchNews = async () => {
 const NewsDashboard = () => {
   const queryClient = useQueryClient();
   const { data: posts, isLoading } = useQuery({ queryKey: ['newsPostsAdmin'], queryFn: fetchNews });
+  
+  const [pollModalOpen, setPollModalOpen] = useState(false);
+  const [selectedNews, setSelectedNews] = useState<{id: number, title: string} | null>(null);
+
+  const handleOpenPollManager = (post: { id: number, title: string }) => {
+    setSelectedNews(post);
+    setPollModalOpen(true);
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async (postId) => {
@@ -35,6 +45,14 @@ const NewsDashboard = () => {
           <Button><PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Postagem</Button>
         </Link>
       </div>
+      
+      <PollManagerModal 
+        open={pollModalOpen} 
+        onOpenChange={setPollModalOpen}
+        newsPostId={selectedNews?.id || null}
+        newsTitle={selectedNews?.title}
+      />
+
       <Card>
         <CardHeader><CardTitle>Postagens Publicadas</CardTitle></CardHeader>
         <CardContent>
@@ -49,7 +67,15 @@ const NewsDashboard = () => {
                     <TableRow key={post.id}>
                       <TableCell className="font-medium">{post.title}</TableCell>
                       <TableCell>{format(new Date(post.created_at), 'dd/MM/yyyy')}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right flex justify-end gap-2">
+                        <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={() => handleOpenPollManager({ id: post.id, title: post.title })}
+                            title="Gerenciar Enquete"
+                        >
+                            <BarChart className="h-4 w-4" />
+                        </Button>
                         <Link to={`/dashboard/news/${post.id}/edit`}><Button variant="ghost" size="icon"><FilePenLine className="h-4 w-4" /></Button></Link>
                         <AlertDialog>
                           <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-red-500"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>

@@ -1,9 +1,9 @@
 name: MetaBot Life Cycle
 
 on:
-  schedule:
+  # schedule:
     # Roda a cada 4 horas (00:00, 04:00, 08:00, etc.)
-    - cron: '0 */4 * * *'
+    # - cron: '0 */4 * * *'
   workflow_dispatch: # Permite rodar manualmente pelo botão no GitHub
 
 jobs:
