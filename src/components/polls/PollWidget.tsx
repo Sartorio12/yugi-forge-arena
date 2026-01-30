@@ -156,7 +156,8 @@ export const PollWidget = ({ newsPostId, user }: PollWidgetProps) => {
                     onSelect={handleAddCandidate} 
                     excludeIds={[
                         ...selectedCandidates.map(c => c.id),
-                        ...(userVotes?.map(v => v.candidate_id).filter(Boolean) as string[] || [])
+                        ...(userVotes?.map(v => v.candidate_id).filter(Boolean) as string[] || []),
+                        ...(user?.id ? [user.id] : [])
                     ]}
                     placeholder="Pesquisar jogador para votar..."
                 />
