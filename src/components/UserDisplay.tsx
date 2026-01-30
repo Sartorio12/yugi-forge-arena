@@ -1,7 +1,7 @@
 import { Profile, useProfile } from "@/hooks/useProfile";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { FramedAvatar } from "./FramedAvatar";
-import { Trophy } from "lucide-react";
+import { Trophy, Swords } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 
@@ -83,12 +83,22 @@ const UserCardDetails = ({ initialProfile, clan }: { initialProfile: UserDisplay
                  </h4>
                </div>
                
-               <div className="flex items-center p-2 bg-secondary/20 rounded-md">
-                  <Trophy className="mr-3 h-5 w-5 text-yellow-500" />
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium">{t('user_display.duelist_level')}</p>
-                    <p className="font-bold text-lg">{level}</p>
-                  </div>
+               <div className="grid grid-cols-2 gap-2 mt-4">
+                 <div className="flex items-center p-2 bg-secondary/20 rounded-md">
+                    <Trophy className="mr-3 h-5 w-5 text-yellow-500" />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase">{t('user_display.duelist_level')}</p>
+                      <p className="font-bold text-lg leading-tight">{level}</p>
+                    </div>
+                 </div>
+
+                 <div className="flex items-center p-2 bg-primary/10 rounded-md border border-primary/20">
+                    <Swords className="mr-3 h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-[10px] text-muted-foreground font-medium uppercase">{t('ranking_page.wins')}</p>
+                      <p className="font-bold text-lg leading-tight">{(displayProfile as any).total_wins || 0}</p>
+                    </div>
+                 </div>
                </div>
 
                {(displayProfile as any).discord_username && (

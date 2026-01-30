@@ -129,6 +129,7 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
                       <TableRow>
                         <TableHead className="w-[100px] text-center">{t('ranking_page.rank')}</TableHead>
                         <TableHead>{t('ranking_page.player')}</TableHead>
+                        <TableHead className="text-center">{t('ranking_page.wins')}</TableHead>
                         <TableHead className="text-right">{t('ranking_page.points')}</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -152,6 +153,7 @@ const RankingPage = ({ user, onLogout }: RankingPageProps) => {
                               </span>
                             </Link>
                           </TableCell>
+                          <TableCell className="text-center font-semibold text-muted-foreground">{player.total_wins}</TableCell>
                           <TableCell className="text-right font-semibold text-primary">{player.total_points}</TableCell>
                         </TableRow>
                       ))}

@@ -2,7 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
-export type Profile = Tables<"profiles">;
+export type Profile = Tables<"profiles"> & {
+  total_wins?: number;
+  total_points?: number;
+  clan_tag?: string | null;
+  clan_name?: string | null;
+  clan_id?: number | null;
+};
 
 export const useProfile = (userId: string | undefined) => {
   const {
@@ -15,19 +21,17 @@ export const useProfile = (userId: string | undefined) => {
       if (!userId) return null;
 
       const { data, error } = await supabase
-        .from("profiles")
-        .select("*, equipped_frame_url")
+        .from("user_profile_stats")
+        .select("*")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === "PGRST116") {
-          return null;
-        }
+        console.error("Error fetching profile from user_profile_stats:", error);
         throw error;
       }
 
-      return data;
+      return data as Profile;
     },
     enabled: !!userId,
   });

@@ -60,10 +60,10 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
     queryFn: async () => {
       if (!id) return null;
       const { data, error } = await supabase
-        .from("profiles")
-        .select("*, level, xp, equipped_frame_url, equipped_titles")
+        .from("user_profile_stats")
+        .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error fetching profile:", error);
@@ -299,6 +299,16 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                   
                   {profile.level !== undefined && profile.xp !== undefined && (
                     <div className="mt-4">
+                      <div className="flex flex-wrap gap-4 mb-4">
+                        <div className="flex-1 min-w-[120px] p-3 rounded-lg bg-primary/10 border border-primary/20">
+                          <p className="text-xs text-muted-foreground uppercase font-bold mb-1">{t('ranking_page.wins')}</p>
+                          <p className="text-2xl font-black text-primary">{profile.total_wins || 0}</p>
+                        </div>
+                        <div className="flex-1 min-w-[120px] p-3 rounded-lg bg-accent/10 border border-accent/20">
+                          <p className="text-xs text-muted-foreground uppercase font-bold mb-1">{t('ranking_page.points')}</p>
+                          <p className="text-2xl font-black text-accent">{profile.total_points || 0}</p>
+                        </div>
+                      </div>
                       <div className="flex justify-between items-center mb-1 text-sm">
                         <span className="font-bold text-primary">{t('profile_page.duelist_level')}: {profile.level}</span>
                         <span className="text-muted-foreground">{profile.xp % 50} / 50 {t('profile_page.xp')}</span>
