@@ -41,7 +41,7 @@ const tournamentFormSchema = z.object({
   event_date: z.date({
     required_error: "A data do evento é obrigatória.",
   }),
-  type: z.enum(["standard", "liga", "banimento"], { required_error: "O tipo de torneio é obrigatório." }).default("standard"),
+  type: z.enum(["standard", "liga", "banimento", "genesys"], { required_error: "O tipo de torneio é obrigatório." }).default("standard"),
   banishment_count: z.preprocess(
     (val) => (val === "" ? 0 : Number(val)),
     z.number().int().min(0).default(0)
@@ -375,6 +375,7 @@ export const TournamentForm = ({
                   <SelectItem value="standard">Padrão</SelectItem>
                   <SelectItem value="liga">Liga (Seleção de Times)</SelectItem>
                   <SelectItem value="banimento">Banimento (Custom Banlist)</SelectItem>
+                  <SelectItem value="genesys">Genesys (Deck Type Only)</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

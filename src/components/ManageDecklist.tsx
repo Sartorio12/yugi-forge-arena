@@ -19,13 +19,15 @@ interface ManageDecklistProps {
   tournamentId: number;
   tournamentStatus: string;
   tournamentEventDate: string;
+  tournamentType?: string;
 }
 
 export const ManageDecklist = ({ 
   user, 
   tournamentId, 
   tournamentStatus, 
-  tournamentEventDate 
+  tournamentEventDate,
+  tournamentType
 }: ManageDecklistProps) => {
   const queryClient = useQueryClient();
   const [selectedDeckId, setSelectedDeckId] = useState<string | undefined>();
@@ -56,7 +58,7 @@ export const ManageDecklist = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("decks")
-        .select("id, deck_name")
+        .select("id, deck_name, is_genesys")
         .eq("user_id", user.id);
       if (error) throw error;
       return data;
@@ -135,7 +137,9 @@ export const ManageDecklist = ({
                 </SelectTrigger>
                 <SelectContent>
                   {userDecks && userDecks.length > 0 ? (
-                    userDecks.map((deck) => (
+                    userDecks
+                      .filter(deck => tournamentType !== 'genesys' || deck.is_genesys)
+                      .map((deck) => (
                       <SelectItem key={deck.id} value={deck.id.toString()}>
                         {deck.deck_name}
                       </SelectItem>

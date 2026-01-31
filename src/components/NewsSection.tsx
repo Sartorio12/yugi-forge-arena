@@ -129,6 +129,9 @@ export const NewsSection = () => {
                                       sizeClassName="h-4 w-4 md:h-6 md:w-6 aspect-square"
                                     />
                                     <span className="font-medium truncate max-w-[60px] md:max-w-[100px]">
+                                      {post.profiles.clan_members?.clans?.tag && (
+                                        <span className="text-primary font-bold mr-1">[{post.profiles.clan_members.clans.tag}]</span>
+                                      )}
                                       {post.profiles.username}
                                     </span>
                                   </div>

@@ -25,7 +25,7 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournament_participants")
-        .select("user_id, profiles(username)")
+        .select("user_id, profiles(username, clan_members(clans(tag)))")
         .eq("tournament_id", Number(tournamentId));
 
       if (error) throw error;
@@ -81,11 +81,14 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                     <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                    {participants?.map((p) => (
-                    <SelectItem key={p.user_id} value={p.user_id}>
-                        {p.profiles?.username}
-                    </SelectItem>
-                    ))}
+                    {participants?.map((p) => {
+                       const tag = (p.profiles as any)?.clan_members?.clans?.tag;
+                       return (
+                        <SelectItem key={p.user_id} value={p.user_id}>
+                            {tag ? `[${tag}] ` : ""}{p.profiles?.username}
+                        </SelectItem>
+                       );
+                    })}
                 </SelectContent>
                 </Select>
             </div>
@@ -97,11 +100,14 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                     <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                    {participants?.filter(p => p.user_id !== player1).map((p) => (
-                    <SelectItem key={p.user_id} value={p.user_id}>
-                        {p.profiles?.username}
-                    </SelectItem>
-                    ))}
+                    {participants?.filter(p => p.user_id !== player1).map((p) => {
+                       const tag = (p.profiles as any)?.clan_members?.clans?.tag;
+                       return (
+                        <SelectItem key={p.user_id} value={p.user_id}>
+                            {tag ? `[${tag}] ` : ""}{p.profiles?.username}
+                        </SelectItem>
+                       );
+                    })}
                 </SelectContent>
                 </Select>
             </div>
@@ -115,12 +121,20 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                     <SelectValue placeholder="Quem venceu?" />
                 </SelectTrigger>
                 <SelectContent>
-                    {player1 && participants?.find(p => p.user_id === player1) && (
-                        <SelectItem value={player1}>{participants.find(p => p.user_id === player1)?.profiles?.username}</SelectItem>
-                    )}
-                    {player2 && participants?.find(p => p.user_id === player2) && (
-                        <SelectItem value={player2}>{participants.find(p => p.user_id === player2)?.profiles?.username}</SelectItem>
-                    )}
+                    {player1 && participants?.find(p => p.user_id === player1) && (() => {
+                        const p = participants.find(p => p.user_id === player1);
+                        const tag = (p?.profiles as any)?.clan_members?.clans?.tag;
+                        return (
+                            <SelectItem value={player1}>{tag ? `[${tag}] ` : ""}{p?.profiles?.username}</SelectItem>
+                        );
+                    })()}
+                    {player2 && participants?.find(p => p.user_id === player2) && (() => {
+                        const p = participants.find(p => p.user_id === player2);
+                        const tag = (p?.profiles as any)?.clan_members?.clans?.tag;
+                        return (
+                             <SelectItem value={player2}>{tag ? `[${tag}] ` : ""}{p?.profiles?.username}</SelectItem>
+                        );
+                    })()}
                 </SelectContent>
                 </Select>
             </div>

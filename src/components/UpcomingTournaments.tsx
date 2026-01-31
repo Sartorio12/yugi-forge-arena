@@ -17,6 +17,11 @@ interface Tournament {
     id: string;
     username: string | null;
     avatar_url: string | null;
+    clan_members: {
+      clans: {
+        tag: string;
+      } | null;
+    } | null;
   } | null;
 }
 
@@ -31,7 +36,12 @@ export const UpcomingTournaments = () => {
           profiles:organizer_id (
             id,
             username,
-            avatar_url
+            avatar_url,
+            clan_members (
+              clans (
+                tag
+              )
+            )
           )
         `)
         .eq("status", "Aberto")
@@ -106,6 +116,9 @@ export const UpcomingTournaments = () => {
                           sizeClassName="h-4 w-4"
                         />
                         <span className="font-medium truncate max-w-[100px]">
+                          {tournament.profiles.clan_members?.clans?.tag && (
+                            <span className="text-primary font-bold mr-1">[{tournament.profiles.clan_members.clans.tag}]</span>
+                          )}
                           {tournament.profiles.username}
                         </span>
                       </div>

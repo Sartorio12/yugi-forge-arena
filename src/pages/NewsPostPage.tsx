@@ -77,7 +77,8 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
                     profiles (
                         id,
                         username,
-                        avatar_url
+                        avatar_url,
+                        clan_members(clans(tag))
                     )
                 ),
                 tournament_deck_snapshots (
@@ -89,7 +90,8 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
                     profiles (
                         id,
                         username,
-                        avatar_url
+                        avatar_url,
+                        clan_members(clans(tag))
                     )
                 )
             `)
@@ -179,7 +181,10 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
                                 placement={item.placement}
                                 deckName={deckData.deck_name || "Deck sem nome"}
                                 isGenesys={deckData.is_genesys || false}
-                                player={deckData.profiles}
+                                player={deckData.profiles ? {
+                                    ...deckData.profiles,
+                                    clan_tag: (deckData.profiles as any).clan_members?.clans?.tag
+                                } : null}
                             />
                         );
                     })}

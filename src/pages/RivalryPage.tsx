@@ -20,8 +20,8 @@ interface RivalryPageProps {
 
 export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
   const { t, i18n } = useTranslation();
-  const [player1, setPlayer1] = useState<{id: string, username: string, avatar_url: string} | null>(null);
-  const [player2, setPlayer2] = useState<{id: string, username: string, avatar_url: string} | null>(null);
+  const [player1, setPlayer1] = useState<{id: string, username: string, avatar_url: string | null, tag?: string} | null>(null);
+  const [player2, setPlayer2] = useState<{id: string, username: string, avatar_url: string | null, tag?: string} | null>(null);
 
   const localeMap: { [key: string]: any } = {
     pt: ptBR,
@@ -79,7 +79,10 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
                                 <div className="absolute inset-0 bg-primary/40 rounded-full blur-2xl animate-pulse" />
                                 <FramedAvatar userId={player1.id} avatarUrl={player1.avatar_url} sizeClassName="h-32 w-32 relative z-10" />
                             </div>
-                            <h2 className="text-3xl font-black mb-1 truncate w-full">{player1.username}</h2>
+                            <h2 className="text-3xl font-black mb-1 truncate w-full">
+                                {player1.tag && <span className="text-primary text-xl mr-2">[{player1.tag}]</span>}
+                                {player1.username}
+                            </h2>
                             <div className="flex items-center gap-2 mb-4">
                                 <Trophy className="h-4 w-4 text-yellow-500" />
                                 <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{p1Wins} Vitórias</span>
@@ -120,7 +123,10 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
                                 <div className="absolute inset-0 bg-primary/40 rounded-full blur-2xl animate-pulse" />
                                 <FramedAvatar userId={player2.id} avatarUrl={player2.avatar_url} sizeClassName="h-32 w-32 relative z-10" />
                             </div>
-                            <h2 className="text-3xl font-black mb-1 truncate w-full">{player2.username}</h2>
+                            <h2 className="text-3xl font-black mb-1 truncate w-full">
+                                {player2.tag && <span className="text-primary text-xl mr-2">[{player2.tag}]</span>}
+                                {player2.username}
+                            </h2>
                             <div className="flex items-center gap-2 mb-4">
                                 <Trophy className="h-4 w-4 text-yellow-500" />
                                 <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{p2Wins} Vitórias</span>
@@ -157,8 +163,12 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
                         {/* Win Probability / Rate Bar */}
                         <div className="max-w-2xl mx-auto space-y-4">
                             <div className="flex justify-between text-xs font-black uppercase tracking-[0.2em]">
-                                <span className={p1Wins >= p2Wins ? 'text-primary' : 'text-muted-foreground'}>{player1.username} {p1WinRate}%</span>
-                                <span className={p2Wins >= p1Wins ? 'text-primary' : 'text-muted-foreground'}>{p2WinRate}% {player2.username}</span>
+                                <span className={p1Wins >= p2Wins ? 'text-primary' : 'text-muted-foreground'}>
+                                    {player1.tag && `[${player1.tag}] `}{player1.username} {p1WinRate}%
+                                </span>
+                                <span className={p2Wins >= p1Wins ? 'text-primary' : 'text-muted-foreground'}>
+                                    {p2WinRate}% {player2.tag && `[${player2.tag}] `}{player2.username}
+                                </span>
                             </div>
                             <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden border border-white/10 p-1">
                                 <div className="h-full flex rounded-full overflow-hidden">

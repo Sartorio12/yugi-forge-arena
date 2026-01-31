@@ -314,6 +314,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                       tournamentStatus={tournament.status}
                       tournamentEventDate={tournament.event_date}
                       numDecksAllowed={tournament.num_decks_allowed}
+                      tournamentType={tournamentType}
                     />
                   ) : (
                     <ManageDecklist 
@@ -321,6 +322,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                       tournamentId={tournament.id}
                       tournamentStatus={tournament.status}
                       tournamentEventDate={tournament.event_date}
+                      tournamentType={tournamentType}
                     />
                   )}
                 </>

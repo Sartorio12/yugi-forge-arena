@@ -21,6 +21,7 @@ interface ManageMultipleDecklistsProps {
   tournamentStatus: string;
   tournamentEventDate: string;
   numDecksAllowed: number;
+  tournamentType?: string;
 }
 
 interface SubmittedDeckInfo {
@@ -36,7 +37,8 @@ export const ManageMultipleDecklists = ({
   tournamentId,
   tournamentStatus,
   tournamentEventDate,
-  numDecksAllowed
+  numDecksAllowed,
+  tournamentType
 }: ManageMultipleDecklistsProps) => {
   const queryClient = useQueryClient();
   const [selectedDeckId, setSelectedDeckId] = useState<string | undefined>();
@@ -50,7 +52,7 @@ export const ManageMultipleDecklists = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("decks")
-        .select("id, deck_name")
+        .select("id, deck_name, is_genesys")
         .eq("user_id", user.id);
       if (error) throw error;
       return data;
@@ -196,6 +198,7 @@ export const ManageMultipleDecklists = ({
                       {userDecks && userDecks.length > 0 ? (
                         userDecks
                          .filter(ud => !submittedDecks.some(sd => sd.deck_id === ud.id)) // Filtra decks já enviados
+                         .filter(ud => tournamentType !== 'genesys' || ud.is_genesys)
                          .map((deck) => (
                           <SelectItem key={deck.id} value={deck.id.toString()}>
                             {deck.deck_name}

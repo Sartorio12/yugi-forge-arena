@@ -17,6 +17,7 @@ interface FeaturedDeckDisplayProps {
     username: string | null;
     avatar_url: string | null;
     id: string;
+    clan_tag?: string | null;
   } | null;
 }
 
@@ -228,7 +229,10 @@ export const FeaturedDeckDisplay = ({
                                     username={player.username}
                                     sizeClassName="h-5 w-5"
                                 />
-                                <span>{player.username}</span>
+                                <span className="flex items-center gap-1">
+                                    {player.clan_tag && <span className="font-bold text-primary">[{player.clan_tag}]</span>}
+                                    {player.username}
+                                </span>
                             </div>
                         )}
                     </div>

@@ -1,6 +1,6 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch } from "lucide-react";
+import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch, Copy } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import UserDisplay from "@/components/UserDisplay";
@@ -240,6 +240,27 @@ const TournamentManagementPage = () => {
     removeParticipantMutation.mutate(participantId);
   };
 
+  const handleCopyParticipants = () => {
+    if (!participants) return;
+
+    const list = participants
+      .sort((a, b) => a.id - b.id)
+      .map((p) => {
+        const tag = p.clans?.tag ? `[${p.clans.tag}] ` : "";
+        const username = p.profiles?.username || "Unknown";
+        const discord = p.profiles?.discord_username || "Sem Discord";
+        return `${tag}${username} - ${discord}`;
+      })
+      .join("\n");
+
+    navigator.clipboard.writeText(list).then(() => {
+      toast({
+        title: "Lista copiada!",
+        description: "A lista de participantes foi copiada para a área de transferência.",
+      });
+    });
+  };
+
   const isLoading = isLoadingTournament || isLoadingParticipants || isLoadingDecks;
 
   return (
@@ -255,7 +276,7 @@ const TournamentManagementPage = () => {
         {id && <MatchReporter tournamentId={id} />}
 
         <Card className="bg-gradient-card border-border">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
               <Crown className="h-8 w-8 text-primary" />
               <div>
@@ -263,6 +284,10 @@ const TournamentManagementPage = () => {
                 <CardDescription>{tournament?.title || "Carregando..."}</CardDescription>
               </div>
             </div>
+            <Button onClick={handleCopyParticipants} variant="outline" className="gap-2">
+               <Copy className="h-4 w-4" />
+               Copiar Lista
+            </Button>
           </CardHeader>
           <CardContent>
             {isLoading ? (

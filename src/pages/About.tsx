@@ -19,13 +19,19 @@ const About = () => {
             <span className="font-semibold">Deck Builder Avançado:</span> Crie, edite e gerencie seus decks com facilidade, com acesso a um vasto banco de dados de cartas e validação de regras.
           </li>
           <li>
-            <span className="font-semibold">Sistema de Torneios Robusto:</span> Participe ou organize torneios com gerenciamento completo, desde inscrições até rankings.
+            <span className="font-semibold">Sistema de Torneios Robusto:</span> Participe ou organize torneios com gerenciamento completo. Suporte a formatos exclusivos como <span className="text-primary font-bold">Banimento</span> e <span className="text-primary font-bold">Genesys</span>.
           </li>
           <li>
-            <span className="font-semibold">Comunidade Ativa:</span> Conecte-se com outros duelistas, compartilhe suas criações e discuta as últimas novidades do mundo de Yu-Gi-Oh!.
+            <span className="font-semibold">Ligas e Times:</span> Compita em ligas representando times reais (com logos oficiais) ou defenda a honra do seu clã.
           </li>
           <li>
-            <span className="font-semibold">Notícias e Artigos:</span> Mantenha-se atualizado com as banlists, lançamentos e análises estratégicas.
+            <span className="font-semibold">Rivalidades e Estatísticas:</span> Compare seu histórico direto contra qualquer jogador na página de Rivalidades e acompanhe seu desempenho detalhado.
+          </li>
+          <li>
+            <span className="font-semibold">Clãs e Analytics:</span> Crie clãs, gerencie membros e acesse dashboards de performance exclusivos para líderes.
+          </li>
+          <li>
+            <span className="font-semibold">Notícias e MetaBot:</span> Fique por dentro do meta com notícias trazidas pela nossa IA exclusiva, o MetaBot, além de artigos da comunidade.
           </li>
         </ul>
       </section>
