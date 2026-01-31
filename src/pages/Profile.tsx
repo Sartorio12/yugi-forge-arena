@@ -20,6 +20,7 @@ import { FrameInventory } from "@/components/FrameInventory";
 import { useChat } from "@/components/chat/ChatProvider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PROFILE_AVATARS } from "@/constants/profileAvatars";
+import { PROFILE_BANNERS } from "@/constants/profileBanners";
 import { MatchHistoryList } from "@/components/MatchHistoryList"; // Import MatchHistoryList
 import { useTranslation } from "react-i18next";
 
@@ -83,6 +84,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [selectedPresetAvatar, setSelectedPresetAvatar] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [selectedPresetBanner, setSelectedPresetBanner] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isBannerUploadDialogOpen, setIsBannerUploadDialogOpen] = useState(false);
 
@@ -218,6 +220,8 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         if (uploadError) throw uploadError;
         const { data: urlData } = supabase.storage.from("profiles").getPublicUrl(filePath);
         banner_url = `${urlData.publicUrl}?t=${new Date().getTime()}`;
+      } else if (selectedPresetBanner) {
+        banner_url = selectedPresetBanner;
       }
 
       const updates = { username, bio, discord_username: discordUsername, avatar_url, banner_url, updated_at: new Date() };
@@ -230,6 +234,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
       setAvatarFile(null);
       setSelectedPresetAvatar(null); // Reset selection
       setBannerFile(null);
+      setSelectedPresetBanner(null);
     } catch (error: Error) {
       toast({ title: "Erro", description: error.message || t('profile_page.edit_modal.error'), variant: "destructive" });
     } finally {
@@ -241,6 +246,12 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
     const fullPath = `/profilepic/${filename}`;
     setSelectedPresetAvatar(fullPath);
     setAvatarFile(null); // Clear file upload if preset is selected
+  };
+
+  const handlePresetBannerSelect = (filename: string) => {
+    const fullPath = `/head_banners/${filename}`;
+    setSelectedPresetBanner(fullPath);
+    setBannerFile(null); // Clear file upload if preset is selected
   };
 
   const isLoading = profileLoading || decksLoading || clanLoading || bannersLoading;
@@ -270,23 +281,23 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
           </div>
           <div className="container mx-auto px-4">
 
-            <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
+            <div className="flex flex-col md:flex-row items-center md:items-center gap-6">
               
               {/* Avatar Container */}
-              <div className="-mt-20 flex-shrink-0 z-10">
+              <div className="-mt-2 md:-mt-2 flex-shrink-0 z-10">
                 <div className="relative">
                   <FramedAvatar 
                     avatarUrl={profile.avatar_url}
                     frameUrl={profile.equipped_frame_url}
                     username={profile.username}
-                    sizeClassName="w-36 h-36"
+                    sizeClassName="w-32 h-32 md:w-36 md:h-36"
                   />
                 </div>
               </div>
 
               {/* Info Wrapper */}
-              <div className="w-full flex-1 text-center md:text-left">
-                <div className="md:mt-4 p-4 rounded-lg bg-card/50 backdrop-blur-sm">
+              <div className="w-full flex-1 text-center md:text-left md:pt-4">
+                <div className="p-4 rounded-lg bg-card/50 backdrop-blur-sm">
                   <h1 className="text-3xl font-bold mb-2">
                     <UserDisplay profile={profile} clan={clan} showTitles={true} />
                   </h1>
@@ -320,7 +331,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 self-center md:self-end pb-4">
+              <div className="flex items-center gap-2 self-center md:self-center">
                 {isProfileOwner && (
                   <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild><Button variant="outline"><Pencil className="h-4 w-4 mr-2" /> {t('profile_page.edit_profile')}</Button></DialogTrigger>
@@ -409,23 +420,56 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                                         </Button>
                                                       )}
                                                     </div>
-                                                    <Input id="banner" type="file" accept="image/*" onChange={(e) => {
-                                                      const file = e.target.files?.[0];
-                                                      if (!file) {
-                                                        setBannerFile(null);
-                                                        return;
-                                                      }
-                                                      if (file.size > 10 * 1024 * 1024) { // 10MB
-                                                        toast({
-                                                          title: "Arquivo muito grande",
-                                                          description: "O banner não pode exceder 10MB.",
-                                                          variant: "destructive",
-                                                        });
-                                                        e.target.value = "";
-                                                        return;
-                                                      }
-                                                      setBannerFile(file);
-                                                    }} />
+                                                    
+                                                    <Tabs defaultValue="upload" className="w-full">
+                                                      <TabsList className="grid w-full grid-cols-2">
+                                                        <TabsTrigger value="upload">{t('profile_page.edit_modal.upload_tab')}</TabsTrigger>
+                                                        <TabsTrigger value="gallery">{t('profile_page.edit_modal.gallery_tab')}</TabsTrigger>
+                                                      </TabsList>
+                                                      <TabsContent value="upload" className="space-y-2">
+                                                        <Input id="banner" type="file" accept="image/*" onChange={(e) => {
+                                                          const file = e.target.files?.[0];
+                                                          if (!file) {
+                                                            setBannerFile(null);
+                                                            return;
+                                                          }
+                                                          if (file.size > 10 * 1024 * 1024) { // 10MB
+                                                            toast({
+                                                              title: "Arquivo muito grande",
+                                                              description: "O banner não pode exceder 10MB.",
+                                                              variant: "destructive",
+                                                            });
+                                                            e.target.value = "";
+                                                            return;
+                                                          }
+                                                          setBannerFile(file);
+                                                          setSelectedPresetBanner(null);
+                                                        }} />
+                                                      </TabsContent>
+                                                      <TabsContent value="gallery">
+                                                        <div className="grid grid-cols-2 gap-3 h-64 overflow-y-auto p-2 border rounded-md bg-black/20">
+                                                          {PROFILE_BANNERS.map((banner, index) => (
+                                                            <div 
+                                                              key={index} 
+                                                              className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all relative w-full pt-[33%] ${selectedPresetBanner === `/head_banners/${banner}` ? 'border-primary ring-2 ring-primary ring-opacity-50 scale-95' : 'border-border hover:border-primary/50'}`}
+                                                              onClick={() => handlePresetBannerSelect(banner)}
+                                                            >
+                                                              <img 
+                                                                src={`/head_banners/${banner}`} 
+                                                                alt={`Banner ${index}`} 
+                                                                className="absolute top-0 left-0 w-full h-full object-cover"
+                                                                loading="lazy"
+                                                              />
+                                                            </div>
+                                                          ))}
+                                                        </div>
+                                                        {selectedPresetBanner && (
+                                                          <p className="text-xs text-primary mt-2 flex items-center gap-1">
+                                                            <Image className="h-3 w-3" /> {t('profile_page.edit_modal.gallery_selected')}
+                                                          </p>
+                                                        )}
+                                                      </TabsContent>
+                                                    </Tabs>
                                                   </div>
                                                 </div>
 

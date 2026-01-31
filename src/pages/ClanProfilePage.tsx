@@ -97,6 +97,22 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
     enabled: !!user && !!clanId,
   });
 
+  // Fetch current user's clan membership (any clan)
+  const { data: userClanMembership } = useQuery({
+    queryKey: ["user-clan-membership", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from("clan_members")
+        .select("clan_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const isLoading = isLoadingClan || isLoadingMembers || isLoadingApplication || isLoadingInvitation;
 
   if (isLoading) {
@@ -110,6 +126,7 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
 
   const currentUserMemberInfo = members?.find(m => m.id === user?.id);
   const isMember = !!currentUserMemberInfo;
+  const isInAnyClan = !!userClanMembership;
   const hasManagementPrivileges = (user?.id === clan?.owner_id) || (currentUserMemberInfo?.role === 'STRATEGIST');
   const hasPendingApplication = application?.status === 'PENDING';
 
@@ -226,6 +243,10 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
                       <Button variant="outline" disabled>
                         {t('clan_profile.pending_application')}
                       </Button>
+                    ) : isInAnyClan ? (
+                      <Button variant="outline" disabled title="Você já faz parte de um clã.">
+                        {t('clan_profile.apply')}
+                      </Button>
                     ) : (
                       <Button onClick={handleApply} disabled={isApplying}>
                         {isApplying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
@@ -332,7 +353,29 @@ const ClanProfilePage = ({ user, onLogout }: ClanProfilePageProps) => {
               </Card>
             </div>
             <div className="lg:col-span-1">
-              <ClanAnalyticsDashboard clanId={clanId} />
+              {isMember ? (
+                <ClanAnalyticsDashboard clanId={clanId} />
+              ) : (
+                <Card className="h-full border-dashed">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-muted-foreground" />
+                      Análise do Clã
+                    </CardTitle>
+                    <CardDescription>
+                      As estatísticas de performance são exclusivas para membros.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="bg-muted p-4 rounded-full mb-4">
+                      <Shield className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground max-w-[200px]">
+                      Junte-se a este clã para visualizar o desempenho competitivo dos seus membros.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>

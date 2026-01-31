@@ -14,9 +14,13 @@ interface UserDisplayProps {
 
 const UserCardDetails = ({ initialProfile, clan }: { initialProfile: UserDisplayProps['profile'], clan: UserDisplayProps['clan'] }) => {
   const { t } = useTranslation();
+  
+  // Robust ID extraction (some views use user_id, some use id)
+  const userId = initialProfile.id || (initialProfile as any).user_id;
+  
   // Fetch full profile details when this component is mounted (on hover)
   // This ensures we have the latest banner, titles, etc. without over-fetching in lists
-  const { profile: fullProfile } = useProfile(initialProfile.id);
+  const { profile: fullProfile } = useProfile(userId);
   
   // Merge initial profile with full profile (full profile takes precedence if loaded)
   const displayProfile = fullProfile || initialProfile;
