@@ -113,6 +113,12 @@ export default async function handler(req, res) {
     // Let's await it to log completion properly
     await syncTierList(supabaseAdmin);
 
+    // Notify participants for today's daily tournaments
+    console.log('Sending daily tournament notifications...');
+    const { data: notifyCount, error: notifyError } = await supabaseAdmin.rpc('notify_daily_tournament_participants');
+    if (notifyError) console.error('Error sending notifications:', notifyError);
+    else console.log(`Sent ${notifyCount} check-in reminders.`);
+
     // --- PARALLEL FETCHING START ---
     console.log('Fetching data sources in parallel...');
     const [englishCardsRes, portugueseCardsRes, mdBanlistRes] = await Promise.all([

@@ -166,6 +166,9 @@ const NavMenu = ({ user, profile }) => {
               <Link to="/dashboard/news">{t('navbar.manage_news')}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
+              <Link to="/dashboard/matches">{t('navbar.manage_matches')}</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link to="/dashboard/titles">{t('navbar.distribute_titles')}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

@@ -49,7 +49,8 @@ interface Participant {
   id: number;
   user_id: string;
   total_wins_in_tournament: number;
-  team_selection?: string; // Add optional team_selection
+  team_selection?: string;
+  checked_in: boolean;
   clans: {
     tag: string;
   } | null;
@@ -79,7 +80,7 @@ const TournamentManagementPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("title, organizer_id, exclusive_organizer_only")
+        .select("title, organizer_id, exclusive_organizer_only, tournament_model")
         .eq("id", Number(id))
         .single();
       if (error) throw error;
@@ -133,6 +134,7 @@ const TournamentManagementPage = () => {
           user_id,
           total_wins_in_tournament,
           team_selection,
+          checked_in,
           clans (
             tag
           ),
@@ -231,6 +233,25 @@ const TournamentManagementPage = () => {
     },
   });
 
+  const removeUncheckedMutation = useMutation({
+    mutationFn: async () => {
+        const { data, error } = await supabase.rpc('remove_unchecked_participants', { p_tournament_id: Number(id) });
+        if (error) throw error;
+        return data; // Returns count of removed users
+    },
+    onSuccess: (removedCount) => {
+        toast({ title: "Limpeza Concluída", description: `${removedCount} participantes ausentes foram removidos.` });
+        queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+    },
+    onError: (error: Error) => {
+        toast({
+            title: "Erro",
+            description: `Falha ao remover participantes: ${error.message}`,
+            variant: "destructive",
+        });
+    }
+  });
+
   const handleUpdateWins = (participant: Participant, change: 1 | -1) => {
     // No longer calculating newWins here to prevent race conditions
     updateWinsMutation.mutate({ participantId: participant.id, change, userId: participant.user_id });
@@ -288,6 +309,39 @@ const TournamentManagementPage = () => {
                <Copy className="h-4 w-4" />
                Copiar Lista
             </Button>
+            
+            {/* Remove Unchecked Button (Only for Daily Tournaments) */}
+            {(tournament as any)?.tournament_model === 'Diário' && (
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="gap-2">
+                            <UserX className="h-4 w-4" />
+                            Remover Ausentes (No Check-in)
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Confirmar Remoção em Massa</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Isso removerá todos os jogadores que <strong>NÃO</strong> realizaram o Check-in.
+                                <br/>
+                                Total de inscritos: {participants?.length || 0}
+                                <br/>
+                                Ausentes: {participants?.filter(p => !p.checked_in).length || 0}
+                                <br/><br/>
+                                Essa ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => removeUncheckedMutation.mutate()} className="bg-destructive hover:bg-destructive/90">
+                                {removeUncheckedMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Confirmar Remoção
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -300,6 +354,7 @@ const TournamentManagementPage = () => {
                   <TableRow>
                     <TableHead className="w-[50px]">No.</TableHead>
                     <TableHead>Jogador</TableHead>
+                    {(tournament as any)?.tournament_model === 'Diário' && <TableHead className="text-center w-[100px]">Check-in</TableHead>}
                     <TableHead>Decklist</TableHead>
                     <TableHead className="text-center w-[150px]">Vitórias</TableHead>
                     <TableHead className="w-[250px]">Ações</TableHead>
@@ -356,6 +411,20 @@ const TournamentManagementPage = () => {
                             </span>
                           </div>
                         </TableCell>
+                        {(tournament as any)?.tournament_model === 'Diário' && (
+                            <TableCell className="text-center">
+                                {p.checked_in ? (
+                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600">
+                                        <Copy className="h-4 w-4 hidden" /> {/* Dummy hidden icon to maintain import if needed, actually using text or different icon */}
+                                        ✓
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 font-bold">
+                                        X
+                                    </span>
+                                )}
+                            </TableCell>
+                        )}
                         <TableCell>
                           {hasDecks ? (
                               <span className="text-green-500 font-semibold">Enviada</span>

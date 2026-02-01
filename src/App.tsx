@@ -26,6 +26,7 @@ import NewsEditorFormPage from "./pages/admin/NewsEditorFormPage";
 import RewardsDistributionPage from "./pages/admin/RewardsDistributionPage";
 import TournamentStatsPage from "./pages/admin/TournamentStatsPage";
 import BroadcastDashboard from "./pages/admin/BroadcastDashboard";
+import MatchManagementPage from "./pages/admin/MatchManagementPage";
 import { RequestPasswordResetPage } from './pages/RequestPasswordResetPage';
 import { UpdatePasswordPage } from './pages/UpdatePasswordPage';
 import CreateClanPage from "./pages/CreateClanPage";
@@ -206,6 +207,10 @@ const App = () => {
                             <Route
                               path="/dashboard/broadcasts"
                               element={<BroadcastDashboard />}
+                            />
+                            <Route
+                              path="/dashboard/matches"
+                              element={<MatchManagementPage />}
                             />
                           </Route>
           

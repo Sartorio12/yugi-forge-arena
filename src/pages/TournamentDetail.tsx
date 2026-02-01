@@ -80,7 +80,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournament_participants")
-        .select("user_id, team_selection")
+        .select("user_id, team_selection, checked_in")
         .eq("tournament_id", Number(id));
       if (error) throw error;
       return data;
@@ -187,6 +187,31 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
     },
   });
 
+  const checkInMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !id) return;
+      const { error } = await supabase.rpc('perform_check_in', {
+        p_tournament_id: Number(id),
+        p_user_id: user.id
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Check-in Realizado!",
+        description: "Sua presença foi confirmada.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["tournamentParticipants", id] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro no Check-in",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRegister = () => {
     if (!user) {
       toast({
@@ -211,8 +236,20 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
   const isLoading = isLoadingTournament || isLoadingParticipants;
   
   const tournamentType = (tournament as any)?.type || 'standard';
+  const tournamentModel = (tournament as any)?.tournament_model || 'Diário';
   const takenTeams = new Set(participants?.map(p => p.team_selection).filter(Boolean));
   const availableTeams = FOOTBALL_TEAMS.filter(team => !takenTeams.has(team));
+  
+  // Check-in availability logic
+  const now = new Date();
+  const eventDate = tournament?.event_date ? new Date(tournament.event_date) : null;
+  const isCheckInOpen = eventDate && 
+    tournamentModel === 'Diário' &&
+    tournament?.status === 'Aberto' &&
+    now >= new Date(eventDate.getTime() - 30 * 60000); // 30 mins before
+
+  const userParticipation = participants?.find(p => p.user_id === user?.id);
+  const isUserCheckedIn = userParticipation?.checked_in;
 
   return (
     <div className="min-h-screen bg-background">
@@ -445,6 +482,33 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                {/* CHECK-IN BUTTON */}
+                {user && isRegistered && tournamentModel === 'Diário' && (
+                    <div className="w-full sm:w-auto">
+                        {isUserCheckedIn ? (
+                             <Button disabled className="w-full bg-green-600/20 text-green-600 border-green-600/50 text-lg py-6">
+                                <CheckCircle className="mr-2 h-5 w-5" />
+                                Check-in Confirmado
+                             </Button>
+                        ) : (
+                            <Button 
+                                onClick={() => checkInMutation.mutate()}
+                                disabled={!isCheckInOpen || checkInMutation.isPending}
+                                className={`w-full text-lg py-6 ${isCheckInOpen ? "animate-pulse bg-green-600 hover:bg-green-700 text-white" : ""}`}
+                                variant={isCheckInOpen ? "default" : "secondary"}
+                            >
+                                {checkInMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle className="mr-2 h-5 w-5" />}
+                                {isCheckInOpen ? "Fazer Check-in Agora!" : "Aguardando horário de Check-in"}
+                            </Button>
+                        )}
+                        {!isUserCheckedIn && !isCheckInOpen && tournament.status === 'Aberto' && (
+                             <p className="text-xs text-center mt-2 text-muted-foreground">
+                                 O check-in abre 30 minutos antes do início ({tournament.event_date ? format(new Date(new Date(tournament.event_date).getTime() - 30 * 60000), "HH:mm") : "??"}).
+                             </p>
+                        )}
+                    </div>
+                )}
+
                               {/* Show "Login/Register to Enroll" button if user is not logged in */}
                               {!user && (
                                 <Button

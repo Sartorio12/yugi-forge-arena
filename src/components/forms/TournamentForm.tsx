@@ -57,6 +57,7 @@ const tournamentFormSchema = z.object({
     (val) => (val === "" ? 1 : Number(val)),
     z.number().int().min(1, { message: "O número de decks deve ser no mínimo 1." }).default(1)
   ),
+  tournament_model: z.enum(["Diário", "Semanal"], { required_error: "O modelo de torneio é obrigatório." }).default("Diário"),
   exclusive_organizer_only: z.boolean().default(false),
 });
 
@@ -92,6 +93,7 @@ export const TournamentForm = ({
       is_decklist_required: initialData?.is_decklist_required ?? true,
       max_participants: initialData?.max_participants || undefined,
       num_decks_allowed: initialData?.num_decks_allowed || 1,
+      tournament_model: (initialData as any)?.tournament_model || "Diário",
       exclusive_organizer_only: initialData?.exclusive_organizer_only ?? false,
     },
   });
@@ -170,6 +172,7 @@ export const TournamentForm = ({
       event_date: values.event_date.toISOString(),
       max_participants: values.max_participants || null,
       num_decks_allowed: values.num_decks_allowed,
+      tournament_model: values.tournament_model,
       banishment_count: values.banishment_count,
     } as any;
     onSubmit(dataToSubmit);
@@ -378,6 +381,30 @@ export const TournamentForm = ({
                   <SelectItem value="genesys">Genesys (Deck Type Only)</SelectItem>
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="tournament_model"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Modelo de Torneio</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o modelo" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Diário">Diário</SelectItem>
+                  <SelectItem value="Semanal">Semanal</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Marcação interna para organização (Diário: começa e termina no mesmo dia | Semanal: ao longo das semanas).
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
