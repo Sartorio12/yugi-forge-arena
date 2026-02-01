@@ -67,12 +67,12 @@ export const NewsSection = () => {
 
   return (
     <section className="py-4">
-      <div className="flex items-center justify-between mb-6 px-1">
+      <div className="relative flex items-center justify-center mb-6 px-1">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <Newspaper className="h-5 w-5 text-primary" />
           {t('news_section.title')}
         </h2>
-        <Link to="/news" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+        <Link to="/news" className="absolute right-1 text-sm text-muted-foreground hover:text-primary transition-colors">
           {t('news_section.view_all')}
         </Link>
       </div>

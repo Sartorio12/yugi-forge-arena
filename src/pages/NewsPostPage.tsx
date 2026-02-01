@@ -112,8 +112,7 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
       <Navbar user={user} onLogout={onLogout} />
       <div className="container mx-auto max-w-3xl py-12">
         <header className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">{post.title}</h1>
-          <div className="flex flex-wrap items-center justify-between gap-4">
+                      <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">{post.title}</h1>          <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-2 text-secondary-foreground">
               {post.profiles && (
                 <>

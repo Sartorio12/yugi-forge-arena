@@ -48,6 +48,7 @@ import { GlobalChatListener } from "./components/chat/GlobalChatListener";
 import { LevelUpListener } from "./components/LevelUpListener";
 import ScrollToTop from "./components/ScrollToTop";
 import { DiscordUsernameModal } from "./components/DiscordUsernameModal";
+import { AbsenceRuleNotice } from "./components/AbsenceRuleNotice";
 import RivalryPage from "./pages/RivalryPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 
@@ -222,6 +223,7 @@ const App = () => {
                         <GlobalChatListener currentUser={user} />
                         <LevelUpListener user={user} />
                         <DiscordUsernameModal userId={user?.id} />
+                        <AbsenceRuleNotice />
                       </ChatProvider>                    </PresenceProvider>
           <SpeedInsights />
           <Analytics />
