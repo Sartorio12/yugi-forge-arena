@@ -46,16 +46,14 @@ export const TopRivalriesWidget = () => {
                    <FramedAvatar 
                     userId={r.player1_id} 
                     avatarUrl={r.player1_avatar} 
-                    sizeClassName="h-10 w-10 ring-2 ring-background shadow-lg" 
-                    showFrame={false}
+                    sizeClassName="h-10 w-10 shadow-lg" 
                    />
                 </div>
                 <div className="relative z-0">
                    <FramedAvatar 
                     userId={r.player2_id} 
                     avatarUrl={r.player2_avatar} 
-                    sizeClassName="h-10 w-10 ring-2 ring-background shadow-lg" 
-                    showFrame={false}
+                    sizeClassName="h-10 w-10 shadow-lg" 
                    />
                 </div>
               </div>
