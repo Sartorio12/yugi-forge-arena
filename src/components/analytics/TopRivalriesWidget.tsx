@@ -43,10 +43,20 @@ export const TopRivalriesWidget = () => {
             >
               <div className="flex items-center -space-x-3">
                 <div className="relative z-10">
-                   <FramedAvatar userId={r.player1_id} avatarUrl={r.player1_avatar} sizeClassName="h-10 w-10 ring-2 ring-background shadow-lg" />
+                   <FramedAvatar 
+                    userId={r.player1_id} 
+                    avatarUrl={r.player1_avatar} 
+                    sizeClassName="h-10 w-10 ring-2 ring-background shadow-lg" 
+                    showFrame={false}
+                   />
                 </div>
                 <div className="relative z-0">
-                   <FramedAvatar userId={r.player2_id} avatarUrl={r.player2_avatar} sizeClassName="h-10 w-10 ring-2 ring-background shadow-lg" />
+                   <FramedAvatar 
+                    userId={r.player2_id} 
+                    avatarUrl={r.player2_avatar} 
+                    sizeClassName="h-10 w-10 ring-2 ring-background shadow-lg" 
+                    showFrame={false}
+                   />
                 </div>
               </div>
               
