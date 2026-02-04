@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,7 +25,8 @@ const EditSweepstakeDialog = ({ sweepstake, open, onOpenChange, onSuccess }: any
     title: "",
     description: "",
     end_date: "",
-    entry_fee: ""
+    entry_fee: "",
+    rules: ""
   });
 
   useEffect(() => {
@@ -33,7 +35,8 @@ const EditSweepstakeDialog = ({ sweepstake, open, onOpenChange, onSuccess }: any
         title: sweepstake.title,
         description: sweepstake.description || "",
         end_date: sweepstake.end_date ? new Date(sweepstake.end_date).toISOString().slice(0, 16) : "",
-        entry_fee: sweepstake.entry_fee
+        entry_fee: sweepstake.entry_fee,
+        rules: sweepstake.rules?.content || ""
       });
     }
   }, [sweepstake]);
@@ -46,7 +49,8 @@ const EditSweepstakeDialog = ({ sweepstake, open, onOpenChange, onSuccess }: any
           title: formData.title,
           description: formData.description,
           end_date: new Date(formData.end_date).toISOString(),
-          entry_fee: Number(formData.entry_fee)
+          entry_fee: Number(formData.entry_fee),
+          rules: { content: formData.rules }
         })
         .eq("id", sweepstake.id);
 
@@ -64,7 +68,7 @@ const EditSweepstakeDialog = ({ sweepstake, open, onOpenChange, onSuccess }: any
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Editar Bolão</DialogTitle>
         </DialogHeader>
@@ -78,12 +82,23 @@ const EditSweepstakeDialog = ({ sweepstake, open, onOpenChange, onSuccess }: any
             <Input value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
           </div>
           <div className="grid gap-2">
-            <Label>Prazo Final</Label>
-            <Input type="datetime-local" value={formData.end_date} onChange={e => setFormData({...formData, end_date: e.target.value})} />
+            <Label>Regulamento Completo</Label>
+            <Textarea 
+                className="h-32" 
+                placeholder="Insira as regras detalhadas aqui..." 
+                value={formData.rules} 
+                onChange={e => setFormData({...formData, rules: e.target.value})} 
+            />
           </div>
-          <div className="grid gap-2">
-            <Label>Taxa de Entrada (R$)</Label>
-            <Input type="number" value={formData.entry_fee} onChange={e => setFormData({...formData, entry_fee: e.target.value})} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+                <Label>Prazo Final</Label>
+                <Input type="datetime-local" value={formData.end_date} onChange={e => setFormData({...formData, end_date: e.target.value})} />
+            </div>
+            <div className="grid gap-2">
+                <Label>Taxa de Entrada (R$)</Label>
+                <Input type="number" value={formData.entry_fee} onChange={e => setFormData({...formData, entry_fee: e.target.value})} />
+            </div>
           </div>
         </div>
         <DialogFooter>
@@ -101,6 +116,7 @@ const CreateSweepstakeForm = ({ onSuccess }: { onSuccess: () => void }) => {
     title: "",
     description: "",
     deadline: "",
+    rules: "",
     d1: "",
     d2: "",
     d3: "",
@@ -123,7 +139,7 @@ const CreateSweepstakeForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!formData.title || !formData.deadline || !formData.d1 || !formData.d2 || !formData.d3 || !formData.d4) {
-        throw new Error("Preencha todos os campos e selecione os 4 torneios.");
+        throw new Error("Preencha todos os campos obrigatórios e selecione os 4 torneios.");
       }
 
       const { error } = await supabase.rpc("setup_duelist_league_sweepstake", {
@@ -133,7 +149,8 @@ const CreateSweepstakeForm = ({ onSuccess }: { onSuccess: () => void }) => {
         p_d1_tournament_id: Number(formData.d1),
         p_d2_tournament_id: Number(formData.d2),
         p_d3_tournament_id: Number(formData.d3),
-        p_d4_tournament_id: Number(formData.d4)
+        p_d4_tournament_id: Number(formData.d4),
+        p_rules: formData.rules
       });
 
       if (error) throw error;
@@ -158,11 +175,19 @@ const CreateSweepstakeForm = ({ onSuccess }: { onSuccess: () => void }) => {
         />
       </div>
       <div className="grid gap-2">
-        <Label>Descrição</Label>
+        <Label>Descrição Curta</Label>
         <Input 
           placeholder="Breve descrição..." 
           value={formData.description} 
           onChange={e => setFormData({...formData, description: e.target.value})} 
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label>Regulamento Completo</Label>
+        <Textarea 
+            placeholder="Regras detalhadas (ex: Critérios de desempate, premiação...)" 
+            value={formData.rules} 
+            onChange={e => setFormData({...formData, rules: e.target.value})} 
         />
       </div>
       <div className="grid gap-2">

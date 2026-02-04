@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { User } from "@supabase/supabase-js";
-import { Loader2, Trophy, DollarSign, Clock, AlertCircle, CheckCircle2, Copy, RefreshCw, QrCode as QrIcon, CreditCard, Lock, Eye, Crown } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Loader2, Trophy, DollarSign, Clock, AlertCircle, CheckCircle2, Copy, RefreshCw, QrCode as QrIcon, CreditCard, Lock, Eye, Crown, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,6 +30,7 @@ interface Sweepstake {
   description: string;
   entry_fee: number;
   end_date: string;
+  rules?: { content: string };
   divisions: SweepstakeDivision[];
   user_bet?: SweepstakeBet;
   total_pot?: number;
@@ -438,11 +440,11 @@ const SweepstakePage = ({ user, onLogout }: SweepstakePageProps) => {
                         {sweepstake.title}
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">{sweepstake.description}</p>
-                    <div className="flex justify-center gap-6 text-sm font-medium mt-4">
+                    <div className="flex flex-wrap justify-center gap-4 text-sm font-medium mt-4">
                         <div className="flex items-center gap-2 bg-card p-3 rounded-lg border border-border">
                             <Clock className="h-5 w-5 text-yellow-500" />
                             <div>
-                                <p className="text-xs text-muted-foreground">Fim</p>
+                                <p className="text-xs text-muted-foreground">Encerra em</p>
                                 <p>{format(new Date(sweepstake.end_date), "dd/MM, HH:mm", { locale: ptBR })}</p>
                             </div>
                         </div>
@@ -453,6 +455,25 @@ const SweepstakePage = ({ user, onLogout }: SweepstakePageProps) => {
                                 <p className="text-green-400">R$ {sweepstake.entry_fee.toFixed(2)}</p>
                             </div>
                         </div>
+                        
+                        {sweepstake.rules && (
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" className="h-auto py-3 bg-card border-border hover:bg-muted">
+                                        <FileText className="h-5 w-5 mr-2 text-primary" />
+                                        Regulamento
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                    <DialogHeader>
+                                        <DialogTitle>Regulamento do Bolão</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed mt-4">
+                                        {sweepstake.rules.content || "Nenhum regulamento específico definido."}
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        )}
                     </div>
                 </div>
 
