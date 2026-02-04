@@ -4,6 +4,7 @@ ADD COLUMN IF NOT EXISTS checked_in boolean DEFAULT false,
 ADD COLUMN IF NOT EXISTS checked_in_at timestamp with time zone;
 
 -- RPC to perform check-in
+DROP FUNCTION IF EXISTS perform_check_in(bigint, uuid);
 CREATE OR REPLACE FUNCTION perform_check_in(p_tournament_id bigint, p_user_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -47,6 +48,7 @@ END;
 $$;
 
 -- RPC to remove unchecked participants
+DROP FUNCTION IF EXISTS remove_unchecked_participants(bigint);
 CREATE OR REPLACE FUNCTION remove_unchecked_participants(p_tournament_id bigint)
 RETURNS integer
 LANGUAGE plpgsql
@@ -64,10 +66,12 @@ BEGIN
     SELECT count(*) INTO v_removed_count FROM deleted_rows;
 
     RETURN v_removed_count;
+    
 END;
 $$;
 
 -- RPC to send daily tournament notifications AND return list for emails
+DROP FUNCTION IF EXISTS notify_daily_tournament_participants();
 CREATE OR REPLACE FUNCTION notify_daily_tournament_participants()
 RETURNS TABLE (
     user_id uuid,
@@ -99,15 +103,15 @@ BEGIN
                 SELECT 1 FROM public.notifications 
                 WHERE user_id = p_record.user_id 
                   AND type = 'system' 
-                  AND content LIKE '%check-in%' 
+                  AND data->>'message' LIKE '%check-in%' 
                   AND created_at > (now() - interval '12 hours')
             ) THEN
                 -- Insert internal notification (Site Bell)
-                INSERT INTO public.notifications (user_id, type, content, link)
+                INSERT INTO public.notifications (user_id, type, data, link)
                 VALUES (
                     p_record.user_id,
                     'system',
-                    'Não esqueça de fazer o Check-in para o torneio ' || t_record.title || '! O check-in abre 30min antes do início.',
+                    jsonb_build_object('message', 'Não esqueça de fazer o Check-in para o torneio ' || t_record.title || '! O check-in abre 30min antes do início.'),
                     '/tournaments/' || t_record.id
                 );
                 

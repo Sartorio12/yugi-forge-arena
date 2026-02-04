@@ -1,4 +1,5 @@
 -- Update remove_unchecked_participants to include notifications for Misses and Blocks
+DROP FUNCTION IF EXISTS remove_unchecked_participants(bigint);
 CREATE OR REPLACE FUNCTION remove_unchecked_participants(p_tournament_id bigint)
 RETURNS integer
 LANGUAGE plpgsql
@@ -25,11 +26,11 @@ BEGIN
         WHERE id = participant_record.user_id;
 
         -- 2. Notify the user about the miss
-        INSERT INTO public.notifications (user_id, type, content)
+        INSERT INTO public.notifications (user_id, type, data)
         VALUES (
             participant_record.user_id,
             'system',
-            'Você não realizou o check-in para o torneio "' || COALESCE(v_tournament_title, 'Torneio') || '". Sua falta foi contabilizada.'
+            jsonb_build_object('message', 'Você não realizou o check-in para o torneio "' || COALESCE(v_tournament_title, 'Torneio') || '". Sua falta foi contabilizada.')
         );
 
         -- 3. Check and Apply block if misses >= 3
@@ -40,11 +41,11 @@ BEGIN
             WHERE id = participant_record.user_id;
 
             -- 4. Notify the user about the Block
-            INSERT INTO public.notifications (user_id, type, content)
+            INSERT INTO public.notifications (user_id, type, data)
             VALUES (
                 participant_record.user_id,
                 'system',
-                'ALERTA: Você foi bloqueado de novas inscrições por 7 dias devido a 3 faltas consecutivas.'
+                jsonb_build_object('message', 'ALERTA: Você foi bloqueado de novas inscrições por 7 dias devido a 3 faltas consecutivas.')
             );
         END IF;
 

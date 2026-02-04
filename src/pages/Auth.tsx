@@ -9,20 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Swords } from "lucide-react";
 import { z, ZodError } from "zod";
-
-// Esquema de validação com Zod
-const passwordSchema = z.string()
-  .min(8, "A senha deve ter no mínimo 8 caracteres")
-  .regex(/[a-z]/, "A senha deve conter pelo menos uma letra minúscula")
-  .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
-  .regex(/[0-9]/, "A senha deve conter pelo menos um número")
-  .regex(/[^a-zA-Z0-9]/, "A senha deve conter pelo menos um caractere especial");
-
-const authSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: passwordSchema,
-  username: z.string().min(3, "O nome de usuário deve ter no mínimo 3 caracteres").optional(),
-});
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 // Função para formatar erros do Zod
 const formatZodError = (error: ZodError) => {
@@ -30,6 +18,7 @@ const formatZodError = (error: ZodError) => {
 };
 
 const Auth = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -39,11 +28,25 @@ const Auth = () => {
   const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
+  // Esquema de validação com Zod
+  const getPasswordSchema = () => z.string()
+    .min(8, t('auth_page.errors.password_min'))
+    .regex(/[a-z]/, t('auth_page.errors.password_lower'))
+    .regex(/[A-Z]/, t('auth_page.errors.password_upper'))
+    .regex(/[0-9]/, t('auth_page.errors.password_number'))
+    .regex(/[^a-zA-Z0-9]/, t('auth_page.errors.password_special'));
+
+  const getAuthSchema = () => z.object({
+    email: z.string().email(t('auth_page.errors.invalid_email')),
+    password: getPasswordSchema(),
+    username: z.string().min(3, t('auth_page.errors.username_min')).optional(),
+  });
+
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPassword = e.target.value;
     setPassword(newPassword);
 
-    const result = passwordSchema.safeParse(newPassword);
+    const result = getPasswordSchema().safeParse(newPassword);
     if (!result.success) {
       setPasswordErrors(result.error.errors.map(err => err.message));
     } else {
@@ -63,7 +66,7 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      const validatedData = authSchema.parse({ email, password, username });
+      const validatedData = getAuthSchema().parse({ email, password, username });
       setLoading(true);
 
       const { error } = await supabase.auth.signUp({
@@ -79,19 +82,19 @@ const Auth = () => {
 
       setShowConfirmationMessage(true);
       toast({
-        title: "Confirme seu email!",
-        description: "Enviamos um link de confirmação para o seu email. Por favor, verifique sua caixa de entrada para ativar sua conta.",
+        title: t('auth_page.toast.confirm_email'),
+        description: t('auth_page.toast.confirm_email_desc'),
         duration: 10000,
       });
     } catch (error: any) {
-      let errorMessage = "Erro ao criar conta";
+      let errorMessage = t('auth_page.errors.create_account_error');
       if (error instanceof ZodError) {
         errorMessage = formatZodError(error);
       } else if (error.message) {
         errorMessage = error.message;
       }
       toast({
-        title: "Erro",
+        title: t('create_clan_page.toast.error'),
         description: errorMessage,
         variant: "destructive",
       });
@@ -104,7 +107,7 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      const validatedData = authSchema.pick({ email: true, password: true }).parse({ email, password });
+      const validatedData = getAuthSchema().pick({ email: true, password: true }).parse({ email, password });
       setLoading(true);
 
       const { error } = await supabase.auth.signInWithPassword({
@@ -115,20 +118,20 @@ const Auth = () => {
       if (error) throw error;
 
       toast({
-        title: "Bem-vindo!",
-        description: "Login realizado com sucesso.",
+        title: t('auth_page.toast.welcome'),
+        description: t('auth_page.toast.login_success'),
       });
       
       navigate("/");
     } catch (error: any) {
-      let errorMessage = "Email ou senha incorretos";
+      let errorMessage = t('auth_page.errors.signin_error');
       if (error instanceof ZodError) {
         errorMessage = formatZodError(error);
       } else if (error.message) {
         errorMessage = error.message;
       }
       toast({
-        title: "Erro",
+        title: t('create_clan_page.toast.error'),
         description: errorMessage,
         variant: "destructive",
       });
@@ -138,41 +141,44 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <Card className="w-full max-w-md p-8 bg-gradient-card border-border">
         <div className="flex flex-col items-center mb-8">
           <Swords className="h-12 w-12 text-primary mb-4" />
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
             STAFF YUGIOH
           </h1>
-          <p className="text-muted-foreground mt-2">Hub de Torneios e Deck Builder</p>
+          <p className="text-muted-foreground mt-2">{t('auth_page.hub_subtitle')}</p>
         </div>
 
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="signin">Entrar</TabsTrigger>
-            <TabsTrigger value="signup">Criar Conta</TabsTrigger>
+            <TabsTrigger value="signin">{t('auth_page.signin_tab')}</TabsTrigger>
+            <TabsTrigger value="signup">{t('auth_page.signup_tab')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin">
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="signin-email">Email</Label>
+                <Label htmlFor="signin-email">{t('auth_page.email_label')}</Label>
                 <Input
                   id="signin-email"
                   type="email"
-                  placeholder="seu@email.com"
+                  placeholder={t('auth_page.email_placeholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="signin-password">Senha</Label>
+                <Label htmlFor="signin-password">{t('auth_page.password_label')}</Label>
                 <Input
                   id="signin-password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder={t('auth_page.password_placeholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -183,14 +189,14 @@ const Auth = () => {
                 className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
                 disabled={loading}
               >
-                {loading ? "Entrando..." : "Entrar"}
+                {loading ? t('auth_page.signing_in') : t('auth_page.signin_btn')}
               </Button>
               <div className="text-center mt-4">
                 <Link
                   to="/esqueci-senha"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
-                  Esqueceu sua senha?
+                  {t('auth_page.forgot_password')}
                 </Link>
               </div>
             </form>
@@ -199,9 +205,9 @@ const Auth = () => {
           <TabsContent value="signup">
             {showConfirmationMessage ? (
               <div className="text-center space-y-4 p-4 border border-dashed rounded-lg">
-                <h3 className="text-2xl font-bold text-primary">Quase lá!</h3>
+                <h3 className="text-2xl font-bold text-primary">{t('auth_page.almost_there')}</h3>
                 <p className="text-muted-foreground">
-                  Enviamos um link de confirmação para <strong>{email}</strong>. Por favor, verifique sua caixa de entrada (e spam) para ativar sua conta.
+                  {t('auth_page.confirmation_sent')} <strong>{email}</strong>. {t('auth_page.toast.confirm_email_desc')}
                 </p>
                 <Button variant="outline" onClick={() => {
                   setShowConfirmationMessage(false);
@@ -209,39 +215,39 @@ const Auth = () => {
                   setPassword('');
                   setUsername('');
                 }}>
-                  Voltar
+                  {t('auth_page.back_btn')}
                 </Button>
               </div>
             ) : (
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-username">Nome de Usuário</Label>
+                  <Label htmlFor="signup-username">{t('auth_page.username_label')}</Label>
                   <Input
                     id="signup-username"
                     type="text"
-                    placeholder="duelista123"
+                    placeholder={t('auth_page.username_placeholder')}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">{t('auth_page.email_label')}</Label>
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="seu@email.com"
+                    placeholder={t('auth_page.email_placeholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Senha</Label>
+                  <Label htmlFor="signup-password">{t('auth_page.password_label')}</Label>
                   <Input
                     id="signup-password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder={t('auth_page.password_placeholder')}
                     value={password}
                     onChange={handlePasswordChange} // Use the new handler
                     required
@@ -259,7 +265,7 @@ const Auth = () => {
                   className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
                   disabled={loading}
                 >
-                  {loading ? "Criando..." : "Criar Conta"}
+                  {loading ? t('auth_page.creating_account') : t('auth_page.signup_btn')}
                 </Button>
               </form>
             )}
@@ -270,4 +276,6 @@ const Auth = () => {
   );
 };
 
+
 export default Auth;
+

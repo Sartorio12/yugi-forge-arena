@@ -10,6 +10,7 @@ import { ConditionalFooter } from "@/components/ConditionalFooter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FramedAvatar } from '@/components/FramedAvatar';
+import { useTranslation } from "react-i18next";
 
 interface MetaDeckExamplesProps {
   user: User | null;
@@ -38,6 +39,7 @@ interface Deck {
 }
 
 const MetaDeckExamples = ({ user, onLogout }: MetaDeckExamplesProps) => {
+  const { t } = useTranslation();
   const params = useParams();
   const deckName = params["*"] ? decodeURIComponent(params["*"]) : "";
   const navigate = useNavigate();
@@ -108,9 +110,9 @@ const MetaDeckExamples = ({ user, onLogout }: MetaDeckExamplesProps) => {
             <ArrowLeft className="h-6 w-6" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Exemplos de {rawName}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('meta_deck_examples.title', { name: rawName })}</h1>
             <p className="text-muted-foreground">
-              Decks da comunidade contendo cartas relacionadas a "{rawName}"
+              {t('meta_deck_examples.subtitle', { name: rawName })}
             </p>
           </div>
         </div>
@@ -153,7 +155,7 @@ const MetaDeckExamples = ({ user, onLogout }: MetaDeckExamplesProps) => {
                     
                     {deck.profiles ? (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="shrink-0">por</span>
+                        <span className="shrink-0">{t('meta_deck_examples.by')}</span>
                         <FramedAvatar
                           userId={deck.profiles.id}
                           avatarUrl={deck.profiles.avatar_url}
@@ -167,7 +169,7 @@ const MetaDeckExamples = ({ user, onLogout }: MetaDeckExamplesProps) => {
                         />
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">por Usuário Desconhecido</span>
+                      <span className="text-xs text-muted-foreground">{t('meta_deck_examples.by')} {t('meta_deck_examples.unknown_user')}</span>
                     )}
                   </div>
 
@@ -181,8 +183,8 @@ const MetaDeckExamples = ({ user, onLogout }: MetaDeckExamplesProps) => {
         ) : (
           <div className="text-center py-20 opacity-50">
             <SearchX className="h-16 w-16 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold">Nenhum deck encontrado</h2>
-            <p>Ninguém postou um deck de {rawName} ainda.</p>
+            <h2 className="text-xl font-semibold">{t('meta_deck_examples.no_decks_title')}</h2>
+            <p>{t('meta_deck_examples.no_decks_desc', { name: rawName })}</p>
           </div>
         )}
       </main>

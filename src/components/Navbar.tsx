@@ -150,6 +150,9 @@ const NavMenu = ({ user, profile }) => {
         <DropdownMenuItem asChild>
           <Link to="/rivalry">{t('navbar.rivalry')}</Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/bolao">{t('navbar.sweepstakes')}</Link>
+        </DropdownMenuItem>
         {user && (
           <DropdownMenuItem asChild>
             <Link to="/deck-builder">{t('navbar.deck_builder')}</Link>
@@ -167,6 +170,9 @@ const NavMenu = ({ user, profile }) => {
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/dashboard/matches">{t('navbar.manage_matches')}</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/dashboard/sweepstakes">Gerenciar Bolões</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/dashboard/titles">{t('navbar.distribute_titles')}</Link>

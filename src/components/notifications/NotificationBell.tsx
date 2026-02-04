@@ -178,6 +178,8 @@ export const NotificationBell = ({ user }: NotificationBellProps) => {
                         components={{ 0: strong, 1: em }}
                     />
                 );
+            case 'system':
+                return data.message || t('notifications.default');
             default:
                 return t('notifications.default');
         }

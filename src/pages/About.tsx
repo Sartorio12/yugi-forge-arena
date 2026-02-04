@@ -1,43 +1,46 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const About = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-4xl font-bold text-center mb-8">Sobre Nós</h1>
+      <h1 className="text-4xl font-bold text-center mb-8">{t('about_page.title')}</h1>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-semibold mb-4">Nossa Missão</h2>
+        <h2 className="text-3xl font-semibold mb-4">{t('about_page.mission_title')}</h2>
         <p className="text-lg text-muted-foreground leading-relaxed">
-          No coração da comunidade Yu-Gi-Oh!, a STAFF® nasceu da paixão por duelos estratégicos e da visão de criar um espaço onde jogadores de todos os níveis pudessem se conectar, competir e crescer juntos. Nossa missão é fomentar um ambiente vibrante e inclusivo, oferecendo ferramentas inovadoras para construção de decks, organização de torneios e uma plataforma para compartilhar notícias e estratégias. Acreditamos que cada duelista tem uma história para contar, e estamos aqui para ajudar a escrevê-las.
+          {t('about_page.mission_text')}
         </p>
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-semibold mb-4">O Que Oferecemos</h2>
+        <h2 className="text-3xl font-semibold mb-4">{t('about_page.what_we_offer_title')}</h2>
         <ul className="list-disc list-inside text-lg text-muted-foreground leading-relaxed space-y-2">
           <li>
-            <span className="font-semibold">Deck Builder Avançado:</span> Crie, edite e gerencie seus decks com facilidade, com acesso a um vasto banco de dados de cartas e validação de regras.
+            <span className="font-semibold">{t('about_page.offer_deck_builder')}</span> {t('about_page.offer_deck_builder_desc')}
           </li>
           <li>
-            <span className="font-semibold">Sistema de Torneios Robusto:</span> Participe ou organize torneios com gerenciamento completo. Suporte a formatos exclusivos como <span className="text-primary font-bold">Banimento</span> e <span className="text-primary font-bold">Genesys</span>.
+            <span className="font-semibold">{t('about_page.offer_tournaments')}</span> {t('about_page.offer_tournaments_desc')} <span className="text-primary font-bold">Banimento</span> e <span className="text-primary font-bold">Genesys</span>.
           </li>
           <li>
-            <span className="font-semibold">Ligas e Times:</span> Compita em ligas representando times reais (com logos oficiais) ou defenda a honra do seu clã.
+            <span className="font-semibold">{t('about_page.offer_leagues')}</span> {t('about_page.offer_leagues_desc')}
           </li>
           <li>
-            <span className="font-semibold">Rivalidades e Estatísticas:</span> Compare seu histórico direto contra qualquer jogador na página de Rivalidades e acompanhe seu desempenho detalhado.
+            <span className="font-semibold">{t('about_page.offer_rivalries')}</span> {t('about_page.offer_rivalries_desc')}
           </li>
           <li>
-            <span className="font-semibold">Clãs e Analytics:</span> Crie clãs, gerencie membros e acesse dashboards de performance exclusivos para líderes.
+            <span className="font-semibold">{t('about_page.offer_clans')}</span> {t('about_page.offer_clans_desc')}
           </li>
           <li>
-            <span className="font-semibold">Notícias e MetaBot:</span> Fique por dentro do meta com notícias trazidas pela nossa IA exclusiva, o MetaBot, além de artigos da comunidade.
+            <span className="font-semibold">{t('about_page.offer_news')}</span> {t('about_page.offer_news_desc')}
           </li>
         </ul>
       </section>
 
       <section className="mb-12">
-        <h2 className="text-3xl font-semibold text-center mb-8">Nossa Equipe</h2>
+        <h2 className="text-3xl font-semibold text-center mb-8">{t('about_page.team_title')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[
             { name: 'KSN YNUI', role: 'Fundador', image: '/KSN YNUI.jpg' },
@@ -60,11 +63,11 @@ const About = () => {
 
       <section className="text-center">
         <p className="text-lg text-muted-foreground mb-4">
-          Junte-se a nós e faça parte da STAFF®!
+          {t('about_page.join_us')}
         </p>
         <Link to="/auth">
           <button className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-md text-lg font-semibold transition-colors">
-            Comece a Duelar Agora
+            {t('about_page.start_dueling')}
           </button>
         </Link>
       </section>

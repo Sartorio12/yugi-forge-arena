@@ -8,12 +8,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Loader2, Save, Trash2, CheckCircle2 } from "lucide-react";
+import { CalendarIcon, Loader2, Save, Trash2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PollManagerModalProps {
   newsPostId: number | null;
@@ -32,6 +34,7 @@ interface PollFormData {
 
 export const PollManagerModal = ({ newsPostId, open, onOpenChange, newsTitle }: PollManagerModalProps) => {
   const queryClient = useQueryClient();
+  const [showVotes, setShowVotes] = useState(false);
   const [formData, setFormData] = useState<PollFormData>({
     question: "",
     poll_type: "user_selection",
@@ -57,6 +60,18 @@ export const PollManagerModal = ({ newsPostId, open, onOpenChange, newsTitle }: 
     enabled: !!newsPostId && open,
   });
 
+  // Fetch detailed votes
+  const { data: detailedVotes, isLoading: isLoadingVotes } = useQuery({
+    queryKey: ["adminPollVotes", existingPoll?.id],
+    queryFn: async () => {
+      if (!existingPoll?.id) return [];
+      const { data, error } = await supabase.rpc('get_poll_votes_admin', { p_poll_id: existingPoll.id });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!existingPoll?.id && showVotes,
+  });
+
   useEffect(() => {
     if (existingPoll) {
       setFormData({
@@ -75,6 +90,7 @@ export const PollManagerModal = ({ newsPostId, open, onOpenChange, newsTitle }: 
             expires_at: undefined,
             is_active: true
         });
+        setShowVotes(false);
     }
   }, [existingPoll, open]);
 
@@ -134,7 +150,7 @@ export const PollManagerModal = ({ newsPostId, open, onOpenChange, newsTitle }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Gerenciar Enquete</DialogTitle>
           <DialogDescription>
@@ -234,6 +250,53 @@ export const PollManagerModal = ({ newsPostId, open, onOpenChange, newsTitle }: 
             {formData.poll_type === 'custom' && (
                 <div className="p-3 bg-yellow-500/10 border border-yellow-500/50 rounded text-sm text-yellow-500">
                     Nota: O gerenciamento de opções personalizadas ainda não foi implementado nesta versão do painel. Use "Seleção de Jogadores" ou insira opções via SQL.
+                </div>
+            )}
+
+            {/* Admin Votes View */}
+            {existingPoll && (
+                <div className="border-t pt-4 mt-4">
+                    <Button 
+                        variant="secondary" 
+                        className="w-full mb-4" 
+                        onClick={() => setShowVotes(!showVotes)}
+                    >
+                        <Users className="mr-2 h-4 w-4" />
+                        {showVotes ? "Ocultar Votos" : "Ver Quem Votou em Quem (Secreto)"}
+                    </Button>
+
+                    {showVotes && (
+                        <div className="bg-muted/30 rounded-md border">
+                            {isLoadingVotes ? (
+                                <div className="p-4 text-center"><Loader2 className="animate-spin inline" /></div>
+                            ) : detailedVotes && detailedVotes.length > 0 ? (
+                                <ScrollArea className="h-[200px] rounded-md">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Eleitor</TableHead>
+                                                <TableHead>Votou em</TableHead>
+                                                <TableHead className="text-right">Data</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {detailedVotes.map((vote: any, idx: number) => (
+                                                <TableRow key={idx}>
+                                                    <TableCell className="font-medium text-xs">{vote.voter_name}</TableCell>
+                                                    <TableCell className="text-xs font-bold text-primary">{vote.vote_target}</TableCell>
+                                                    <TableCell className="text-right text-xs text-muted-foreground">
+                                                        {format(new Date(vote.voted_at), "dd/MM HH:mm")}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </ScrollArea>
+                            ) : (
+                                <div className="p-4 text-center text-muted-foreground">Nenhum voto registrado ainda.</div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
           </div>

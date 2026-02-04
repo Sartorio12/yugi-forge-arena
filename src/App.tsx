@@ -27,6 +27,7 @@ import RewardsDistributionPage from "./pages/admin/RewardsDistributionPage";
 import TournamentStatsPage from "./pages/admin/TournamentStatsPage";
 import BroadcastDashboard from "./pages/admin/BroadcastDashboard";
 import MatchManagementPage from "./pages/admin/MatchManagementPage";
+import SweepstakeDashboard from "./pages/admin/SweepstakeDashboard";
 import { RequestPasswordResetPage } from './pages/RequestPasswordResetPage';
 import { UpdatePasswordPage } from './pages/UpdatePasswordPage';
 import CreateClanPage from "./pages/CreateClanPage";
@@ -51,6 +52,7 @@ import { DiscordUsernameModal } from "./components/DiscordUsernameModal";
 import { AbsenceRuleNotice } from "./components/AbsenceRuleNotice";
 import RivalryPage from "./pages/RivalryPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import SweepstakePage from "./pages/SweepstakePage";
 
 const queryClient = new QueryClient();
 
@@ -163,6 +165,10 @@ const App = () => {
                             path="/rivalry" 
                             element={<RivalryPage user={user} onLogout={handleLogout} />} 
                           />
+                          <Route 
+                            path="/bolao" 
+                            element={<SweepstakePage user={user} onLogout={handleLogout} />} 
+                          />
                           <Route
                             path="/messages"
                             element={<MessagesPage user={user} onLogout={handleLogout} />}
@@ -212,6 +218,10 @@ const App = () => {
                             <Route
                               path="/dashboard/matches"
                               element={<MatchManagementPage />}
+                            />
+                            <Route
+                              path="/dashboard/sweepstakes"
+                              element={<SweepstakeDashboard />}
                             />
                           </Route>
           

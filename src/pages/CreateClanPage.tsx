@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import Navbar from "@/components/Navbar";
 import { ClanForm, ClanFormValues } from "@/components/forms/ClanForm";
@@ -17,6 +18,7 @@ interface CreateClanPageProps {
 }
 
 const CreateClanPage = ({ user, onLogout }: CreateClanPageProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -24,7 +26,7 @@ const CreateClanPage = ({ user, onLogout }: CreateClanPageProps) => {
 
   const handleCreateClan = async (values: ClanFormValues, iconFile: File | null, bannerFile: File | null) => {
     if (!user) {
-      toast({ title: "Erro", description: "Você precisa estar logado para criar um clã.", variant: "destructive" });
+      toast({ title: t('create_clan_page.toast.error'), description: t('create_clan_page.toast.login_required'), variant: "destructive" });
       return;
     }
 
@@ -84,8 +86,8 @@ const CreateClanPage = ({ user, onLogout }: CreateClanPageProps) => {
 
       // 4. On success, show toast and navigate
       toast({
-        title: "Sucesso!",
-        description: "Clã criado com sucesso.",
+        title: t('create_clan_page.toast.success'),
+        description: t('create_clan_page.toast.created'),
       });
 
       // Invalidate queries to refetch user profile data (to show they are in a clan)
@@ -95,7 +97,7 @@ const CreateClanPage = ({ user, onLogout }: CreateClanPageProps) => {
 
     } catch (error: any) {
       toast({
-        title: "Erro",
+        title: t('create_clan_page.toast.error'),
         description: error.message || "Ocorreu um erro desconhecido.",
         variant: "destructive",
       });
@@ -110,9 +112,9 @@ const CreateClanPage = ({ user, onLogout }: CreateClanPageProps) => {
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold">Criar seu Clã</h1>
+            <h1 className="text-3xl font-bold">{t('create_clan_page.title')}</h1>
             <p className="text-muted-foreground">
-              Defina a identidade do seu clã e comece a recrutar membros.
+              {t('create_clan_page.subtitle')}
             </p>
           </div>
           <ClanForm
@@ -123,7 +125,7 @@ const CreateClanPage = ({ user, onLogout }: CreateClanPageProps) => {
           <div className="mt-8 flex justify-end">
             <Button type="submit" form="create-clan-form" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirmar e Criar Clã
+              {t('create_clan_page.confirm_btn')}
             </Button>
           </div>
         </div>

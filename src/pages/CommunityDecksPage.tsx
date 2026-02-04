@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "use-debounce";
+import { useTranslation } from "react-i18next";
 
 interface Deck {
   id: number;
@@ -32,6 +33,7 @@ interface Deck {
 }
 
 const CommunityDecksPage = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm] = useDebounce(searchTerm, 500); // Debounce for 500ms
 
@@ -111,14 +113,14 @@ const CommunityDecksPage = () => {
       <div className="container mx-auto max-w-7xl px-4 py-6">
         <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
           <Layers className="h-7 w-7 text-primary" />
-          Todos os Decks da Comunidade
+          {t('community_decks.title')}
         </h1>
 
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Pesquisar builds.."
+            placeholder={t('community_decks.search_placeholder')}
             className="pl-10 pr-4 py-2 w-full rounded-md border border-input bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -167,7 +169,7 @@ const CommunityDecksPage = () => {
                         <UserDisplay profile={deck.profiles} clan={deck.profiles.clan_members?.clans?.tag ? { tag: deck.profiles.clan_members.clans.tag } : null} />
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">por Usuário Desconhecido</span>
+                      <span className="text-xs text-muted-foreground">{t('featured_decks.by_unknown')}</span>
                     )}
                   </CardContent>
                 </Card>
@@ -176,7 +178,7 @@ const CommunityDecksPage = () => {
           </div>
         ) : (
           <div className="text-center text-muted-foreground py-12 border-2 border-dashed border-border rounded-lg bg-[hsl(0_0%_12%)]">
-            <p>Nenhum deck público disponível.</p>
+            <p>{t('community_decks.no_decks')}</p>
           </div>
         )}
       </div>
