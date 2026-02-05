@@ -48,6 +48,7 @@ import { ChatDock } from "./components/chat/ChatDock";
 import { GlobalChatListener } from "./components/chat/GlobalChatListener";
 import { LevelUpListener } from "./components/LevelUpListener";
 import ScrollToTop from "./components/ScrollToTop";
+import { UpdateManager } from "./components/UpdateManager";
 import { DiscordUsernameModal } from "./components/DiscordUsernameModal";
 import { AbsenceRuleNotice } from "./components/AbsenceRuleNotice";
 import RivalryPage from "./pages/RivalryPage";
@@ -102,6 +103,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <UpdateManager />
           <ScrollToTop />
                     <PresenceProvider user={user}>
                       <ChatProvider>
