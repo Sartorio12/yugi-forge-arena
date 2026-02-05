@@ -59,6 +59,7 @@ const tournamentFormSchema = z.object({
   ),
   tournament_model: z.enum(["Diário", "Semanal"], { required_error: "O modelo de torneio é obrigatório." }).default("Diário"),
   exclusive_organizer_only: z.boolean().default(false),
+  is_private: z.boolean().default(false),
 });
 
 interface TournamentFormProps {
@@ -95,6 +96,7 @@ export const TournamentForm = ({
       num_decks_allowed: initialData?.num_decks_allowed || 1,
       tournament_model: (initialData as any)?.tournament_model || "Diário",
       exclusive_organizer_only: initialData?.exclusive_organizer_only ?? false,
+      is_private: (initialData as any)?.is_private ?? false,
     },
   });
 
@@ -174,6 +176,7 @@ export const TournamentForm = ({
       num_decks_allowed: values.num_decks_allowed,
       tournament_model: values.tournament_model,
       banishment_count: values.banishment_count,
+      is_private: values.is_private,
     } as any;
     onSubmit(dataToSubmit);
   };
@@ -203,6 +206,26 @@ export const TournamentForm = ({
                 <FormLabel>Modo Exclusivo do Organizador</FormLabel>
                 <FormDescription>
                   Se ativado, apenas o organizador deste torneio (você) poderá ver os decks. Outros admins não terão acesso.
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="is_private"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel>Torneio Privado (Apenas Convidados)</FormLabel>
+                <FormDescription>
+                  Se ativado, jogadores não poderão se inscrever sozinhos. Você deverá adicioná-los manualmente no painel de gerenciamento.
                 </FormDescription>
               </div>
               <FormControl>

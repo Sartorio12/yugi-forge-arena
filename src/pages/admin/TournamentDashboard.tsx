@@ -69,7 +69,7 @@ const TournamentDashboard = () => {
       queryFn: async () => {
         const { data, error } = await supabase
           .from("tournaments")
-          .select("*, organizer_id, exclusive_organizer_only") // Added new columns
+          .select("*, organizer_id, exclusive_organizer_only, is_private") // Added new columns
           .is("deleted_at", null)
           .order("event_date", { ascending: false });
         if (error) throw error;

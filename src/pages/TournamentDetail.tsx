@@ -366,13 +366,22 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                         {t('tournament_detail.login_to_enroll')}
                     </Button>
                 )}
-                {user && !isRegistered && tournament.status === 'Aberto' && (
+                {user && !isRegistered && (tournament as any)?.is_private && (
+                    <div className="w-full p-6 border border-dashed rounded-lg bg-muted/20 flex flex-col items-center gap-2 text-center">
+                        <Ban className="h-8 w-8 text-muted-foreground" />
+                        <div>
+                            <p className="font-bold text-lg">Torneio Exclusivo</p>
+                            <p className="text-muted-foreground text-sm">Este torneio é exclusivo para convidados. Caso você tenha sido selecionado, o organizador irá te inserir manualmente.</p>
+                        </div>
+                    </div>
+                )}
+                {user && !isRegistered && !(tournament as any)?.is_private && tournament.status === 'Aberto' && (
                     <Button onClick={handleRegister} disabled={registrationMutation.isPending} className="w-full sm:w-auto flex-grow bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg py-6">
                         {registrationMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                         {t('tournament_detail.enroll_btn')}
                     </Button>
                 )}
-                {user && !isRegistered && tournament.status !== 'Aberto' && (
+                {user && !isRegistered && !(tournament as any)?.is_private && tournament.status !== 'Aberto' && (
                     <Button variant="outline" disabled className="w-full sm:w-auto flex-grow text-lg py-6">
                         {t('tournament_detail.enrollments_closed')}
                     </Button>

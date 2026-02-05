@@ -185,7 +185,7 @@ export const ActivityTimeline = () => {
 
         const combinedActivities = allActivities
           .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-          .slice(0, 10);
+          .slice(0, 20);
 
         setActivities(combinedActivities);
       } catch (error) {
@@ -216,7 +216,7 @@ export const ActivityTimeline = () => {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <ScrollArea className="h-64">
+          <ScrollArea className="h-[450px]">
             <ul className="space-y-4">
               {activities.map((activity) => (
                 <li key={activity.id} className="flex items-start space-x-3">

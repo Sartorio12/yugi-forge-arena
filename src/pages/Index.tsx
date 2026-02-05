@@ -51,6 +51,9 @@ const Index = ({ user, onLogout }: IndexProps) => {
 
             {/* C. Decks da Comunidade */}
             <FeaturedDecks />
+
+            {/* D. Atividade Recente - Agora abaixo dos decks e à esquerda do Discord */}
+            <ActivityTimeline />
           </div>
 
           {/* SIDEBAR (Right - 30% approx) */}
@@ -69,10 +72,6 @@ const Index = ({ user, onLogout }: IndexProps) => {
             <DiscordWidget />
           </div>
           
-        </div>
-        {/* D. Atividade Recente */}
-        <div className="mt-8">
-          <ActivityTimeline />
         </div>
       </div>
     </div>

@@ -1,11 +1,12 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch, Copy } from "lucide-react";
+import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch, Copy, UserPlus, Search } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import UserDisplay from "@/components/UserDisplay";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,8 +66,6 @@ interface Participant {
   } | null;
 }
 
-
-
 import { MatchReporter } from "@/components/admin/MatchReporter";
 
 const TournamentManagementPage = () => {
@@ -74,13 +73,16 @@ const TournamentManagementPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("title, organizer_id, exclusive_organizer_only, tournament_model")
+        .select("title, organizer_id, exclusive_organizer_only, tournament_model, is_private")
         .eq("id", Number(id))
         .single();
       if (error) throw error;
@@ -153,10 +155,68 @@ const TournamentManagementPage = () => {
       if (error) {
         throw error;
       }
-      console.log('Participants Data:', data?.[0]?.profiles);
       return data as Participant[];
     },
     enabled: !!id,
+  });
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase.rpc('search_profiles_for_admin', {
+        p_search_term: searchTerm
+      });
+      if (error) throw error;
+      setSearchResults(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Erro na busca",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const addParticipantMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase.rpc('admin_add_participant', {
+        p_tournament_id: Number(id),
+        p_user_id: userId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Sucesso", description: "Jogador adicionado com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+      setSearchTerm("");
+      setSearchResults([]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao adicionar",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const togglePrivateMutation = useMutation({
+    mutationFn: async (isPrivate: boolean) => {
+      const { error } = await supabase
+        .from('tournaments')
+        .update({ is_private: isPrivate })
+        .eq('id', Number(id));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Sucesso", description: "Privacidade do torneio atualizada." });
+      queryClient.invalidateQueries({ queryKey: ["tournament", id] });
+    },
   });
 
   const { data: allDecks, isLoading: isLoadingDecks } = useQuery({
@@ -297,51 +357,99 @@ const TournamentManagementPage = () => {
         {id && <MatchReporter tournamentId={id} />}
 
         <Card className="bg-gradient-card border-border">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Crown className="h-8 w-8 text-primary" />
-              <div>
-                <CardTitle className="text-3xl">Gerenciar Torneio</CardTitle>
-                <CardDescription>{tournament?.title || "Carregando..."}</CardDescription>
+          <CardHeader className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <Crown className="h-8 w-8 text-primary" />
+                <div>
+                  <CardTitle className="text-3xl">Gerenciar Torneio</CardTitle>
+                  <CardDescription>{tournament?.title || "Carregando..."}</CardDescription>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button onClick={handleCopyParticipants} variant="outline" className="gap-2">
+                   <Copy className="h-4 w-4" />
+                   Copiar Lista
+                </Button>
+                
+                {/* Remove Unchecked Button (Only for Daily Tournaments) */}
+                {(tournament as any)?.tournament_model === 'Diário' && (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" className="gap-2">
+                                <UserX className="h-4 w-4" />
+                                Remover Ausentes
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar Remoção em Massa</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Isso removerá todos os jogadores que <strong>NÃO</strong> realizaram o Check-in.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => removeUncheckedMutation.mutate()} className="bg-destructive hover:bg-destructive/90">
+                                    Confirmar Remoção
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
               </div>
             </div>
-            <Button onClick={handleCopyParticipants} variant="outline" className="gap-2">
-               <Copy className="h-4 w-4" />
-               Copiar Lista
-            </Button>
-            
-            {/* Remove Unchecked Button (Only for Daily Tournaments) */}
-            {(tournament as any)?.tournament_model === 'Diário' && (
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive" className="gap-2">
-                            <UserX className="h-4 w-4" />
-                            Remover Ausentes (No Check-in)
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Confirmar Remoção em Massa</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Isso removerá todos os jogadores que <strong>NÃO</strong> realizaram o Check-in.
-                                <br/>
-                                Total de inscritos: {participants?.length || 0}
-                                <br/>
-                                Ausentes: {participants?.filter(p => !p.checked_in).length || 0}
-                                <br/><br/>
-                                Essa ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => removeUncheckedMutation.mutate()} className="bg-destructive hover:bg-destructive/90">
-                                {removeUncheckedMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                Confirmar Remoção
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            )}
+
+            {/* Manual Participant Addition */}
+            <div className="p-4 bg-muted/10 border rounded-lg space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <UserPlus className="h-4 w-4" /> Inserção Manual
+              </h3>
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <div className="relative flex-grow">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Buscar jogador por nick ou clã..." 
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" disabled={isSearching}>
+                  {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
+                </Button>
+              </form>
+
+              {searchResults.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                  {searchResults.map((result) => (
+                    <div key={result.profile_id} className="flex items-center justify-between p-3 bg-background border rounded-lg">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <FramedAvatar 
+                          username={result.username}
+                          avatarUrl={result.avatar_url}
+                          frameUrl={result.equipped_frame_url}
+                          sizeClassName="h-8 w-8"
+                        />
+                        <div className="flex flex-col truncate">
+                          <span className="font-medium text-sm truncate">{result.username}</span>
+                          {result.clan_tag && <span className="text-xs text-primary font-bold">[{result.clan_tag}]</span>}
+                        </div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                        onClick={() => addParticipantMutation.mutate(result.profile_id)}
+                        disabled={addParticipantMutation.isPending}
+                      >
+                        <PlusCircle className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
