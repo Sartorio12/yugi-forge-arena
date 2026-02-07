@@ -130,11 +130,15 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
         if (banishmentSelectedCards.length !== requiredBans) {
           throw new Error(`Você deve selecionar exatamente ${requiredBans} cartas para banir.`);
         }
+        
+        // No modo banimento, o deck é obrigatório no ato da inscrição por causa do fluxo unificado
+        if (tournament.is_decklist_required && !selectedDeckId) {
+             throw new Error("Você deve selecionar um deck para se inscrever neste modo.");
+        }
       }
 
-      if (tournament.is_decklist_required && !selectedDeckId) {
-           throw new Error("Você deve selecionar um deck para se inscrever.");
-      }
+      // Para outros modos (Liga/Padrão), não bloqueamos a inscrição sem deck, 
+      // pois o usuário pode enviar depois na aba de gestão.
 
       const { error } = await supabase.rpc('register_to_tournament', {
           p_tournament_id: Number(id),
