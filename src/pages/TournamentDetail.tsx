@@ -130,45 +130,31 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
         if (banishmentSelectedCards.length !== requiredBans) {
           throw new Error(`Você deve selecionar exatamente ${requiredBans} cartas para banir.`);
         }
-        
-        if (tournament.is_decklist_required && !selectedDeckId) {
-             throw new Error("Você deve selecionar um deck para se inscrever.");
-        }
+      }
 
-        const { error } = await supabase.rpc('register_with_bans', {
-            p_tournament_id: Number(id),
-            p_user_id: user.id,
-            p_card_ids: banishmentSelectedCards
-        });
-        
-        if (error) throw error;
-        
-        // Submit the selected deck if required
-        if (tournament.is_decklist_required && selectedDeckId) {
-            const { error: deckError } = await supabase.rpc('submit_deck_to_tournament', {
-                p_tournament_id: Number(id),
-                p_deck_id: parseInt(selectedDeckId, 10),
-            });
+      if (tournament.is_decklist_required && !selectedDeckId) {
+           throw new Error("Você deve selecionar um deck para se inscrever.");
+      }
 
-            if (deckError) {
-                 throw new Error(`Inscrição realizada, mas erro ao enviar deck: ${deckError.message}`);
-            }
-        }
+      const { error } = await supabase.rpc('register_to_tournament', {
+          p_tournament_id: Number(id),
+          p_user_id: user.id,
+          p_team_selection: selectedTeam || null,
+          p_card_ids: banishmentSelectedCards
+      });
+      
+      if (error) throw error;
+      
+      // Submit the selected deck if required
+      if (tournament.is_decklist_required && selectedDeckId) {
+          const { error: deckError } = await supabase.rpc('submit_deck_to_tournament', {
+              p_tournament_id: Number(id),
+              p_deck_id: parseInt(selectedDeckId, 10),
+          });
 
-      } else {
-        // Standard/Liga Registration
-        const { error } = await supabase.from("tournament_participants").insert({
-            user_id: user.id,
-            tournament_id: Number(id),
-            team_selection: tournamentType === 'liga' ? selectedTeam : null
-        });
-
-        if (error) {
-            if (error.code === '23505') {
-            throw new Error("Você já está inscrito neste torneio.");
-            }
-            throw error;
-        }
+          if (deckError) {
+               throw new Error(`Inscrição realizada, mas erro ao enviar deck: ${deckError.message}`);
+          }
       }
     },
     onSuccess: () => {
@@ -376,10 +362,105 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                     </div>
                 )}
                 {user && !isRegistered && !(tournament as any)?.is_private && tournament.status === 'Aberto' && (
-                    <Button onClick={handleRegister} disabled={registrationMutation.isPending} className="w-full sm:w-auto flex-grow bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg py-6">
-                        {registrationMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-                        {t('tournament_detail.enroll_btn')}
-                    </Button>
+                    <div className="w-full space-y-6">
+                        {/* Liga Team Selection (Pre-registration) */}
+                        {tournamentType === 'liga' && (
+                            <div className="p-6 border rounded-lg bg-muted/20 space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <img src="/genesys_1.png" className="h-6 w-6 object-contain" alt="League" />
+                                    <h3 className="text-xl font-bold">{t('tournament_detail.team_selection_title')}</h3>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">{t('tournament_detail.choose_team_label')}</label>
+                                    <Select value={selectedTeam} onValueChange={setSelectedTeam} disabled={registrationMutation.isPending}>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder={t('tournament_detail.select_team_placeholder')} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableTeams.map(team => (
+                                                <SelectItem key={team} value={team}>
+                                                    <div className="flex items-center gap-2">
+                                                        <img src={getTeamLogoUrl(team)} alt={team} className="w-6 h-6 object-contain" />
+                                                        <span>{team}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground italic">
+                                        {t('tournament_detail.team_selection_note')}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Banimento Selection (Pre-registration) */}
+                        {tournamentType === 'banimento' && (
+                            <div className="p-6 border rounded-lg bg-muted/20 space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <Ban className="h-6 w-6 text-destructive" />
+                                    <h3 className="text-xl font-bold">{t('tournament_detail.banishment_title')}</h3>
+                                </div>
+                                <p className="text-muted-foreground">
+                                    <span dangerouslySetInnerHTML={{ __html: t('tournament_detail.banishment_desc', { count: (tournament as any).banishment_count }) }} />
+                                </p>
+                                
+                                <Accordion type="single" collapsible className="w-full border rounded-lg bg-card px-4">
+                                    <AccordionItem value="current-bans" className="border-b-0">
+                                        <AccordionTrigger className="hover:no-underline">
+                                            <span className="font-semibold text-destructive">{t('tournament_detail.view_banned_cards', { count: existingBans?.length || 0 })}</span>
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <CustomBanlist tournamentId={tournament.id} />
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
+
+                                <BanlistSelector 
+                                    maxSelection={(tournament as any).banishment_count || 0}
+                                    selectedCards={banishmentSelectedCards}
+                                    onSelectionChange={setBanishmentSelectedCards}
+                                    unavailableCards={existingBans || []}
+                                />
+
+                                {tournament.is_decklist_required && (
+                                    <div className="pt-4 border-t border-border">
+                                        <h3 className="text-lg font-bold mb-2">{t('tournament_detail.select_deck_title')}</h3>
+                                        <Select
+                                            value={selectedDeckId}
+                                            onValueChange={setSelectedDeckId}
+                                            disabled={registrationMutation.isPending}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder={t('tournament_detail.select_deck_placeholder')} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {userDecks && userDecks.length > 0 ? (
+                                                    userDecks.map((deck: any) => (
+                                                        <SelectItem key={deck.id} value={deck.id.toString()}>
+                                                            {deck.deck_name}
+                                                        </SelectItem>
+                                                    ))
+                                                ) : (
+                                                    <div className="p-4 text-sm text-muted-foreground">
+                                                        {t('tournament_detail.no_saved_decks')}
+                                                    </div>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            {t('tournament_detail.deck_auto_submit_note')}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <Button onClick={handleRegister} disabled={registrationMutation.isPending} className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg py-6">
+                            {registrationMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                            {t('tournament_detail.enroll_btn')}
+                        </Button>
+                    </div>
                 )}
                 {user && !isRegistered && !(tournament as any)?.is_private && tournament.status !== 'Aberto' && (
                     <Button variant="outline" disabled className="w-full sm:w-auto flex-grow text-lg py-6">
@@ -442,38 +523,15 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                             <div className="mb-6">
                                 <h3 className="text-xl font-bold mb-4">{t('tournament_detail.team_selection_title')}</h3>
                                 <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/20">
-                                    {participants?.find(p => p.user_id === user?.id)?.team_selection ? (
-                                        <>
-                                            <img 
-                                            src={getTeamLogoUrl(participants.find(p => p.user_id === user?.id)?.team_selection as string)} 
-                                            alt="Team Logo" 
-                                            className="w-16 h-16 object-contain"
-                                            />
-                                            <div>
-                                            <p className="font-semibold text-lg">{t('tournament_detail.you_are_defending')}</p>
-                                            <p className="text-primary text-xl font-bold">{participants.find(p => p.user_id === user?.id)?.team_selection}</p>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">{t('tournament_detail.choose_team_label')}</label>
-                                            <Select value={selectedTeam} onValueChange={setSelectedTeam} disabled={registrationMutation.isPending}>
-                                                <SelectTrigger className="w-full md:w-[300px]">
-                                                <SelectValue placeholder={t('tournament_detail.select_team_placeholder')} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                {availableTeams.map(team => (
-                                                    <SelectItem key={team} value={team}>
-                                                    <div className="flex items-center gap-2">
-                                                        <img src={getTeamLogoUrl(team)} alt={team} className="w-6 h-6 object-contain" />
-                                                        <span>{team}</span>
-                                                    </div>
-                                                    </SelectItem>
-                                                ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    )}
+                                    <img 
+                                    src={getTeamLogoUrl(participants?.find(p => p.user_id === user?.id)?.team_selection as string)} 
+                                    alt="Team Logo" 
+                                    className="w-16 h-16 object-contain"
+                                    />
+                                    <div>
+                                    <p className="font-semibold text-lg">{t('tournament_detail.you_are_defending')}</p>
+                                    <p className="text-primary text-xl font-bold">{participants?.find(p => p.user_id === user?.id)?.team_selection}</p>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -485,78 +543,6 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                             </div>
                         )}
                     </TabsContent>
-                )}
-
-                {/* Tab: Registration Helper (Unregistered) */}
-                {!isRegistered && tournamentType === 'banimento' && (
-                     /* If not registered, show the ban selection UI outside tabs as part of registration flow, or inside a specialized tab?
-                        Currently, the code had it inline. I'll keep it inline inside the "Análise" tab? No, that's confusing.
-                        I'll leave the pre-registration UI (Team Select, Ban Select) visible ONLY if they are NOT registered,
-                        ABOVE the tabs, or as a default view.
-                        
-                        Actually, the previous code had the Ban UI visible for unregistered users to select bans.
-                        I will put that BACK under the main Card, before the Tabs.
-                     */
-                     <div className="mt-8 mb-8 p-4 border rounded-lg bg-muted/10">
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Ban className="h-6 w-6 text-destructive" />
-                                <h3 className="text-xl font-bold">{t('tournament_detail.banishment_title')}</h3>
-                            </div>
-                            <p className="text-muted-foreground mb-4">
-                                <span dangerouslySetInnerHTML={{ __html: t('tournament_detail.banishment_desc', { count: (tournament as any).banishment_count }) }} />
-                            </p>
-                            
-                            <Accordion type="single" collapsible className="w-full border rounded-lg bg-card px-4">
-                                <AccordionItem value="current-bans" className="border-b-0">
-                                <AccordionTrigger className="hover:no-underline">
-                                    <span className="font-semibold text-destructive">{t('tournament_detail.view_banned_cards', { count: existingBans?.length || 0 })}</span>
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <CustomBanlist tournamentId={tournament.id} />
-                                </AccordionContent>
-                                </AccordionItem>
-                            </Accordion>
-
-                            <BanlistSelector 
-                                maxSelection={(tournament as any).banishment_count || 0}
-                                selectedCards={banishmentSelectedCards}
-                                onSelectionChange={setBanishmentSelectedCards}
-                                unavailableCards={existingBans || []}
-                            />
-
-                            {tournament.is_decklist_required && (
-                            <div className="pt-4 border-t border-border">
-                                <h3 className="text-lg font-bold mb-2">{t('tournament_detail.select_deck_title')}</h3>
-                                <Select
-                                    value={selectedDeckId}
-                                    onValueChange={setSelectedDeckId}
-                                    disabled={registrationMutation.isPending}
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder={t('tournament_detail.select_deck_placeholder')} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {userDecks && userDecks.length > 0 ? (
-                                            userDecks.map((deck: any) => (
-                                                <SelectItem key={deck.id} value={deck.id.toString()}>
-                                                    {deck.deck_name}
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <div className="p-4 text-sm text-muted-foreground">
-                                                {t('tournament_detail.no_saved_decks')}
-                                            </div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                    {t('tournament_detail.deck_auto_submit_note')}
-                                </p>
-                            </div>
-                            )}
-                        </div>
-                     </div>
                 )}
                 
                 {/* Tab: Analysis (Oracle) */}
