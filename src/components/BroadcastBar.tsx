@@ -75,9 +75,10 @@ export const BroadcastBar = () => {
       const origin = window.location.origin;
       const domain = window.location.hostname;
       
+      // Use a more robust embed URL for YouTube
       const src = isChannelId
-        ? `https://www.youtube.com/embed/live_stream?channel=${channel_id}&autoplay=1&origin=${origin}`
-        : `https://www.youtube.com/embed/${channel_id}?autoplay=1&origin=${origin}`;
+        ? `https://www.youtube.com/embed/live_stream?channel=${channel_id}&autoplay=1&mute=1&origin=${origin}&enablejsapi=1`
+        : `https://www.youtube.com/embed/${channel_id}?autoplay=1&mute=1&origin=${origin}&enablejsapi=1`;
 
       return (
         <div className="flex w-full flex-col lg:flex-row lg:h-full">
