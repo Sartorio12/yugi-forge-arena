@@ -70,11 +70,10 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
 
   const sortedRoundNumbers = rounds ? Object.keys(rounds).map(Number).sort((a, b) => a - b) : [];
 
-  // Calculate dynamic height based on the number of matches in Round 1
   const matchesInRound1 = sortedRoundNumbers.length > 0 ? rounds[sortedRoundNumbers[0]].length : 0;
-  const containerHeight = Math.max(600, matchesInRound1 * 130); // 130px per match in R1
+  const containerHeight = Math.max(600, matchesInRound1 * 130);
 
-  const PlayerSlot = ({ player, isWinner, isPlaceholder }: { player: any, isWinner: boolean, isPlaceholder?: boolean }) => (
+  const PlayerSlot = ({ player, isWinner, isPlaceholder, hasBye }: { player: any, isWinner: boolean, isPlaceholder?: boolean, hasBye?: boolean }) => (
     <div className={`flex items-center gap-2 px-3 py-2 transition-all h-[40px] ${isWinner ? 'bg-yellow-500/20' : 'bg-black/40'} ${isPlaceholder ? 'opacity-40' : ''}`}>
       <FramedAvatar 
         userId={player?.id}
@@ -84,9 +83,14 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
         sizeClassName="h-6 w-6 shrink-0"
       />
       <div className="flex flex-col min-w-0 flex-1">
-        <span className={`text-[11px] font-bold truncate ${isWinner ? 'text-yellow-500' : 'text-foreground'}`}>
-          {player?.username || (isPlaceholder ? "Aguardando..." : "BYE")}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`text-[11px] font-bold truncate ${isWinner ? 'text-yellow-500' : 'text-foreground'}`}>
+            {player?.username || (isPlaceholder ? "Aguardando..." : "BYE")}
+          </span>
+          {hasBye && (
+            <span className="text-[7px] bg-primary/20 text-primary px-1 rounded font-black border border-primary/30">GANHA BYE</span>
+          )}
+        </div>
         {player?.clan_members?.[0]?.clans?.tag && (
           <span className="text-[8px] text-muted-foreground leading-none">[{player.clan_members[0].clans.tag}]</span>
         )}
@@ -121,64 +125,78 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
           </div>
         ) : rounds && sortedRoundNumbers.length > 0 ? (
           <div className="flex items-center gap-0 pb-20 min-w-max">
-            {sortedRoundNumbers.map((roundNum, rIndex) => (
-              <div key={roundNum} className="flex flex-col w-72">
-                {/* Header da Rodada */}
-                <div className="px-4 mb-8">
-                  <div className="bg-primary/10 border-l-4 border-primary px-3 py-2 rounded-r-md">
-                    <span className="text-xs font-black text-primary uppercase tracking-widest">{rounds[roundNum][0].round_name}</span>
+            {sortedRoundNumbers.map((roundNum, rIndex) => {
+              const roundMatches = rounds[roundNum];
+              const byes = roundMatches.filter(m => 
+                (m.player1_id && !m.player2_id) || (!m.player1_id && m.player2_id)
+              );
+
+              return (
+                <div key={roundNum} className="flex flex-col w-72">
+                  <div className="px-4 mb-4">
+                    <div className="bg-primary/10 border-l-4 border-primary px-3 py-2 rounded-r-md">
+                      <span className="text-xs font-black text-primary uppercase tracking-widest">{roundMatches[0].round_name}</span>
+                    </div>
+                  </div>
+
+                  <div className="px-4 mb-4 h-12 overflow-hidden">
+                    {byes.length > 0 && (
+                      <div className="text-[9px] text-muted-foreground bg-muted/20 p-1.5 rounded border border-white/5">
+                        <span className="font-bold text-primary block mb-0.5 uppercase">Avançam via BYE:</span>
+                        <p className="truncate italic">
+                          {byes.map(m => m.player1?.username || m.player2?.username).join(", ")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col justify-around relative" style={{ height: `${containerHeight}px` }}>
+                    {roundMatches.map((match, mIndex) => {
+                      const isP1Bye = match.player1_id && !match.player2_id;
+                      const isP2Bye = !match.player1_id && match.player2_id;
+
+                      return (
+                        <div key={match.id} className="relative px-4 flex flex-col justify-center h-full">
+                          <Card className={`group relative z-10 border-0 bg-zinc-900 shadow-2xl overflow-hidden min-w-[220px] transition-transform hover:scale-105 duration-300 ${match.winner_id ? 'ring-1 ring-yellow-500/50' : 'ring-1 ring-white/10'}`}>
+                            <div className="flex flex-col divide-y divide-white/5">
+                              <PlayerSlot 
+                                player={match.player1} 
+                                isWinner={match.winner_id === match.player1_id && !!match.player1_id}
+                                isPlaceholder={!match.player1_id}
+                                hasBye={isP1Bye}
+                              />
+                              <PlayerSlot 
+                                player={match.player2} 
+                                isWinner={match.winner_id === match.player2_id && !!match.player2_id}
+                                isPlaceholder={!match.player2_id}
+                                hasBye={isP2Bye}
+                              />
+                            </div>
+                            <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary/20 group-hover:bg-primary transition-colors" />
+                          </Card>
+
+                          {rIndex < sortedRoundNumbers.length - 1 && (
+                            <>
+                              <div className="absolute -right-4 top-1/2 w-4 h-[2px] bg-primary/40"></div>
+                              <div 
+                                className="absolute -right-4 w-[2px] bg-primary/40"
+                                style={{
+                                  height: '100%',
+                                  top: mIndex % 2 === 0 ? '50%' : '-50%',
+                                }}
+                              ></div>
+                              {mIndex % 2 === 0 && (
+                                <div className="absolute -right-8 top-full w-4 h-[2px] bg-primary/40"></div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                {/* Partidas com espaçamento dinâmico */}
-                <div className="flex flex-col justify-around relative" style={{ height: `${containerHeight}px` }}>
-                  {rounds[roundNum].map((match, mIndex) => (
-                    <div key={match.id} className="relative px-4 flex flex-col justify-center h-full">
-                      <Card className={`group relative z-10 border-0 bg-zinc-900 shadow-2xl overflow-hidden min-w-[220px] transition-transform hover:scale-105 duration-300 ${match.winner_id ? 'ring-1 ring-yellow-500/50' : 'ring-1 ring-white/10'}`}>
-                        <div className="flex flex-col divide-y divide-white/5">
-                          <PlayerSlot 
-                            player={match.player1} 
-                            isWinner={match.winner_id === match.player1_id && !!match.player1_id}
-                            isPlaceholder={!match.player1_id}
-                          />
-                          <PlayerSlot 
-                            player={match.player2} 
-                            isWinner={match.winner_id === match.player2_id && !!match.player2_id}
-                            isPlaceholder={!match.player2_id}
-                          />
-                        </div>
-                        
-                        {/* Match Number Badge */}
-                        <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary/20 group-hover:bg-primary transition-colors" />
-                      </Card>
-
-                      {/* Conectores Visuais (Lógica de Braços) */}
-                      {rIndex < sortedRoundNumbers.length - 1 && (
-                        <>
-                          {/* Linha horizontal saindo do card */}
-                          <div className="absolute -right-4 top-1/2 w-4 h-[2px] bg-primary/40"></div>
-                          
-                          {/* Braço vertical conectando ao par */}
-                          {/* O braço vertical precisa cobrir a distância até o centro do oponente */}
-                          <div 
-                            className="absolute -right-4 w-[2px] bg-primary/40"
-                            style={{
-                              height: '100%',
-                              top: mIndex % 2 === 0 ? '50%' : '-50%',
-                            }}
-                          ></div>
-
-                          {/* Linha horizontal entrando na próxima rodada (apenas no ponto de encontro) */}
-                          {mIndex % 2 === 0 && (
-                             <div className="absolute -right-8 top-full w-4 h-[2px] bg-primary/40"></div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-4 bg-muted/5 border-2 border-dashed rounded-xl border-white/10">

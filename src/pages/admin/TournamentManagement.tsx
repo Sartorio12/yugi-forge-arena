@@ -232,6 +232,7 @@ const TournamentManagementPage = () => {
   });
 
   const generateBracketMutation = useMutation({
+    queryKey: ["tournamentMatches", id],
     mutationFn: async () => {
       const { error } = await supabase.rpc('generate_single_elimination_bracket', {
         p_tournament_id: Number(id)
@@ -244,6 +245,22 @@ const TournamentManagementPage = () => {
     },
     onError: (error: any) => {
       toast({ title: "Erro ao gerar chaveamento", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const resetBracketMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('reset_tournament_bracket', {
+        p_tournament_id: Number(id)
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Chaveamento Excluído", description: "Todas as partidas foram removidas." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentMatches", id] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro ao resetar", description: error.message, variant: "destructive" });
     }
   });
 
@@ -691,25 +708,49 @@ const TournamentManagementPage = () => {
                         </ul>
                       </div>
 
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button className="h-14 gap-2 w-full text-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" disabled={generateBracketMutation.isPending || !participants || participants.length < 2}>
-                            <Trophy className="h-6 w-6" /> Gerar Árvore de Torneio
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Criar Novo Chaveamento?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta ação irá apagar todos os resultados atuais e criar uma nova árvore de partidas. Tem certeza?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => generateBracketMutation.mutate()} className="bg-primary">Sim, Gerar Chave</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <div className="flex flex-col md:flex-row gap-4">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button className="h-14 gap-2 flex-1 text-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" disabled={generateBracketMutation.isPending || !participants || participants.length < 2}>
+                              <Trophy className="h-6 w-6" /> Gerar Árvore de Torneio
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Criar Novo Chaveamento?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação irá apagar todos os resultados atuais e criar uma nova árvore de partidas. Tem certeza?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => generateBracketMutation.mutate()} className="bg-primary">Sim, Gerar Chave</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                        {matches && matches.length > 0 && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" className="h-14 gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-white" disabled={resetBracketMutation.isPending}>
+                                <UserX className="h-6 w-6" /> Excluir Chaveamento
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Chaveamento Completo?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Isso removerá permanentemente todas as partidas e resultados da árvore. Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => resetBracketMutation.mutate()} className="bg-destructive">Sim, Excluir Tudo</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 )}
