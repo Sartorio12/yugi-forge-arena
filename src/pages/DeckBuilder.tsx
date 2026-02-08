@@ -647,6 +647,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const loadDeckForEditing = useCallback(async (deckId: number) => {
     setIsLoadingDeck(true);
     try {
+      const isSuperAdmin = user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
+
       // Check for tournament lock first
       const { data: tournamentDecks, error: tournamentError } = await supabase
         .from('tournament_decks')
@@ -658,16 +660,17 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
       const now = new Date();
       for (const entry of tournamentDecks) {
         if (entry.tournaments && new Date(entry.tournaments.event_date) <= now) {
-          setIsDeckLocked(true);
-          // Removed toast notification as requested
-          break;
+          if (!isSuperAdmin) {
+            setIsDeckLocked(true);
+            break;
+          }
         }
       }
 
       // Fetch from DB
       const { data: deckData, error: deckError } = await supabase.from('decks').select('*, profiles(*)').eq('id', deckId).single();
       if (deckError || !deckData) throw new Error("Deck para edição não encontrado.");
-      if (deckData.user_id !== user?.id) throw new Error("Você não tem permissão para editar este deck.");
+      if (deckData.user_id !== user?.id && !isSuperAdmin) throw new Error("Você não tem permissão para editar este deck.");
 
       let loadedFromDraft = false;
       const draftString = localStorage.getItem('deck_builder_draft');
