@@ -16,6 +16,7 @@ interface Match {
   player1_id: string | null;
   player2_id: string | null;
   winner_id: string | null;
+  is_wo: boolean;
   player1?: { id: string; username: string; avatar_url: string | null; equipped_frame_url: string | null; clan_members?: { clans: { tag: string } }[] };
   player2?: { id: string; username: string; avatar_url: string | null; equipped_frame_url: string | null; clan_members?: { clans: { tag: string } }[] };
 }
@@ -49,6 +50,7 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
           player1_id,
           player2_id,
           winner_id,
+          is_wo,
           player1:player1_id(id, username, avatar_url, equipped_frame_url, clan_members(clans(tag))),
           player2:player2_id(username, avatar_url, equipped_frame_url, clan_members(clans(tag)))
         `)
@@ -73,7 +75,7 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
   const matchesInRound1 = sortedRoundNumbers.length > 0 ? rounds[sortedRoundNumbers[0]].length : 0;
   const containerHeight = Math.max(600, matchesInRound1 * 130);
 
-  const PlayerSlot = ({ player, isWinner, isPlaceholder, hasBye }: { player: any, isWinner: boolean, isPlaceholder?: boolean, hasBye?: boolean }) => (
+  const PlayerSlot = ({ player, isWinner, isPlaceholder, hasBye, isWO }: { player: any, isWinner: boolean, isPlaceholder?: boolean, hasBye?: boolean, isWO?: boolean }) => (
     <div className={`flex items-center gap-2 px-3 py-2 transition-all h-[40px] ${isWinner ? 'bg-yellow-500/20' : 'bg-black/40'} ${isPlaceholder ? 'opacity-40' : ''}`}>
       <FramedAvatar 
         userId={player?.id}
@@ -89,6 +91,9 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
           </span>
           {hasBye && (
             <span className="text-[7px] bg-primary/20 text-primary px-1 rounded font-black border border-primary/30">GANHA BYE</span>
+          )}
+          {isWinner && isWO && (
+             <span className="text-[7px] bg-yellow-500/20 text-yellow-500 px-1 rounded font-black border border-yellow-500/30">W.O.</span>
           )}
         </div>
         {player?.clan_members?.[0]?.clans?.tag && (
@@ -164,12 +169,14 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
                                 isWinner={match.winner_id === match.player1_id && !!match.player1_id}
                                 isPlaceholder={!match.player1_id}
                                 hasBye={isP1Bye}
+                                isWO={match.is_wo}
                               />
                               <PlayerSlot 
                                 player={match.player2} 
                                 isWinner={match.winner_id === match.player2_id && !!match.player2_id}
                                 isPlaceholder={!match.player2_id}
                                 hasBye={isP2Bye}
+                                isWO={match.is_wo}
                               />
                             </div>
                             <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary/20 group-hover:bg-primary transition-colors" />

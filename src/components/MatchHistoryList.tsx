@@ -6,6 +6,7 @@ import { Loader2, Calendar, Trophy, XCircle, Swords } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 interface MatchHistoryListProps {
   userId: string;
@@ -56,7 +57,18 @@ export const MatchHistoryList = ({ userId }: MatchHistoryListProps) => {
 
             {/* Result (Center) */}
             <div className={`flex flex-col items-center justify-center font-black uppercase text-sm md:text-lg ${match.result === 'WIN' ? 'text-green-600' : 'text-red-600'}`}>
-                {match.result === 'WIN' ? 'Vitória' : 'Derrota'}
+                <div className="flex items-center gap-2">
+                  {match.result === 'WIN' ? 'Vitória' : 'Derrota'}
+                  {match.is_wo && (
+                    <Badge 
+                      variant="outline" 
+                      className={`text-[10px] ${match.result === 'WIN' ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}`}
+                      title={match.result === 'WIN' ? "Venceu por ausência do adversário" : "Perdeu por ausência/desistência"}
+                    >
+                      W.O.
+                    </Badge>
+                  )}
+                </div>
                 {match.result === 'WIN' ? <Trophy className="h-4 w-4 md:h-6 md:w-6 mt-1" /> : <XCircle className="h-4 w-4 md:h-6 md:w-6 mt-1" />}
             </div>
 
@@ -65,6 +77,7 @@ export const MatchHistoryList = ({ userId }: MatchHistoryListProps) => {
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground uppercase">Adversário</span>
                 <Link to={`/profile/${match.opponent_id}`} className="font-medium hover:underline truncate max-w-[100px] md:max-w-[150px]">
+                    {match.opponent_clan_tag && <span className="text-primary mr-1">[{match.opponent_clan_tag}]</span>}
                     {match.opponent_name}
                 </Link>
               </div>

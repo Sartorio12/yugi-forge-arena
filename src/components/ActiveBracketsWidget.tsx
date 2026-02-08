@@ -74,7 +74,9 @@ export const ActiveBracketsWidget = () => {
                   ? `/tournaments/${tournament.id}/groups` 
                   : tournament.format === 'single_elimination' 
                     ? `/tournaments/${tournament.id}/bracket`
-                    : `/tournaments/${tournament.id}`
+                    : tournament.format === 'swiss'
+                      ? `/tournaments/${tournament.id}/swiss`
+                      : `/tournaments/${tournament.id}`
               }>
                 <Button variant="secondary" size="sm" className="w-full h-8 text-xs font-bold gap-2 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500 hover:text-white transition-all">
                   <Trophy className="h-3 w-3" />

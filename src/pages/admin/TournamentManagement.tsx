@@ -1,6 +1,6 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch, Copy, UserPlus, Search, LayoutDashboard, Swords, Settings, ShieldAlert, Shuffle, Users2, Trophy, RotateCcw } from "lucide-react";
+import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch, Copy, UserPlus, Search, LayoutDashboard, Swords, Settings, ShieldAlert, Shuffle, Users2, Trophy, RotateCcw, Layers } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import UserDisplay from "@/components/UserDisplay";
@@ -48,6 +48,7 @@ import { useEffect, useState } from "react";
 import { getTeamLogoUrl } from "@/constants/teams";
 import { User } from "@supabase/supabase-js";
 import { MatchReporter } from "@/components/admin/MatchReporter";
+import { generateSwissPairings } from "@/lib/swissPairing"; // Import the helper
 
 // Types
 interface ParticipantDeck {
@@ -85,9 +86,174 @@ interface Match {
   winner_id: string | null;
   round_name: string;
   round_number: number;
-  player1?: { username: string };
-  player2?: { username: string };
+  player1_score: number;
+  player2_score: number;
+  is_wo: boolean;
+  player1?: { username: string; avatar_url?: string; clan_members?: { clans: { tag: string } }[] } | any;
+  player2?: { username: string; avatar_url?: string; clan_members?: { clans: { tag: string } }[] } | any;
 }
+
+const MatchCard = ({ match, onUpdate, isPending }: { match: Match, onUpdate: (winnerId: string | null, isWO: boolean, s1: number, s2: number) => void, isPending: boolean }) => {
+    const [score1, setScore1] = useState(match.player1_score || 0);
+    const [score2, setScore2] = useState(match.player2_score || 0);
+    const [isWO, setIsWO] = useState(match.is_wo || false);
+
+    useEffect(() => {
+        setScore1(match.player1_score || 0);
+        setScore2(match.player2_score || 0);
+        setIsWO(match.is_wo || false);
+    }, [match.player1_score, match.player2_score, match.is_wo]);
+
+    // Derived winner based on scores
+    const currentWinnerId = score1 > score2 ? match.player1_id : (score2 > score1 ? match.player2_id : null);
+    const hasChanges = score1 !== match.player1_score || score2 !== match.player2_score || isWO !== match.is_wo || (match.winner_id !== currentWinnerId && currentWinnerId !== null);
+
+    const handleSave = () => {
+        onUpdate(currentWinnerId, isWO, score1, score2);
+    };
+
+    const handleQuickWO = (playerNum: 1 | 2) => {
+        if (playerNum === 1) {
+            setScore1(2);
+            setScore2(0);
+        } else {
+            setScore1(0);
+            setScore2(2);
+        }
+        setIsWO(true);
+    };
+
+    const tag1 = match.player1?.clan_members?.[0]?.clans?.tag;
+    const tag2 = match.player2?.clan_members?.[0]?.clans?.tag;
+
+    return (
+        <Card className={`relative overflow-hidden transition-all duration-500 border-border/40 hover:border-primary/30 ${match.winner_id ? 'bg-primary/5 ring-1 ring-primary/10' : 'bg-card/40'}`}>
+            {/* Header Badge */}
+            <div className="absolute top-0 left-0 right-0 flex justify-center">
+                <Badge variant="secondary" className="rounded-t-none text-[9px] h-5 px-3 bg-black/40 text-muted-foreground font-black tracking-[0.2em] border-x border-b border-white/5">
+                    {match.round_name} <span className="text-primary/50 ml-1">#{match.id}</span>
+                </Badge>
+            </div>
+
+            <CardContent className="pt-8 pb-4 px-4">
+                <div className="flex items-center justify-between gap-2">
+                    
+                    {/* Player 1 Section */}
+                    <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                        <div className="relative">
+                            <FramedAvatar 
+                                userId={match.player1_id} 
+                                username={match.player1?.username} 
+                                avatarUrl={match.player1?.avatar_url} 
+                                sizeClassName="h-12 w-12" 
+                            />
+                            {currentWinnerId === match.player1_id && (
+                                <div className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-1 shadow-lg border-2 border-background animate-in zoom-in duration-300">
+                                    <Trophy className="h-3 w-3 text-black" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="text-center w-full overflow-hidden">
+                            <p className={`text-[10px] font-black uppercase truncate tracking-tighter ${currentWinnerId === match.player1_id ? 'text-primary' : 'text-foreground'}`}>
+                                {tag1 && <span className="opacity-60 mr-1">[{tag1}]</span>}
+                                {match.player1?.username || "Aguardando..."}
+                            </p>
+                        </div>
+                        {match.player1_id && match.player2_id && !match.winner_id && (
+                            <Button 
+                                size="sm" variant="ghost" 
+                                className="h-6 text-[8px] font-black opacity-40 hover:opacity-100"
+                                onClick={() => handleQuickWO(1)}
+                            >
+                                VITÓRIA W.O.
+                            </Button>
+                        )}
+                    </div>
+
+                    {/* Scoreboard Center */}
+                    <div className="flex flex-col items-center gap-3 shrink-0">
+                        <div className={`flex items-center gap-1 p-1 rounded-lg border transition-all ${hasChanges ? 'bg-primary/20 border-primary animate-pulse' : 'bg-black/40 border-white/5'}`}>
+                            <Input 
+                                type="number" 
+                                value={score1}
+                                onChange={(e) => { setScore1(Number(e.target.value)); setIsWO(false); }}
+                                className="w-10 h-10 text-center text-xl font-black bg-transparent border-0 focus-visible:ring-0 p-0"
+                                disabled={!match.player1_id || !match.player2_id || isPending}
+                            />
+                            <div className="w-px h-6 bg-white/10" />
+                            <Input 
+                                type="number" 
+                                value={score2}
+                                onChange={(e) => { setScore2(Number(e.target.value)); setIsWO(false); }}
+                                className="w-10 h-10 text-center text-xl font-black bg-transparent border-0 focus-visible:ring-0 p-0"
+                                disabled={!match.player1_id || !match.player2_id || isPending}
+                            />
+                        </div>
+                        
+                        {hasChanges ? (
+                            <Button 
+                                size="sm" 
+                                className="h-7 px-4 bg-green-600 hover:bg-green-500 text-white font-black text-[9px] uppercase tracking-widest shadow-lg shadow-green-900/20"
+                                onClick={handleSave}
+                                disabled={isPending}
+                            >
+                                {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirmar"}
+                            </Button>
+                        ) : match.winner_id ? (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-5 text-[8px] font-black uppercase tracking-widest text-muted-foreground hover:text-destructive"
+                                onClick={() => onUpdate(null, false, 0, 0)}
+                                disabled={isPending}
+                            >
+                                <RotateCcw className="h-2 w-2 mr-1" /> Resetar
+                            </Button>
+                        ) : null}
+                    </div>
+
+                    {/* Player 2 Section */}
+                    <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                        <div className="relative">
+                            <FramedAvatar 
+                                userId={match.player2_id} 
+                                username={match.player2?.username} 
+                                avatarUrl={match.player2?.avatar_url} 
+                                sizeClassName="h-12 w-12" 
+                            />
+                            {currentWinnerId === match.player2_id && (
+                                <div className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-1 shadow-lg border-2 border-background animate-in zoom-in duration-300">
+                                    <Trophy className="h-3 w-3 text-black" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="text-center w-full overflow-hidden">
+                            <p className={`text-[10px] font-black uppercase truncate tracking-tighter ${currentWinnerId === match.player2_id ? 'text-primary' : 'text-foreground'}`}>
+                                {tag2 && <span className="opacity-60 mr-1">[{tag2}]</span>}
+                                {match.player2?.username || (match.player1_id && !match.player2_id ? "BYE" : "Aguardando...")}
+                            </p>
+                        </div>
+                        {match.player1_id && match.player2_id && !match.winner_id && (
+                            <Button 
+                                size="sm" variant="ghost" 
+                                className="h-6 text-[8px] font-black opacity-40 hover:opacity-100"
+                                onClick={() => handleQuickWO(2)}
+                            >
+                                VITÓRIA W.O.
+                            </Button>
+                        )}
+                    </div>
+
+                </div>
+                {isWO && (
+                    <div className="mt-2 flex justify-center">
+                        <Badge variant="outline" className="text-[7px] bg-yellow-500/10 text-yellow-600 border-yellow-500/20 font-black tracking-widest uppercase py-0 h-4">Walkover (Ausência)</Badge>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
 
 const TournamentManagementPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -197,8 +363,8 @@ const TournamentManagementPage = () => {
         .from("tournament_matches")
         .select(`
           *,
-          player1:player1_id(username),
-          player2:player2_id(username)
+          player1:player1_id(username, avatar_url, clan_members(clans(tag))),
+          player2:player2_id(username, avatar_url, clan_members(clans(tag)))
         `)
         .eq("tournament_id", Number(id))
         .order("round_number", { ascending: true })
@@ -260,32 +426,62 @@ const TournamentManagementPage = () => {
     }
   });
 
-  const resetBracketMutation = useMutation({
+  const generateSwissRoundMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc('reset_tournament_bracket', {
-        p_tournament_id: Number(id)
-      });
+      // 1. Generate Pairings using TS logic
+      const pairings = await generateSwissPairings(Number(id));
+      
+      // 2. Determine Round Number and Name
+      // Get current max round
+      const { data: lastMatch } = await supabase
+        .from("tournament_matches")
+        .select("round_number")
+        .eq("tournament_id", Number(id))
+        .order("round_number", { ascending: false })
+        .limit(1)
+        .single();
+        
+      const nextRoundNumber = (lastMatch?.round_number || 0) + 1;
+      const roundName = `Rodada ${nextRoundNumber}`;
+
+      // 3. Insert Matches in Bulk
+      const matchesToInsert = pairings.map(pair => ({
+        tournament_id: Number(id),
+        player1_id: pair.player1,
+        player2_id: pair.player2, // Can be null for BYE
+        round_number: nextRoundNumber,
+        round_name: roundName,
+        winner_id: pair.player2 === null ? pair.player1 : null, // Auto-win for BYE
+        is_wo: pair.player2 === null ? true : false // Mark BYE as WO implicitly or just win
+      }));
+
+      const { error } = await supabase.from("tournament_matches").insert(matchesToInsert);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Chaveamento Excluído", description: "Todas as partidas foram removidas." });
+      toast({ title: "Rodada Gerada", description: "Os novos confrontos foram criados com sucesso." });
       queryClient.invalidateQueries({ queryKey: ["tournamentMatches", id] });
     },
     onError: (error: any) => {
-      toast({ title: "Erro ao resetar", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao gerar rodada", description: error.message, variant: "destructive" });
     }
   });
 
   const updateMatchWinnerMutation = useMutation({
-    mutationFn: async ({ matchId, winnerId }: { matchId: number, winnerId: string | null }) => {
+    mutationFn: async ({ matchId, winnerId, isWO = false, score1 = 0, score2 = 0 }: { matchId: number, winnerId: string | null, isWO?: boolean, score1?: number, score2?: number }) => {
       const { error } = await supabase
         .from("tournament_matches")
-        .update({ winner_id: winnerId })
+        .update({ 
+          winner_id: winnerId,
+          is_wo: isWO,
+          player1_score: score1,
+          player2_score: score2
+        })
         .eq("id", matchId);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Resultado Atualizado", description: "O vencedor foi registrado e o ranking atualizado." });
+      toast({ title: "Resultado Atualizado", description: "O vencedor e o placar foram registrados." });
       queryClient.invalidateQueries({ queryKey: ["tournamentMatches", id] });
       queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
     },
@@ -308,14 +504,20 @@ const TournamentManagementPage = () => {
 
   const addParticipantMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase.rpc('admin_add_participant', { p_tournament_id: Number(id), p_user_id: userId });
+      console.log("Tentando adicionar participante:", { tournamentId: Number(id), userId }); // DEBUG
+
+      if (!userId) throw new Error("ID do usuário inválido.");
+
+      const { error } = await supabase.rpc('admin_add_participant', { 
+        p_tournament_id: Number(id), 
+        p_user_id: userId 
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       toast({ title: "Sucesso", description: "Jogador adicionado com sucesso." });
       queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
-      setSearchTerm("");
-      setSearchResults([]);
+      // Keep search results open to allow multiple additions
     },
     onError: (error: any) => {
       toast({ title: "Erro ao adicionar", description: error.message, variant: "destructive" });
@@ -495,7 +697,7 @@ const TournamentManagementPage = () => {
                 <TabsTrigger value="matches" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
                   <Swords className="h-4 w-4" /> Resultados
                 </TabsTrigger>
-                {((tournament as any)?.format === 'groups' || (tournament as any)?.format === 'single_elimination') && (
+                {((tournament as any)?.format === 'groups' || (tournament as any)?.format === 'single_elimination' || (tournament as any)?.format === 'swiss') && (
                   <TabsTrigger value="organization" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
                     <Shuffle className="h-4 w-4" /> Organização
                   </TabsTrigger>
@@ -626,7 +828,7 @@ const TournamentManagementPage = () => {
                                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><FileSearch className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                           <DropdownMenuContent align="end">
                                             {userDecks.map(dl => (
-                                              <div key={dl.deck_id} className="flex flex-col">
+                                              <div key={dl.deck_id} className="flex flex-col border-b last:border-0 border-border/10 pb-1 mb-1 last:pb-0 last:mb-0">
                                                 <DropdownMenuItem asChild>
                                                   <Link to={`/deck/${dl.deck_id}?snapshot_id=${dl.deck_snapshot_id}`} target="_blank" className="flex-1">
                                                     {dl.deck_name || 'Deck'}
@@ -670,65 +872,22 @@ const TournamentManagementPage = () => {
               </TabsContent>
 
               <TabsContent value="matches" className="p-6 m-0">
-                {(tournament as any)?.format === 'single_elimination' && matches && matches.length > 0 ? (
+                {((tournament as any)?.format === 'single_elimination' || (tournament as any)?.format === 'swiss') && matches && matches.length > 0 ? (
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-bold flex items-center gap-2 italic uppercase tracking-tighter">
-                        <Trophy className="text-yellow-500 h-5 w-5" /> Partidas da Árvore
+                        <Trophy className="text-yellow-500 h-5 w-5" /> Partidas Geradas
                       </h3>
-                      <Badge variant="outline">Mata-mata</Badge>
+                      <Badge variant="outline">{tournament?.format === 'swiss' ? 'Suíço' : 'Mata-mata'}</Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {matches.map((m) => (
-                        <Card key={m.id} className={`border-border/50 ${m.winner_id ? 'bg-green-500/5 border-green-500/20' : 'bg-muted/10'}`}>
-                          <CardHeader className="py-3 px-4 border-b border-border/50 bg-muted/20">
-                            <CardTitle className="text-xs font-bold uppercase text-muted-foreground flex justify-between">
-                              {m.round_name} <span>#{m.id}</span>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex flex-col gap-2">
-                              {/* PLAYER 1 */}
-                              <Button 
-                                variant={m.winner_id === m.player1_id && m.player1_id ? "default" : "outline"}
-                                className="justify-start h-10 gap-2 relative overflow-hidden"
-                                disabled={!m.player1_id || !m.player2_id || updateMatchWinnerMutation.isPending}
-                                onClick={() => updateMatchWinnerMutation.mutate({ matchId: m.id, winnerId: m.player1_id })}
-                              >
-                                <span className="truncate flex-1 text-left">{m.player1?.username || "Aguardando..."}</span>
-                                {m.winner_id === m.player1_id && <Trophy className="h-3 w-3 text-yellow-400" />}
-                              </Button>
-
-                              <div className="flex items-center justify-center gap-2 py-1">
-                                <div className="h-px flex-1 bg-border/50" />
-                                <span className="text-[10px] font-black text-muted-foreground tracking-widest">VS</span>
-                                <div className="h-px flex-1 bg-border/50" />
-                              </div>
-
-                              {/* PLAYER 2 */}
-                              <Button 
-                                variant={m.winner_id === m.player2_id && m.player2_id ? "default" : "outline"}
-                                className="justify-start h-10 gap-2 relative overflow-hidden"
-                                disabled={!m.player1_id || !m.player2_id || updateMatchWinnerMutation.isPending}
-                                onClick={() => updateMatchWinnerMutation.mutate({ matchId: m.id, winnerId: m.player2_id })}
-                              >
-                                <span className="truncate flex-1 text-left">{m.player2?.username || "Aguardando..."}</span>
-                                {m.winner_id === m.player2_id && <Trophy className="h-3 w-3 text-yellow-400" />}
-                              </Button>
-                            </div>
-                            
-                            {m.winner_id && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="w-full h-6 text-[10px] text-muted-foreground hover:text-destructive"
-                                onClick={() => updateMatchWinnerMutation.mutate({ matchId: m.id, winnerId: null })}
-                              >
-                                Resetar Resultado
-                              </Button>
-                            )}
-                          </CardContent>
-                        </Card>
+                        <MatchCard 
+                            key={m.id} 
+                            match={m} 
+                            onUpdate={(winnerId, isWO, s1, s2) => updateMatchWinnerMutation.mutate({ matchId: m.id, winnerId, isWO, score1: s1, score2: s2 })}
+                            isPending={updateMatchWinnerMutation.isPending}
+                        />
                       ))}
                     </div>
                   </div>
@@ -815,6 +974,48 @@ const TournamentManagementPage = () => {
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {(tournament as any)?.format === 'swiss' && (
+                  <Card className="bg-primary/5 border-primary/20">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2"><Layers className="h-5 w-5 text-primary" /> Sistema Suíço</CardTitle>
+                      <CardDescription>Gerencie as rodadas com base na pontuação e Buchholz.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="p-4 bg-muted/20 border border-dashed rounded-lg text-sm space-y-2">
+                        <p className="font-bold flex items-center gap-2 text-primary"><ShieldAlert className="h-4 w-4" /> Como funciona:</p>
+                        <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                          <li>O sistema emparealha jogadores com pontuações similares.</li>
+                          <li>Evita repetição de oponentes (sempre que possível).</li>
+                          <li>BYEs são atribuídos automaticamente se o número de jogadores for ímpar.</li>
+                          <li>Certifique-se de que <strong>TODOS</strong> os resultados da rodada anterior foram registrados antes de gerar a próxima.</li>
+                        </ul>
+                      </div>
+
+                      <div className="flex flex-col md:flex-row gap-4">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button className="h-14 gap-2 flex-1 text-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" disabled={generateSwissRoundMutation.isPending || !participants || participants.length < 2}>
+                              <Shuffle className="h-6 w-6" /> Gerar Próxima Rodada
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Gerar Nova Rodada?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Isso criará novos confrontos com base na classificação atual. Verifique se todos os resultados anteriores estão corretos.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => generateSwissRoundMutation.mutate()} className="bg-primary">Sim, Gerar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </CardContent>
                   </Card>

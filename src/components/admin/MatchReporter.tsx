@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Swords, Trophy } from "lucide-react";
+import { Loader2, Swords, Trophy, AlertTriangle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface MatchReporterProps {
   tournamentId: string;
@@ -18,6 +20,7 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
   const [player2, setPlayer2] = useState<string>("");
   const [winner, setWinner] = useState<string>("");
   const [roundName, setRoundName] = useState<string>("");
+  const [isWO, setIsWO] = useState<boolean>(false);
 
   // Fetch participants
   const { data: participants, isLoading } = useQuery({
@@ -46,6 +49,7 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
           player2_id: player2,
           winner_id: winner,
           round_name: roundName || "Rodada Regular",
+          is_wo: isWO,
         });
 
       if (error) throw error;
@@ -56,6 +60,7 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
       setPlayer2("");
       setWinner("");
       setRoundName("");
+      setIsWO(false);
       queryClient.invalidateQueries({ queryKey: ["tournament-matches", tournamentId] });
     },
     onError: (err) => {
@@ -146,6 +151,22 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                     value={roundName} 
                     onChange={(e) => setRoundName(e.target.value)} 
                 />
+            </div>
+        </div>
+
+        <div className="flex items-center space-x-2 bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20">
+            <Checkbox 
+                id="wo" 
+                checked={isWO} 
+                onCheckedChange={(checked) => setIsWO(checked as boolean)} 
+            />
+            <div className="grid gap-1.5 leading-none">
+                <Label htmlFor="wo" className="text-sm font-bold flex items-center gap-1.5 text-yellow-600">
+                    <AlertTriangle className="h-4 w-4" /> Vitória por W.O. (Ausência)
+                </Label>
+                <p className="text-xs text-yellow-700/70">
+                    Marque isso se um dos jogadores não apareceu ou desistiu sem jogar.
+                </p>
             </div>
         </div>
 

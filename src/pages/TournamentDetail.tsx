@@ -138,6 +138,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
 
   const isGroupFormat = (tournament as any)?.format === 'groups' || (tournament as any)?.type === 'grupos';
   const isBracketFormat = (tournament as any)?.format === 'single_elimination';
+  const isSwissFormat = (tournament as any)?.format === 'swiss';
   const hasGroupsPopulated = participantsByGroup && Object.keys(participantsByGroup).length > 0;
 
   const { data: existingBans } = useQuery({
@@ -415,6 +416,11 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                     {isBracketFormat && (
                         <TabsTrigger value="bracket" className="gap-2">
                             <Trophy className="h-4 w-4" /> Chaveamento
+                        </TabsTrigger>
+                    )}
+                    {isSwissFormat && (
+                        <TabsTrigger value="swiss" className="gap-2">
+                            <Layers className="h-4 w-4" /> Classificação Suíça
                         </TabsTrigger>
                     )}
                     <TabsTrigger value="analysis" className="gap-2">
@@ -701,6 +707,27 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                                 <Button className="gap-2 text-lg h-12 px-8 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white shadow-lg">
                                     <Trophy className="h-5 w-5" />
                                     Ver Chaveamento Completo
+                                </Button>
+                            </Link>
+                        </div>
+                    </TabsContent>
+                )}
+
+                {/* Tab: Swiss */}
+                {isSwissFormat && (
+                    <TabsContent value="swiss" className="mt-6">
+                        <div className="flex flex-col items-center justify-center p-8 bg-muted/10 border-2 border-dashed rounded-xl gap-4">
+                            <Layers className="h-12 w-12 text-primary/50" />
+                            <div className="text-center space-y-2">
+                                <h3 className="text-xl font-bold">Classificação Suíça</h3>
+                                <p className="text-muted-foreground max-w-md mx-auto">
+                                    Acompanhe a pontuação, critérios de desempate (Buchholz) e o progresso das rodadas.
+                                </p>
+                            </div>
+                            <Link to={`/tournaments/${id}/swiss`}>
+                                <Button className="gap-2 text-lg h-12 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white shadow-lg">
+                                    <Trophy className="h-5 w-5" />
+                                    Ver Tabela Completa
                                 </Button>
                             </Link>
                         </div>

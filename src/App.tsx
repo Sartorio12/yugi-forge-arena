@@ -57,6 +57,8 @@ import RivalryPage from "./pages/RivalryPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import SweepstakePage from "./pages/SweepstakePage";
 
+import SwissStandingsPage from "./pages/SwissStandingsPage";
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -119,6 +121,10 @@ const App = () => {
                           <Route
                             path="/tournaments/:id"
                             element={<TournamentDetail user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/tournaments/:id/swiss"
+                            element={<SwissStandingsPage user={user} onLogout={handleLogout} />}
                           />
                           <Route
                             path="/tournaments/:id/groups"
