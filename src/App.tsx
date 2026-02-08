@@ -10,6 +10,8 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Tournaments from "./pages/Tournaments";
 import TournamentDetail from "./pages/TournamentDetail";
+import GroupStandingsPage from "./pages/GroupStandingsPage";
+import TournamentBracketPage from "./pages/TournamentBracketPage";
 import Profile from "./pages/Profile";
 import DeckBuilder from "./pages/DeckBuilder";
 import DeckPage from "./pages/DeckPage";
@@ -117,6 +119,14 @@ const App = () => {
                           <Route
                             path="/tournaments/:id"
                             element={<TournamentDetail user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/tournaments/:id/groups"
+                            element={<GroupStandingsPage user={user} onLogout={handleLogout} />}
+                          />
+                          <Route
+                            path="/tournaments/:id/bracket"
+                            element={<TournamentBracketPage user={user} onLogout={handleLogout} />}
                           />
                           <Route
                             path="/profile/:id"

@@ -1,12 +1,16 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch, Copy, UserPlus, Search } from "lucide-react";
+import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch, Copy, UserPlus, Search, LayoutDashboard, Swords, Settings, ShieldAlert, Shuffle, Users2, Trophy } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import UserDisplay from "@/components/UserDisplay";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,13 +36,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Profile } from "@/hooks/useProfile";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from '../../integrations/supabase/client';
 import { useEffect, useState } from "react";
 import { getTeamLogoUrl } from "@/constants/teams";
 import { User } from "@supabase/supabase-js";
+import { MatchReporter } from "@/components/admin/MatchReporter";
 
-// Updated to match the RPC return type
+// Types
 interface ParticipantDeck {
   user_id: string;
   deck_id: number;
@@ -51,6 +62,7 @@ interface Participant {
   user_id: string;
   total_wins_in_tournament: number;
   team_selection?: string;
+  group_name?: string;
   checked_in: boolean;
   clans: {
     tag: string;
@@ -66,7 +78,16 @@ interface Participant {
   } | null;
 }
 
-import { MatchReporter } from "@/components/admin/MatchReporter";
+interface Match {
+  id: number;
+  player1_id: string | null;
+  player2_id: string | null;
+  winner_id: string | null;
+  round_name: string;
+  round_number: number;
+  player1?: { username: string };
+  player2?: { username: string };
+}
 
 const TournamentManagementPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -76,13 +97,14 @@ const TournamentManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [numGroups, setNumGroups] = useState(2);
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("title, organizer_id, exclusive_organizer_only, tournament_model, is_private")
+        .select("title, organizer_id, exclusive_organizer_only, tournament_model, is_private, type, format")
         .eq("id", Number(id))
         .single();
       if (error) throw error;
@@ -97,8 +119,6 @@ const TournamentManagementPage = () => {
 
       if (tournament && user) {
         const t = tournament as any;
-        
-        // Fetch user profile to check for admin role
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -119,7 +139,6 @@ const TournamentManagementPage = () => {
           }
         }
       } else if (tournament && !user) {
-          // Should not happen due to AdminRoute, but safe to redirect
           navigate("/auth");
       }
     };
@@ -136,6 +155,7 @@ const TournamentManagementPage = () => {
           user_id,
           total_wins_in_tournament,
           team_selection,
+          group_name,
           checked_in,
           clans (
             tag
@@ -152,31 +172,106 @@ const TournamentManagementPage = () => {
         `)
         .eq("tournament_id", Number(id));
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       return data as Participant[];
     },
     enabled: !!id,
   });
 
+  const { data: matches, isLoading: isLoadingMatches } = useQuery({
+    queryKey: ["tournamentMatches", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tournament_matches")
+        .select(`
+          *,
+          player1:player1_id(username),
+          player2:player2_id(username)
+        `)
+        .eq("tournament_id", Number(id))
+        .order("round_number", { ascending: true })
+        .order("id", { ascending: true });
+
+      if (error) throw error;
+      return data as any as Match[];
+    },
+    enabled: !!id,
+  });
+
+  const shuffleGroupsMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('shuffle_tournament_groups', {
+        p_tournament_id: Number(id),
+        p_num_groups: numGroups
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Sorteio Realizado", description: `Jogadores distribuídos em ${numGroups} grupos.` });
+      queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro no sorteio", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const resetGroupsMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('reset_tournament_groups', {
+        p_tournament_id: Number(id)
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Grupos Resetados", description: "Todos os jogadores voltaram para 'Sem grupo'." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro ao resetar", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const generateBracketMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('generate_single_elimination_bracket', {
+        p_tournament_id: Number(id)
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Chaveamento Gerado", description: "A árvore de mata-mata foi criada com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentMatches", id] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro ao gerar chaveamento", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateMatchWinnerMutation = useMutation({
+    mutationFn: async ({ matchId, winnerId }: { matchId: number, winnerId: string | null }) => {
+      const { error } = await supabase
+        .from("tournament_matches")
+        .update({ winner_id: winnerId })
+        .eq("id", matchId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Resultado Atualizado", description: "O vencedor foi registrado e o ranking atualizado." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentMatches", id] });
+      queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+    },
+  });
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchTerm.trim()) return;
-    
     setIsSearching(true);
     try {
-      const { data, error } = await supabase.rpc('search_profiles_for_admin', {
-        p_search_term: searchTerm
-      });
+      const { data, error } = await supabase.rpc('search_profiles_for_admin', { p_search_term: searchTerm });
       if (error) throw error;
       setSearchResults(data || []);
     } catch (error: any) {
-      toast({
-        title: "Erro na busca",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast({ title: "Erro na busca", description: error.message, variant: "destructive" });
     } finally {
       setIsSearching(false);
     }
@@ -184,10 +279,7 @@ const TournamentManagementPage = () => {
 
   const addParticipantMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase.rpc('admin_add_participant', {
-        p_tournament_id: Number(id),
-        p_user_id: userId
-      });
+      const { error } = await supabase.rpc('admin_add_participant', { p_tournament_id: Number(id), p_user_id: userId });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -197,20 +289,30 @@ const TournamentManagementPage = () => {
       setSearchResults([]);
     },
     onError: (error: any) => {
-      toast({
-        title: "Erro ao adicionar",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast({ title: "Erro ao adicionar", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateParticipantGroupMutation = useMutation({
+    mutationFn: async ({ participantId, groupName }: { participantId: number, groupName: string | null }) => {
+      const { error } = await supabase
+        .from("tournament_participants")
+        .update({ group_name: groupName })
+        .eq("id", participantId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Grupo Atualizado", description: "O jogador foi movido com sucesso." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro ao atualizar grupo", description: error.message, variant: "destructive" });
     }
   });
 
   const togglePrivateMutation = useMutation({
     mutationFn: async (isPrivate: boolean) => {
-      const { error } = await supabase
-        .from('tournaments')
-        .update({ is_private: isPrivate })
-        .eq('id', Number(id));
+      const { error } = await supabase.from('tournaments').update({ is_private: isPrivate }).eq('id', Number(id));
       if (error) throw error;
     },
     onSuccess: () => {
@@ -222,15 +324,8 @@ const TournamentManagementPage = () => {
   const { data: allDecks, isLoading: isLoadingDecks } = useQuery({
     queryKey: ["tournamentDecksForAdmin", id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_tournament_decks_for_admin', { 
-        p_tournament_id: Number(id) 
-      });
-      
-      if (error) {
-          console.error("Error fetching tournament decks via RPC:", error);
-          throw error;
-      }
-      console.log("All tournament decks data (RPC):", data);
+      const { data, error } = await supabase.rpc('get_tournament_decks_for_admin', { p_tournament_id: Number(id) });
+      if (error) throw error;
       return data as ParticipantDeck[];
     },
     enabled: !!id,
@@ -239,57 +334,35 @@ const TournamentManagementPage = () => {
   const decksByUserId = new Map<string, ParticipantDeck[]>();
   if (allDecks) {
     for (const deck of allDecks) {
-      if (deck.user_id && !decksByUserId.has(deck.user_id)) {
-        decksByUserId.set(deck.user_id, []);
-      }
-      if (deck.user_id) {
-        decksByUserId.get(deck.user_id)!.push(deck);
-      }
+      if (deck.user_id && !decksByUserId.has(deck.user_id)) decksByUserId.set(deck.user_id, []);
+      if (deck.user_id) decksByUserId.get(deck.user_id)!.push(deck);
     }
   }
 
   const updateWinsMutation = useMutation({
     mutationFn: async ({ participantId, change, userId }: { participantId: number; change: number; userId: string }) => {
-      const { error } = await supabase.rpc('update_player_wins', {
-        p_participant_id: participantId,
-        p_win_change: change
-      });
+      const { error } = await supabase.rpc('update_player_wins', { p_participant_id: participantId, p_win_change: change });
       if (error) throw error;
-      return { userId }; // Pass userId to onSuccess
+      return { userId };
     },
     onSuccess: (data) => {
       toast({ title: "Sucesso", description: "Contagem de vitórias atualizada." });
       queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
       queryClient.invalidateQueries({ queryKey: ["profile", data.userId] });
-      queryClient.invalidateQueries({ queryKey: ["topRankedPlayers"] });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Erro",
-        description: `Não foi possível atualizar as vitórias: ${error.message}`,
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: `Erro: ${error.message}`, variant: "destructive" });
     },
   });
 
   const removeParticipantMutation = useMutation({
     mutationFn: async (participantId: number) => {
-      const { error } = await supabase
-        .from("tournament_participants")
-        .delete()
-        .eq("id", participantId);
+      const { error } = await supabase.from("tournament_participants").delete().eq("id", participantId);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Sucesso", description: "Participante removido do torneio." });
+      toast({ title: "Sucesso", description: "Participante removido." });
       queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro",
-        description: `Não foi possível remover o participante: ${error.message}`,
-        variant: "destructive",
-      });
     },
   });
 
@@ -297,327 +370,365 @@ const TournamentManagementPage = () => {
     mutationFn: async () => {
         const { data, error } = await supabase.rpc('remove_unchecked_participants', { p_tournament_id: Number(id) });
         if (error) throw error;
-        return data; // Returns count of removed users
+        return data;
     },
     onSuccess: (removedCount) => {
         toast({ title: "Limpeza Concluída", description: `${removedCount} participantes ausentes foram removidos.` });
         queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
     },
-    onError: (error: Error) => {
-        toast({
-            title: "Erro",
-            description: `Falha ao remover participantes: ${error.message}`,
-            variant: "destructive",
-        });
-    }
   });
-
-  const handleUpdateWins = (participant: Participant, change: 1 | -1) => {
-    // No longer calculating newWins here to prevent race conditions
-    updateWinsMutation.mutate({ participantId: participant.id, change, userId: participant.user_id });
-  };
-
-  const handleRemoveParticipant = (participantId: number) => {
-    removeParticipantMutation.mutate(participantId);
-  };
 
   const handleCopyParticipants = () => {
     if (!participants) return;
-
-    const list = participants
-      .sort((a, b) => a.id - b.id)
-      .map((p) => {
+    const list = participants.sort((a, b) => a.id - b.id).map((p) => {
         const tag = p.clans?.tag ? `[${p.clans.tag}] ` : "";
         const username = p.profiles?.username || "Unknown";
         const discord = p.profiles?.discord_username || "Sem Discord";
         return `${tag}${username} - ${discord}`;
-      })
-      .join("\n");
-
+    }).join("\n");
     navigator.clipboard.writeText(list).then(() => {
-      toast({
-        title: "Lista copiada!",
-        description: "A lista de participantes foi copiada para a área de transferência.",
-      });
+      toast({ title: "Lista copiada!", description: "A lista de participantes foi copiada." });
     });
   };
 
-  const isLoading = isLoadingTournament || isLoadingParticipants || isLoadingDecks;
+  const isLoading = isLoadingTournament || isLoadingParticipants || isLoadingDecks || isLoadingMatches;
 
   return (
-    <>
-      <main className="container mx-auto px-4 py-12">
-        <Link to="/dashboard/tournaments">
-          <Button variant="ghost" className="mb-8 hover:text-primary">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar ao Dashboard
-          </Button>
-        </Link>
+    <main className="container mx-auto px-4 py-12">
+      <Link to="/dashboard/tournaments">
+        <Button variant="ghost" className="mb-8 hover:text-primary transition-all">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar ao Dashboard
+        </Button>
+      </Link>
 
-        {id && <MatchReporter tournamentId={id} />}
-
-        <Card className="bg-gradient-card border-border">
-          <CardHeader className="space-y-6">
+      <div className="space-y-6">
+        <Card className="bg-gradient-card border-border overflow-hidden">
+          <CardHeader className="border-b bg-muted/30">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <Crown className="h-8 w-8 text-primary" />
+                <Crown className="h-10 w-10 text-primary animate-pulse" />
                 <div>
-                  <CardTitle className="text-3xl">Gerenciar Torneio</CardTitle>
-                  <CardDescription>{tournament?.title || "Carregando..."}</CardDescription>
+                  <CardTitle className="text-3xl font-black uppercase tracking-tighter italic">Painel de Gerência</CardTitle>
+                  <CardDescription className="font-medium text-primary/80">{tournament?.title || "Carregando..."}</CardDescription>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Button onClick={handleCopyParticipants} variant="outline" className="gap-2">
-                   <Copy className="h-4 w-4" />
-                   Copiar Lista
-                </Button>
-                
-                {/* Remove Unchecked Button (Only for Daily Tournaments) */}
-                {(tournament as any)?.tournament_model === 'Diário' && (
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" className="gap-2">
-                                <UserX className="h-4 w-4" />
-                                Remover Ausentes
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar Remoção em Massa</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Isso removerá todos os jogadores que <strong>NÃO</strong> realizaram o Check-in.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => removeUncheckedMutation.mutate()} className="bg-destructive hover:bg-destructive/90">
-                                    Confirmar Remoção
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                )}
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1">
+                  {tournament?.format === 'groups' ? 'Fase de Grupos' : tournament?.format === 'swiss' ? 'Suíço' : 'Mata-mata'}
+                </Badge>
+                <Badge variant="secondary">
+                  {tournament?.tournament_model}
+                </Badge>
               </div>
-            </div>
-
-            {/* Manual Participant Addition */}
-            <div className="p-4 bg-muted/10 border rounded-lg space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <UserPlus className="h-4 w-4" /> Inserção Manual
-              </h3>
-              <form onSubmit={handleSearch} className="flex gap-2">
-                <div className="relative flex-grow">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Buscar jogador por nick ou clã..." 
-                    className="pl-10"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <Button type="submit" disabled={isSearching}>
-                  {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
-                </Button>
-              </form>
-
-              {searchResults.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
-                  {searchResults.map((result) => (
-                    <div key={result.profile_id} className="flex items-center justify-between p-3 bg-background border rounded-lg">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        <FramedAvatar 
-                          username={result.username}
-                          avatarUrl={result.avatar_url}
-                          frameUrl={result.equipped_frame_url}
-                          sizeClassName="h-8 w-8"
-                        />
-                        <div className="flex flex-col truncate">
-                          <span className="font-medium text-sm truncate">{result.username}</span>
-                          {result.clan_tag && <span className="text-xs text-primary font-bold">[{result.clan_tag}]</span>}
-                        </div>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
-                        onClick={() => addParticipantMutation.mutate(result.profile_id)}
-                        disabled={addParticipantMutation.isPending}
-                      >
-                        <PlusCircle className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : participants && participants.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px]">No.</TableHead>
-                    <TableHead>Jogador</TableHead>
-                    {(tournament as any)?.tournament_model === 'Diário' && <TableHead className="text-center w-[100px]">Check-in</TableHead>}
-                    <TableHead>Decklist</TableHead>
-                    <TableHead className="text-center w-[150px]">Vitórias</TableHead>
-                    <TableHead className="w-[250px]">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {participants.sort((a, b) => a.id - b.id).map((p, index) => {
-                    const userDecks = decksByUserId.get(p.user_id);
-                    const hasDecks = userDecks && userDecks.length > 0;
-                    
-                    // Check if the current logged-in user is the organizer
-                    // Note: tournament is already loaded if we are here (isLoading checks)
-                    const isOrganizer = currentUser?.id === (tournament as any)?.organizer_id;
-                    const exclusiveMode = (tournament as any)?.exclusive_organizer_only;
-                    
-                    // Show decklist button only if:
-                    // 1. Not exclusive mode
-                    // 2. OR Exclusive mode AND current user is the organizer
-                    const showDecklistButton = !exclusiveMode || isOrganizer;
 
-                    return (
-                      <TableRow key={p.id}>
-                        <TableCell className="font-medium">
-                          {index + 1}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-4">
-                            <FramedAvatar
-                              userId={p.profiles?.id}
-                              avatarUrl={p.profiles?.avatar_url}
-                              frameUrl={p.profiles?.equipped_frame_url}
-                              username={p.profiles?.username}
-                              sizeClassName="h-10 w-10"
-                            />
-                            <span className="font-medium flex flex-col gap-1">
-                              <div className="flex items-center gap-2">
-                                <Link to={`/profile/${p.profiles?.id}`}>
-                                  <UserDisplay profile={p.profiles || {}} clan={p.clans} />
-                                </Link>
-                                {p.team_selection && (
-                                  <img
-                                    src={getTeamLogoUrl(p.team_selection)}
-                                    alt={p.team_selection}
-                                    title={`Time: ${p.team_selection}`}
-                                    className="w-6 h-6 object-contain"
-                                  />
-                                )}
+          <CardContent className="p-0">
+            <Tabs defaultValue="participants" className="w-full">
+              <TabsList className="w-full justify-start rounded-none border-b bg-muted/10 h-14 px-4 gap-4 overflow-x-auto overflow-y-hidden">
+                <TabsTrigger value="participants" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                  <LayoutDashboard className="h-4 w-4" /> Inscritos
+                </TabsTrigger>
+                <TabsTrigger value="matches" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                  <Swords className="h-4 w-4" /> Resultados
+                </TabsTrigger>
+                {((tournament as any)?.format === 'groups' || (tournament as any)?.format === 'single_elimination') && (
+                  <TabsTrigger value="organization" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                    <Shuffle className="h-4 w-4" /> Organização
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="settings" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                  <Settings className="h-4 w-4" /> Ajustes
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="participants" className="p-6 space-y-6 m-0">
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="w-full lg:w-1/3 space-y-4">
+                    <div className="p-4 bg-muted/20 border rounded-xl space-y-4">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" /> Inserção Manual
+                      </h3>
+                      <form onSubmit={handleSearch} className="flex gap-2">
+                        <div className="relative flex-grow">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input placeholder="Nick ou clã..." className="pl-10 h-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        </div>
+                        <Button type="submit" disabled={isSearching} size="sm">Buscar</Button>
+                      </form>
+                      {searchResults.length > 0 && (
+                        <div className="grid grid-cols-1 gap-2 mt-4 max-h-[300px] overflow-y-auto pr-2">
+                          {searchResults.map((result) => (
+                            <div key={result.profile_id} className="flex items-center justify-between p-2 bg-background border rounded-lg hover:border-primary/50 transition-colors">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                <FramedAvatar username={result.username} avatarUrl={result.avatar_url} sizeClassName="h-8 w-8" />
+                                <div className="flex flex-col truncate">
+                                  <span className="font-medium text-sm truncate">{result.username}</span>
+                                  {result.clan_tag && <span className="text-[10px] text-primary font-bold">[{result.clan_tag}]</span>}
+                                </div>
                               </div>
-                              {p.profiles?.discord_username && (
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                   <span className="text-[#5865F2] font-bold">Discord:</span> {p.profiles.discord_username}
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </TableCell>
-                        {(tournament as any)?.tournament_model === 'Diário' && (
-                            <TableCell className="text-center">
-                                {p.checked_in ? (
-                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600">
-                                        <Copy className="h-4 w-4 hidden" /> {/* Dummy hidden icon to maintain import if needed, actually using text or different icon */}
-                                        ✓
-                                    </span>
-                                ) : (
-                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 font-bold">
-                                        X
-                                    </span>
-                                )}
-                            </TableCell>
-                        )}
-                        <TableCell>
-                          {hasDecks ? (
-                              <span className="text-green-500 font-semibold">Enviada</span>
-                          ) : (
-                              <span className="text-muted-foreground">Pendente</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center font-bold text-xl">
-                          {p.total_wins_in_tournament}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-start gap-2">
-                            {hasDecks && userDecks && showDecklistButton && (
-                               <DropdownMenu>
-                               <DropdownMenuTrigger asChild>
-                                 <Button variant="outline" size="icon">
-                                   <FileSearch className="h-5 w-5" />
-                                 </Button>
-                               </DropdownMenuTrigger>
-                               <DropdownMenuContent>
-                                 {userDecks.map(dl => (
-                                   <DropdownMenuItem key={dl.deck_id} asChild>
-                                     <Link to={`/deck/${dl.deck_id}?snapshot_id=${dl.deck_snapshot_id}`} target="_blank" rel="noopener noreferrer">
-                                       {dl.deck_name || 'Deck sem nome'}
-                                     </Link>
-                                   </DropdownMenuItem>
-                                 ))}
-                               </DropdownMenuContent>
-                             </DropdownMenu>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10" onClick={() => addParticipantMutation.mutate(result.profile_id)}><PlusCircle className="h-5 w-5" /></Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button onClick={handleCopyParticipants} variant="outline" className="w-full gap-2 justify-start"><Copy className="h-4 w-4" /> Copiar Lista</Button>
+                      {(tournament as any)?.tournament_model === 'Diário' && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild><Button variant="destructive" className="w-full gap-2 justify-start bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive hover:text-white"><UserX className="h-4 w-4" /> Remover Ausentes</Button></AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>Confirmar Limpeza</AlertDialogTitle><AlertDialogDescription>Isso removerá quem não fez check-in.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => removeUncheckedMutation.mutate()} className="bg-destructive">Remover</AlertDialogAction></AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    {isLoadingParticipants ? (
+                      <div className="flex justify-center items-center py-20"><Loader2 className="animate-spin text-primary" /></div>
+                    ) : (
+                      <div className="border rounded-xl overflow-hidden">
+                        <Table>
+                          <TableHeader className="bg-muted/30">
+                            <TableRow>
+                              <TableHead className="w-[50px]">No.</TableHead>
+                              <TableHead>Jogador</TableHead>
+                              {(tournament as any)?.tournament_model === 'Diário' && <TableHead className="text-center">Check-in</TableHead>}
+                              {(tournament as any)?.format === 'groups' && <TableHead>Grupo</TableHead>}
+                              <TableHead className="text-center">Vitórias</TableHead>
+                              <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {participants?.sort((a, b) => a.id - b.id).map((p, index) => {
+                              const userDecks = decksByUserId.get(p.user_id);
+                              const hasDecks = userDecks && userDecks.length > 0;
+                              const isOrganizer = currentUser?.id === (tournament as any)?.organizer_id;
+                              const exclusiveMode = (tournament as any)?.exclusive_organizer_only;
+                              const showDecklistButton = !exclusiveMode || isOrganizer;
+
+                              return (
+                                <TableRow key={p.id} className="group hover:bg-muted/5">
+                                  <TableCell className="text-muted-foreground">{index + 1}</TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-3">
+                                      <FramedAvatar userId={p.profiles?.id} avatarUrl={p.profiles?.avatar_url} frameUrl={p.profiles?.equipped_frame_url} username={p.profiles?.username} sizeClassName="h-9 w-9" />
+                                      <div className="flex flex-col">
+                                        <div className="flex items-center gap-2">
+                                          <Link to={`/profile/${p.profiles?.id}`} className="font-semibold text-sm hover:text-primary transition-colors"><UserDisplay profile={p.profiles || {}} clan={p.clans} /></Link>
+                                          {p.team_selection && <img src={getTeamLogoUrl(p.team_selection)} className="w-5 h-5" alt="" />}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  {(tournament as any)?.tournament_model === 'Diário' && (
+                                    <TableCell className="text-center">{p.checked_in ? <Badge className="bg-green-500/10 text-green-500 border-green-500/20">OK</Badge> : <Badge className="bg-red-500/10 text-red-500 border-red-500/20">AUSENTE</Badge>}</TableCell>
+                                  )}
+                                  {(tournament as any)?.format === 'groups' && (
+                                    <TableCell>
+                                      <Select 
+                                        value={p.group_name || "none"} 
+                                        onValueChange={(val) => updateParticipantGroupMutation.mutate({ 
+                                          participantId: p.id, 
+                                          groupName: val === "none" ? null : val 
+                                        })}
+                                      >
+                                        <SelectTrigger className="h-8 w-[110px] text-[10px]">
+                                          <SelectValue placeholder="Sem grupo" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="none" className="text-[10px]">Nenhum</SelectItem>
+                                          {Array.from({ length: 16 }).map((_, i) => {
+                                            const name = `Grupo ${String.fromCharCode(65 + i)}`;
+                                            return <SelectItem key={name} value={name} className="text-[10px]">{name}</SelectItem>;
+                                          })}
+                                        </SelectContent>
+                                      </Select>
+                                    </TableCell>
+                                  )}
+                                  <TableCell className="text-center font-bold text-primary">{p.total_wins_in_tournament}</TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      {hasDecks && userDecks && showDecklistButton && (
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><FileSearch className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            {userDecks.map(dl => (
+                                              <DropdownMenuItem key={dl.deck_id} asChild><Link to={`/deck/${dl.deck_id}?snapshot_id=${dl.deck_snapshot_id}`} target="_blank">{dl.deck_name || 'Deck'}</Link></DropdownMenuItem>
+                                            ))}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      )}
+                                      <div className="flex bg-muted/20 rounded-lg p-0.5">
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500" onClick={() => handleUpdateWins(p, 1)}><PlusCircle className="h-4 w-4" /></Button>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleUpdateWins(p, -1)} disabled={p.total_wins_in_tournament === 0}><MinusCircle className="h-4 w-4" /></Button>
+                                      </div>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive"><UserX className="h-4 w-4" /></Button></AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader><AlertDialogTitle>Remover?</AlertDialogTitle></AlertDialogHeader>
+                                          <AlertDialogFooter><AlertDialogCancel>Não</AlertDialogCancel><AlertDialogAction onClick={() => handleRemoveParticipant(p.id)} className="bg-destructive">Sim</AlertDialogAction></AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="matches" className="p-6 m-0">
+                {(tournament as any)?.format === 'single_elimination' && matches && matches.length > 0 ? (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-bold flex items-center gap-2 italic uppercase tracking-tighter">
+                        <Trophy className="text-yellow-500 h-5 w-5" /> Partidas da Árvore
+                      </h3>
+                      <Badge variant="outline">Mata-mata</Badge>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {matches.map((m) => (
+                        <Card key={m.id} className={`border-border/50 ${m.winner_id ? 'bg-green-500/5 border-green-500/20' : 'bg-muted/10'}`}>
+                          <CardHeader className="py-3 px-4 border-b border-border/50 bg-muted/20">
+                            <CardTitle className="text-xs font-bold uppercase text-muted-foreground flex justify-between">
+                              {m.round_name} <span>#{m.id}</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4 space-y-3">
+                            <div className="flex flex-col gap-2">
+                              {/* PLAYER 1 */}
+                              <Button 
+                                variant={m.winner_id === m.player1_id && m.player1_id ? "default" : "outline"}
+                                className="justify-start h-10 gap-2 relative overflow-hidden"
+                                disabled={!m.player1_id || !m.player2_id || updateMatchWinnerMutation.isPending}
+                                onClick={() => updateMatchWinnerMutation.mutate({ matchId: m.id, winnerId: m.player1_id })}
+                              >
+                                <span className="truncate flex-1 text-left">{m.player1?.username || "Aguardando..."}</span>
+                                {m.winner_id === m.player1_id && <Trophy className="h-3 w-3 text-yellow-400" />}
+                              </Button>
+
+                              <div className="flex items-center justify-center gap-2 py-1">
+                                <div className="h-px flex-1 bg-border/50" />
+                                <span className="text-[10px] font-black text-muted-foreground tracking-widest">VS</span>
+                                <div className="h-px flex-1 bg-border/50" />
+                              </div>
+
+                              {/* PLAYER 2 */}
+                              <Button 
+                                variant={m.winner_id === m.player2_id && m.player2_id ? "default" : "outline"}
+                                className="justify-start h-10 gap-2 relative overflow-hidden"
+                                disabled={!m.player1_id || !m.player2_id || updateMatchWinnerMutation.isPending}
+                                onClick={() => updateMatchWinnerMutation.mutate({ matchId: m.id, winnerId: m.player2_id })}
+                              >
+                                <span className="truncate flex-1 text-left">{m.player2?.username || "Aguardando..."}</span>
+                                {m.winner_id === m.player2_id && <Trophy className="h-3 w-3 text-yellow-400" />}
+                              </Button>
+                            </div>
+                            
+                            {m.winner_id && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="w-full h-6 text-[10px] text-muted-foreground hover:text-destructive"
+                                onClick={() => updateMatchWinnerMutation.mutate({ matchId: m.id, winnerId: null })}
+                              >
+                                Resetar Resultado
+                              </Button>
                             )}
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => handleUpdateWins(p, 1)}
-                              disabled={updateWinsMutation.isPending}
-                            >
-                              <PlusCircle className="h-5 w-5 text-green-500" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => handleUpdateWins(p, -1)}
-                              disabled={updateWinsMutation.isPending || p.total_wins_in_tournament === 0}
-                            >
-                              <MinusCircle className="h-5 w-5 text-red-500" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="icon" disabled={removeParticipantMutation.isPending}>
-                                  <UserX className="h-5 w-5" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta ação removerá o participante {p.profiles?.username} do torneio.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleRemoveParticipant(p.id)}>
-                                    Remover
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-20">
-                <p className="text-muted-foreground text-lg">
-                  Nenhum participante inscrito neste torneio ainda.
-                </p>
-              </div>
-            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <MatchReporter tournamentId={id!} />
+                )}
+              </TabsContent>
+
+              <TabsContent value="organization" className="p-6 m-0 space-y-6">
+                {(tournament as any)?.format === 'groups' && (
+                  <Card className="bg-primary/5 border-primary/20">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2"><Shuffle className="h-5 w-5 text-primary" /> Gerador de Grupos</CardTitle>
+                      <CardDescription>Distribua os jogadores em grupos aleatórios.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-end gap-6">
+                        <div className="space-y-2">
+                          <Label>Quantidade de Grupos</Label>
+                          <Input type="number" value={numGroups} onChange={(e) => setNumGroups(Number(e.target.value))} className="w-24 h-12 text-xl font-bold text-center" />
+                        </div>
+                        <Button className="h-12 gap-2 flex-1" onClick={() => shuffleGroupsMutation.mutate()} disabled={shuffleGroupsMutation.isPending}><Shuffle className="h-5 w-5" /> Sortear Agora</Button>
+                        {participants?.some(p => p.group_name) && <Button variant="outline" className="h-12 border-dashed" onClick={() => resetGroupsMutation.mutate()} disabled={resetGroupsMutation.isPending}>Limpar</Button>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {(tournament as any)?.format === 'single_elimination' && (
+                  <Card className="bg-primary/5 border-primary/20">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2"><Trophy className="h-5 w-5 text-primary" /> Chaveamento Mata-mata</CardTitle>
+                      <CardDescription>Gere a árvore de eliminatória simples baseada nos inscritos atuais.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="p-4 bg-muted/20 border border-dashed rounded-lg text-sm space-y-2">
+                        <p className="font-bold flex items-center gap-2 text-primary"><ShieldAlert className="h-4 w-4" /> Informações Importantes:</p>
+                        <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                          <li>O sistema criará chaves automáticas (2, 4, 8, 16 ou 32 vagas).</li>
+                          <li>Jogadores sem oponente inicial avançarão automaticamente para a 2ª rodada.</li>
+                          <li>Isso irá <strong>RESETAR</strong> todas as partidas existentes deste torneio.</li>
+                        </ul>
+                      </div>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button className="h-14 gap-2 w-full text-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" disabled={generateBracketMutation.isPending || !participants || participants.length < 2}>
+                            <Trophy className="h-6 w-6" /> Gerar Árvore de Torneio
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Criar Novo Chaveamento?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação irá apagar todos os resultados atuais e criar uma nova árvore de partidas. Tem certeza?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => generateBracketMutation.mutate()} className="bg-primary">Sim, Gerar Chave</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              <TabsContent value="settings" className="p-6 m-0 space-y-6">
+                <div className="p-4 bg-background border rounded-xl flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-base font-bold">Torneio Privado</Label>
+                    <p className="text-xs text-muted-foreground">Bloqueia inscrições públicas diretas.</p>
+                  </div>
+                  <Switch checked={tournament?.is_private} onCheckedChange={(val) => togglePrivateMutation.mutate(val)} disabled={togglePrivateMutation.isPending} />
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
-      </main>
-    </>
+      </div>
+    </main>
   );
 };
 

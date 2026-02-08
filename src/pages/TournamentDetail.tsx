@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
-import { Calendar, ExternalLink, Loader2, ArrowLeft, CheckCircle, Layers, Ban, BrainCircuit, LayoutDashboard } from "lucide-react";
+import { Calendar, ExternalLink, Loader2, ArrowLeft, CheckCircle, Layers, Ban, BrainCircuit, LayoutDashboard, Users2, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState, useEffect } from "react";
@@ -33,6 +33,24 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+
+interface Participant {
+  user_id: string;
+  team_selection?: string;
+  group_name?: string;
+  checked_in: boolean;
+  profiles: {
+    username: string;
+    avatar_url: string | null;
+    equipped_frame_url: string | null;
+    clan_members: {
+      clans: {
+        tag: string;
+      } | null;
+    } | null;
+  } | null;
+}
 
 interface TournamentDetailProps {
   user: User | null;
@@ -59,6 +77,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
         .single();
 
       if (error) throw error;
+      console.log("Tournament Data:", data); // Debug log
       return data;
     },
   });
@@ -82,16 +101,44 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournament_participants")
-        .select("user_id, team_selection, checked_in")
+        .select(`
+            user_id, 
+            team_selection, 
+            group_name, 
+            checked_in,
+            profiles (
+                username,
+                avatar_url,
+                equipped_frame_url,
+                clan_members (
+                    clans (
+                        tag
+                    )
+                )
+            )
+        `)
         .eq("tournament_id", Number(id));
       if (error) throw error;
-      return data;
+      return data as any as Participant[];
     },
     enabled: !!id,
   });
 
   const userParticipation = participants?.find((p) => p.user_id === user?.id);
   const isRegistered = !!userParticipation;
+
+  // Group participants by group_name
+  const participantsByGroup = participants?.reduce((acc: Record<string, Participant[]>, p) => {
+    if (p.group_name) {
+      if (!acc[p.group_name]) acc[p.group_name] = [];
+      acc[p.group_name].push(p);
+    }
+    return acc;
+  }, {});
+
+  const isGroupFormat = (tournament as any)?.format === 'groups' || (tournament as any)?.type === 'grupos';
+  const isBracketFormat = (tournament as any)?.format === 'single_elimination';
+  const hasGroupsPopulated = participantsByGroup && Object.keys(participantsByGroup).length > 0;
 
   const { data: existingBans } = useQuery({
     queryKey: ["existingBans", id],
@@ -360,10 +407,88 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                     <TabsTrigger value="management" className="gap-2">
                         <LayoutDashboard className="h-4 w-4" /> {isRegistered ? "Gestão da Inscrição" : "Inscrição"}
                     </TabsTrigger>
+                    {isGroupFormat && (
+                        <TabsTrigger value="groups" className="gap-2">
+                            <Users2 className="h-4 w-4" /> Grupos
+                        </TabsTrigger>
+                    )}
+                    {isBracketFormat && (
+                        <TabsTrigger value="bracket" className="gap-2">
+                            <Trophy className="h-4 w-4" /> Chaveamento
+                        </TabsTrigger>
+                    )}
                     <TabsTrigger value="analysis" className="gap-2">
                         <BrainCircuit className="h-4 w-4" /> Análise (Oráculo)
                     </TabsTrigger>
                 </TabsList>
+
+                {/* Tab: Groups */}
+                {isGroupFormat && (
+                    <TabsContent value="groups" className="mt-6">
+                        <div className="flex justify-end mb-4">
+                            <Link to={`/tournaments/${id}/groups`}>
+                                <Button className="gap-2 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white shadow-lg">
+                                    <Trophy className="h-4 w-4" />
+                                    Ver Tabela de Classificação
+                                </Button>
+                            </Link>
+                        </div>
+                        
+                        {hasGroupsPopulated ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {Object.keys(participantsByGroup!).sort().map((groupName) => (
+                                    <Card key={groupName} className="bg-muted/10 border-primary/20 overflow-hidden">
+                                        <div className="bg-primary/20 px-4 py-2 border-b border-primary/20 flex justify-between items-center">
+                                            <h3 className="font-bold text-lg flex items-center gap-2">
+                                                <Users2 className="h-5 w-5 text-primary" />
+                                                {groupName}
+                                            </h3>
+                                        </div>
+                                        <div className="p-4 space-y-3">
+                                            {participantsByGroup![groupName].map((p) => (
+                                                <div key={p.user_id} className="flex items-center justify-between group">
+                                                    <div className="flex items-center gap-3">
+                                                        <FramedAvatar 
+                                                            username={p.profiles?.username || ""}
+                                                            avatarUrl={p.profiles?.avatar_url || null}
+                                                            frameUrl={p.profiles?.equipped_frame_url || null}
+                                                            sizeClassName="h-8 w-8"
+                                                        />
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-1">
+                                                                {p.profiles?.clan_members?.clans?.tag && (
+                                                                    <span className="text-primary font-bold text-xs">[{p.profiles.clan_members.clans.tag}]</span>
+                                                                )}
+                                                                <span className="font-medium text-sm group-hover:text-primary transition-colors">
+                                                                    {p.profiles?.username}
+                                                                </span>
+                                                            </div>
+                                                            {p.team_selection && (
+                                                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                                                    <img src={getTeamLogoUrl(p.team_selection)} className="h-3 w-3 object-contain" alt="" />
+                                                                    {p.team_selection}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {p.checked_in && (
+                                                        <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 text-[10px] h-5">
+                                                            Check-in
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/5">
+                                <p className="text-muted-foreground">Os grupos ainda não foram sorteados para este torneio.</p>
+                            </div>
+                        )}
+                    </TabsContent>
+                )}
 
                 {/* Tab: Management / Registration */}
                 <TabsContent value="management" className="mt-6 space-y-6">
@@ -561,6 +686,27 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                     )}
                 </TabsContent>
                 
+                {/* Tab: Bracket */}
+                {isBracketFormat && (
+                    <TabsContent value="bracket" className="mt-6">
+                        <div className="flex flex-col items-center justify-center p-8 bg-muted/10 border-2 border-dashed rounded-xl gap-4">
+                            <Trophy className="h-12 w-12 text-yellow-500/50" />
+                            <div className="text-center space-y-2">
+                                <h3 className="text-xl font-bold">Árvore do Torneio</h3>
+                                <p className="text-muted-foreground max-w-md mx-auto">
+                                    Visualize o chaveamento completo, acompanhe o progresso das rodadas e veja quem avança para a final.
+                                </p>
+                            </div>
+                            <Link to={`/tournaments/${id}/bracket`}>
+                                <Button className="gap-2 text-lg h-12 px-8 bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-white shadow-lg">
+                                    <Trophy className="h-5 w-5" />
+                                    Ver Chaveamento Completo
+                                </Button>
+                            </Link>
+                        </div>
+                    </TabsContent>
+                )}
+
                 {/* Tab: Analysis (Oracle) */}
                 <TabsContent value="analysis" className="mt-6">
                     <TournamentPredictions tournamentId={Number(id)} />

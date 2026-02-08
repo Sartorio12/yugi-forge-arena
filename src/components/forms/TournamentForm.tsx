@@ -42,6 +42,7 @@ const tournamentFormSchema = z.object({
     required_error: "A data do evento é obrigatória.",
   }),
   type: z.enum(["standard", "liga", "banimento", "genesys"], { required_error: "O tipo de torneio é obrigatório." }).default("standard"),
+  format: z.enum(["single_elimination", "swiss", "groups"], { required_error: "O esquema do torneio é obrigatório." }).default("single_elimination"),
   banishment_count: z.preprocess(
     (val) => (val === "" ? 0 : Number(val)),
     z.number().int().min(0).default(0)
@@ -88,6 +89,7 @@ export const TournamentForm = ({
       description: initialData?.description || "",
       event_date: initialData?.event_date ? new Date(initialData.event_date) : undefined,
       type: (initialData as any)?.type || "standard",
+      format: (initialData as any)?.format || "single_elimination",
       banishment_count: (initialData as any)?.banishment_count || 0,
       status: initialData?.status || "Aberto",
       registration_link: initialData?.registration_link || "",
@@ -177,6 +179,7 @@ export const TournamentForm = ({
       tournament_model: values.tournament_model,
       banishment_count: values.banishment_count,
       is_private: values.is_private,
+      format: values.format,
     } as any;
     onSubmit(dataToSubmit);
   };
@@ -404,6 +407,31 @@ export const TournamentForm = ({
                   <SelectItem value="genesys">Genesys (Deck Type Only)</SelectItem>
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="format"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Esquema do Torneio</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o esquema" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="single_elimination">Mata-mata (Eliminatória Simples)</SelectItem>
+                  <SelectItem value="swiss">Suíço (Pontos Corridos)</SelectItem>
+                  <SelectItem value="groups">Fase de Grupos</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Define a estrutura de organização das partidas.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

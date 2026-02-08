@@ -23,6 +23,7 @@ interface Tournament {
   event_date: string;
   status: string;
   organizer_id: string;
+  format: string | null;
 }
 
 export const TournamentHero = () => {
@@ -47,7 +48,8 @@ export const TournamentHero = () => {
           banner_image_url,
           event_date,
           status,
-          organizer_id
+          organizer_id,
+          format
         `)
         .eq("status", "Aberto")
         .is("deleted_at", null)
@@ -134,7 +136,7 @@ export const TournamentHero = () => {
                       {tournament.title}
                     </h2>
 
-                    <div className="pt-0.5 sm:pt-2">
+                    <div className="pt-0.5 sm:pt-2 flex flex-wrap gap-2">
                       <Button size="sm" className="sm:hidden h-7 bg-primary hover:bg-primary/90 text-[10px] px-3 font-bold" asChild>
                         <Link to={`/tournaments/${tournament.id}`}>
                           {t('tournament_hero.register')}
