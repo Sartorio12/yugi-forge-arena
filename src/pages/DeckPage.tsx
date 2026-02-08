@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, Loader2, Heart, MessageSquare, Copy } from "lucide-react";
+import { Home, Loader2, Heart, MessageSquare, Copy, Pencil } from "lucide-react";
 import { DeckCommentSection } from "@/components/comments/DeckCommentSection";
 import UserDisplay from "@/components/UserDisplay";
 import { Tables } from "@/integrations/supabase/types";
@@ -200,17 +200,29 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
   const { data: snapshotDeck, isLoading: isLoadingSnapshotDeck } = useQuery<Deck | null>({
       queryKey: ["deck-snapshot", snapshotId],
       queryFn: async () => {
-          const { data, error } = await supabase
+          // Fetch snapshot data
+          const { data: snapshotData, error: snapshotError } = await supabase
               .from("tournament_deck_snapshots")
               .select("*, profiles(*, equipped_frame_url)")
               .eq("id", snapshotId)
               .single();
-          if (error) {
-              console.error("Error fetching deck snapshot:", error);
+          
+          if (snapshotError) {
+              console.error("Error fetching deck snapshot:", snapshotError);
               return null;
           }
-          // The snapshot table has a similar structure to the decks table
-          return data as Deck;
+
+          // Try to find the original deck ID from tournament_decks linkage if possible, or just return snapshot data
+          // We can try to join or separate query. For simplicity, let's do a separate check if needed or just rely on what we have.
+          // Note: snapshot table does not strictly store original deck_id usually, but tournament_decks does.
+          // Let's try to fetch the tournament_decks entry that points to this snapshot to get the original deck_id
+          const { data: tournamentDeckData } = await supabase
+            .from('tournament_decks')
+            .select('deck_id')
+            .eq('deck_snapshot_id', snapshotId)
+            .maybeSingle();
+
+          return { ...snapshotData, deck_id: tournamentDeckData?.deck_id } as Deck;
       },
       enabled: !!snapshotId, // Only run if it is a snapshot
   });
@@ -456,7 +468,9 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
     );
   }
 
-  if (deck.is_private && deck.user_id !== user?.id && currentUserRole !== 'admin' && currentUserRole !== 'organizer') {
+  const isSuperAdmin = user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
+
+  if (deck.is_private && deck.user_id !== user?.id && currentUserRole !== 'admin' && currentUserRole !== 'organizer' && !isSuperAdmin) {
     return (
         <div className="min-h-screen bg-background text-center py-20">
             <p className="text-2xl text-destructive">{t('deck_page.private_deck')}</p>
@@ -468,6 +482,8 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
         </div>
     );
   }
+
+  const canEdit = user?.id === deck.user_id || isSuperAdmin;
 
   const getBanlistIcon = (banStatus: string | null | undefined) => {
     if (banStatus === "Banned" || banStatus === "Forbidden") return "/ban.png";
@@ -516,6 +532,22 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
                       <Copy className="h-5 w-5 mr-2" />
                       <span>{t('deck_page.copy_deck')}</span>
                   </Button>
+                  {canEdit && !snapshotId && (
+                      <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/deck-builder?edit=${deck.id}`}>
+                              <Pencil className="h-5 w-5 mr-2" />
+                              <span>{t('deck_page.edit_deck')}</span>
+                          </Link>
+                      </Button>
+                  )}
+                  {isSuperAdmin && snapshotId && (
+                      <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/deck-builder?edit=${id}`}>
+                              <Pencil className="h-5 w-5 mr-2" />
+                              <span>Editar Deck Original</span>
+                          </Link>
+                      </Button>
+                  )}
             </div>
           </CardHeader>
           <CardContent className="bg-card/50 rounded-b-lg">

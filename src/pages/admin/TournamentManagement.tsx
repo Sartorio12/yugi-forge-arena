@@ -1,6 +1,6 @@
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch, Copy, UserPlus, Search, LayoutDashboard, Swords, Settings, ShieldAlert, Shuffle, Users2, Trophy } from "lucide-react";
+import { Loader2, ArrowLeft, PlusCircle, MinusCircle, Crown, UserX, FileSearch, Copy, UserPlus, Search, LayoutDashboard, Swords, Settings, ShieldAlert, Shuffle, Users2, Trophy, RotateCcw } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import UserDisplay from "@/components/UserDisplay";
@@ -98,6 +98,18 @@ const TournamentManagementPage = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [numGroups, setNumGroups] = useState(2);
+
+  const { data: currentUserProfile } = useQuery({
+    queryKey: ['profile_role', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser) return null;
+      const { data } = await supabase.from('profiles').select('role').eq('id', currentUser.id).single();
+      return data;
+    },
+    enabled: !!currentUser
+  });
+
+  const isAdmin = currentUserProfile?.role === 'admin';
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
@@ -395,6 +407,26 @@ const TournamentManagementPage = () => {
     },
   });
 
+  const forceUpdateSnapshotMutation = useMutation({
+    mutationFn: async ({ userId, deckId }: { userId: string, deckId: number }) => {
+      const { error } = await supabase.rpc('admin_force_update_snapshot', {
+        p_tournament_id: Number(id),
+        p_user_id: userId,
+        p_deck_id: deckId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Snapshot Atualizado", description: "O deck do torneio agora reflete a versão atual do deck do jogador." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentDecksForAdmin", id] });
+    },
+    onError: (error: any) => {
+      console.error("Snapshot sync error:", error);
+      const errorMessage = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
+      toast({ title: "Erro ao atualizar", description: errorMessage, variant: "destructive" });
+    }
+  });
+
   const handleUpdateWins = (participant: Participant, change: number) => {
     if (!participant.profiles?.id) return;
     updateWinsMutation.mutate({ 
@@ -539,9 +571,13 @@ const TournamentManagementPage = () => {
                             {participants?.sort((a, b) => a.id - b.id).map((p, index) => {
                               const userDecks = decksByUserId.get(p.user_id);
                               const hasDecks = userDecks && userDecks.length > 0;
+                              
                               const isOrganizer = currentUser?.id === (tournament as any)?.organizer_id;
                               const exclusiveMode = (tournament as any)?.exclusive_organizer_only;
-                              const showDecklistButton = !exclusiveMode || isOrganizer;
+                              
+                              // Admins always see, Organizers always see, 
+                              // others only see if NOT in exclusive mode
+                              const showDecklistButton = isAdmin || isOrganizer || !exclusiveMode;
 
                               return (
                                 <TableRow key={p.id} className="group hover:bg-muted/5">
@@ -590,7 +626,21 @@ const TournamentManagementPage = () => {
                                           <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><FileSearch className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                           <DropdownMenuContent align="end">
                                             {userDecks.map(dl => (
-                                              <DropdownMenuItem key={dl.deck_id} asChild><Link to={`/deck/${dl.deck_id}?snapshot_id=${dl.deck_snapshot_id}`} target="_blank">{dl.deck_name || 'Deck'}</Link></DropdownMenuItem>
+                                              <div key={dl.deck_id} className="flex flex-col">
+                                                <DropdownMenuItem asChild>
+                                                  <Link to={`/deck/${dl.deck_id}?snapshot_id=${dl.deck_snapshot_id}`} target="_blank" className="flex-1">
+                                                    {dl.deck_name || 'Deck'}
+                                                  </Link>
+                                                </DropdownMenuItem>
+                                                {isAdmin && (
+                                                  <DropdownMenuItem 
+                                                    className="text-[10px] text-primary font-bold bg-primary/5 hover:bg-primary/10 cursor-pointer"
+                                                    onClick={() => forceUpdateSnapshotMutation.mutate({ userId: p.user_id, deckId: dl.deck_id })}
+                                                  >
+                                                    <RotateCcw className="h-3 w-3 mr-1" /> Sincronizar Snapshot
+                                                  </DropdownMenuItem>
+                                                )}
+                                              </div>
                                             ))}
                                           </DropdownMenuContent>
                                         </DropdownMenu>

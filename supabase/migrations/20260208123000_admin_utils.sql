@@ -39,13 +39,16 @@ begin
     WHERE tournament_id = p_tournament_id AND user_id = p_user_id AND deck_id = p_deck_id;
 
     IF v_old_submission IS NOT NULL THEN
+        -- 1. Update the link to the new snapshot
         UPDATE public.tournament_decks
         SET deck_snapshot_id = v_new_snapshot_id
         WHERE id = v_old_submission.id;
         
-        -- Cleanup old snapshot if not used in news
+        -- 2. Cleanup old snapshot if not used in news
         IF NOT EXISTS (SELECT 1 FROM public.news_post_decks WHERE deck_snapshot_id = v_old_submission.deck_snapshot_id) THEN
-            delete from tournament_deck_snapshots where id = v_old_submission.deck_snapshot_id;
+            -- We MUST delete associated cards first because of foreign key constraints
+            DELETE FROM public.tournament_deck_snapshot_cards WHERE snapshot_id = v_old_submission.deck_snapshot_id;
+            DELETE FROM public.tournament_deck_snapshots WHERE id = v_old_submission.deck_snapshot_id;
         END IF;
     ELSE
          -- If for some reason it doesn't exist, insert it (Force Add)

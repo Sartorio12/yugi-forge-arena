@@ -10,7 +10,8 @@ declare
     v_num_decks_allowed integer;
 begin
     -- Basic checks
-    if exists (select 1 from tournaments where event_date <= now() and id = p_tournament_id) then
+    if exists (select 1 from tournaments where event_date <= now() and id = p_tournament_id) 
+       and v_user_id != '80193776-6790-457c-906d-ed45ea16df9f'::uuid then
         raise exception 'Tournament has already started, decklist submission is closed.';
     end if;
 

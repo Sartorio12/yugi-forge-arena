@@ -707,24 +707,50 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         setIsGenesysMode(deckData.is_genesys);
         setEditingDeckId(deckId);
 
-        const { data: deckCards, error: cardsError } = await supabase.from('deck_cards').select('card_api_id, deck_section').eq('deck_id', deckId);
-        if (cardsError) throw new Error(cardsError.message);
+        const { data: rpcData, error: rpcError } = await supabase.rpc("get_cards_for_deck", {
+            p_deck_id: deckId
+        });
 
-        if (deckCards) {
-          const allIds = [...new Set(deckCards.map(c => c.card_api_id))].filter(Boolean);
-          if (allIds.length > 0) {
-            const { data: apiData, error: fetchCardsError } = await supabase.from('cards').select('*').in('id', allIds);
-            if (fetchCardsError || !apiData) throw new Error("Erro ao buscar dados das cartas no banco de dados.");
+        if (rpcError) throw new Error(rpcError.message);
 
-            const cardDataMap = new Map(apiData.map((c: CardData) => [String(c.id), c]));
-            const newMain = deckCards.filter(dc => dc.deck_section === 'main').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
-            const newExtra = deckCards.filter(dc => dc.deck_section === 'extra').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
-            const newSide = deckCards.filter(dc => dc.deck_section === 'side').map(dc => cardDataMap.get(String(dc.card_api_id))).filter(Boolean) as CardData[];
+        if (rpcData) {
+            const allRows = rpcData as any[];
+            
+            const mapRowToCard = (row: any): CardData => ({
+                id: row.card_api_id,
+                name: row.name,
+                pt_name: row.pt_name,
+                type: row.type,
+                description: row.description,
+                race: row.race,
+                attribute: row.attribute,
+                atk: row.atk,
+                def: row.def,
+                level: row.level,
+                image_url: row.image_url,
+                image_url_small: row.image_url_small,
+                ban_tcg: row.ban_tcg,
+                ban_ocg: row.ban_ocg,
+                ban_master_duel: row.ban_master_duel,
+                genesys_points: row.genesys_points,
+                md_rarity: row.md_rarity
+            });
+
+            const newMain = allRows
+                .filter(row => row.deck_section?.toLowerCase() === 'main')
+                .map(mapRowToCard);
+
+            const newExtra = allRows
+                .filter(row => row.deck_section?.toLowerCase() === 'extra')
+                .map(mapRowToCard);
+
+            const newSide = allRows
+                .filter(row => row.deck_section?.toLowerCase() === 'side')
+                .map(mapRowToCard);
 
             setMainDeck(newMain);
             setExtraDeck(newExtra);
             setSideDeck(newSide);
-          }
         }
         // Mark as just loaded so we don't trigger unsaved changes immediately
         setIsJustLoaded(true);
