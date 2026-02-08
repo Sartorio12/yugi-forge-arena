@@ -395,6 +395,19 @@ const TournamentManagementPage = () => {
     },
   });
 
+  const handleUpdateWins = (participant: Participant, change: number) => {
+    if (!participant.profiles?.id) return;
+    updateWinsMutation.mutate({ 
+      participantId: participant.id, 
+      change, 
+      userId: participant.profiles.id 
+    });
+  };
+
+  const handleRemoveParticipant = (participantId: number) => {
+    removeParticipantMutation.mutate(participantId);
+  };
+
   const handleCopyParticipants = () => {
     if (!participants) return;
     const list = participants.sort((a, b) => a.id - b.id).map((p) => {
@@ -476,18 +489,20 @@ const TournamentManagementPage = () => {
                       </form>
                       {searchResults.length > 0 && (
                         <div className="grid grid-cols-1 gap-2 mt-4 max-h-[300px] overflow-y-auto pr-2">
-                          {searchResults.map((result) => (
-                            <div key={result.profile_id} className="flex items-center justify-between p-2 bg-background border rounded-lg hover:border-primary/50 transition-colors">
-                              <div className="flex items-center gap-2 overflow-hidden">
-                                <FramedAvatar username={result.username} avatarUrl={result.avatar_url} sizeClassName="h-8 w-8" />
-                                <div className="flex flex-col truncate">
-                                  <span className="font-medium text-sm truncate">{result.username}</span>
-                                  {result.clan_tag && <span className="text-[10px] text-primary font-bold">[{result.clan_tag}]</span>}
+                          {searchResults
+                            .filter(result => !participants?.some(p => p.user_id === result.profile_id))
+                            .map((result) => (
+                              <div key={result.profile_id} className="flex items-center justify-between p-2 bg-background border rounded-lg hover:border-primary/50 transition-colors">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                  <FramedAvatar username={result.username} avatarUrl={result.avatar_url} sizeClassName="h-8 w-8" />
+                                  <div className="flex flex-col truncate">
+                                    <span className="font-medium text-sm truncate">{result.username}</span>
+                                    {result.clan_tag && <span className="text-[10px] text-primary font-bold">[{result.clan_tag}]</span>}
+                                  </div>
                                 </div>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10" onClick={() => addParticipantMutation.mutate(result.profile_id)}><PlusCircle className="h-5 w-5" /></Button>
                               </div>
-                              <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10" onClick={() => addParticipantMutation.mutate(result.profile_id)}><PlusCircle className="h-5 w-5" /></Button>
-                            </div>
-                          ))}
+                            ))}
                         </div>
                       )}
                     </div>
