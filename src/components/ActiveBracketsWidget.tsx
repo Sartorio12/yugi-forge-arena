@@ -10,17 +10,32 @@ export const ActiveBracketsWidget = () => {
   const { data: activeTournaments, isLoading } = useQuery({
     queryKey: ["active-brackets-widget"],
     queryFn: async () => {
+      // We fetch tournaments and use filtered joins to check for existence of matches or groups
       const { data, error } = await supabase
         .from("tournaments")
-        .select("id, title, format, status")
+        .select(`
+          id, 
+          title, 
+          format, 
+          status,
+          event_date,
+          tournament_matches(id),
+          tournament_participants(group_name)
+        `)
         .is("deleted_at", null)
         .in("status", ["Aberto", "Em Andamento"])
-        .not("format", "is", null) // Torneios que tenham algum formato definido
-        .order("event_date", { ascending: true })
-        .limit(3);
+        .not("format", "is", null)
+        .order("event_date", { ascending: true });
 
       if (error) throw error;
-      return data;
+      
+      // Filter in JS: has matches OR at least one participant has a group assigned
+      const drawnTournaments = (data || []).filter(t => 
+        (t.tournament_matches && t.tournament_matches.length > 0) || 
+        (t.tournament_participants && t.tournament_participants.some((p: any) => p.group_name !== null))
+      );
+
+      return drawnTournaments.slice(0, 3);
     },
   });
 

@@ -83,10 +83,12 @@ export const ManageDecklist = ({
       });
       queryClient.invalidateQueries({ queryKey: ["submittedDeck", tournamentId, user.id] });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error("Submit decklist error:", error);
+      const errorMessage = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
       toast({
         title: "Erro",
-        description: `Não foi possível enviar a decklist: ${error.message}`,
+        description: `Não foi possível enviar a decklist: ${errorMessage}`,
         variant: "destructive",
       });
     },

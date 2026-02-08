@@ -1108,8 +1108,9 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         setHasUnsavedChanges(false);
         navigate(`/profile/${user.id}`);
       }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+    } catch (error: any) {
+      console.error("Save deck error:", error);
+      const errorMessage = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
       toast({ title: t('deck_builder.toast.save_error'), description: errorMessage, variant: "destructive" });
     } finally {
       setIsSaving(false);

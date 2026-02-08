@@ -95,8 +95,10 @@ export const ManageMultipleDecklists = ({
       queryClient.invalidateQueries({ queryKey: ["submittedDecks", tournamentId, user.id] });
       setSelectedDeckId(undefined); // Reset select
     },
-    onError: (error: Error) => {
-      toast({ title: "Erro", description: `Não foi possível enviar a decklist: ${error.message}`, variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Submit decklist error:", error);
+      const errorMessage = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
+      toast({ title: "Erro", description: `Não foi possível enviar a decklist: ${errorMessage}`, variant: "destructive" });
     },
   });
 
@@ -116,8 +118,10 @@ export const ManageMultipleDecklists = ({
       toast({ title: "Sucesso!", description: "Decklist removida." });
       queryClient.invalidateQueries({ queryKey: ["submittedDecks", tournamentId, user.id] });
     },
-    onError: (error: Error) => {
-      toast({ title: "Erro", description: `Não foi possível remover a decklist: ${error.message}`, variant: "destructive" });
+    onError: (error: any) => {
+      console.error("Remove decklist error:", error);
+      const errorMessage = error.message || (typeof error === 'string' ? error : JSON.stringify(error));
+      toast({ title: "Erro", description: `Não foi possível remover a decklist: ${errorMessage}`, variant: "destructive" });
     },
   });
 
