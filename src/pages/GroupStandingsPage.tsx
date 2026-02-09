@@ -21,6 +21,7 @@ interface GroupStanding {
   wins: number;
   losses: number;
   points: number;
+  is_disqualified?: boolean;
 }
 
 interface GroupStandingsPageProps {
@@ -133,7 +134,14 @@ const GroupStandingsPage = ({ user, onLogout }: GroupStandingsPageProps) => {
                               />
                               <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-sm truncate max-w-[120px]">{player.username}</span>
+                                  <span className={`font-semibold text-sm truncate max-w-[120px] ${player.is_disqualified ? 'line-through text-muted-foreground' : ''}`}>
+                                    {player.username}
+                                  </span>
+                                  {player.is_disqualified && (
+                                    <span className="text-[10px] bg-red-500/10 text-red-500 border border-red-500/20 px-1 rounded font-black">
+                                      W.O.
+                                    </span>
+                                  )}
                                   {tournament?.type === 'liga' && player.team_selection && (
                                     <img 
                                       src={getTeamLogoUrl(player.team_selection)} 

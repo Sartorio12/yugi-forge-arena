@@ -61,6 +61,7 @@ const tournamentFormSchema = z.object({
   tournament_model: z.enum(["Diário", "Semanal"], { required_error: "O modelo de torneio é obrigatório." }).default("Diário"),
   exclusive_organizer_only: z.boolean().default(false),
   is_private: z.boolean().default(false),
+  show_on_home: z.boolean().default(true),
 });
 
 interface TournamentFormProps {
@@ -99,6 +100,7 @@ export const TournamentForm = ({
       tournament_model: (initialData as any)?.tournament_model || "Diário",
       exclusive_organizer_only: initialData?.exclusive_organizer_only ?? false,
       is_private: (initialData as any)?.is_private ?? false,
+      show_on_home: (initialData as any)?.show_on_home ?? true,
     },
   });
 
@@ -179,6 +181,7 @@ export const TournamentForm = ({
       tournament_model: values.tournament_model,
       banishment_count: values.banishment_count,
       is_private: values.is_private,
+      show_on_home: values.show_on_home,
       format: values.format,
     } as any;
     onSubmit(dataToSubmit);
@@ -229,6 +232,26 @@ export const TournamentForm = ({
                 <FormLabel>Torneio Privado (Apenas Convidados)</FormLabel>
                 <FormDescription>
                   Se ativado, jogadores não poderão se inscrever sozinhos. Você deverá adicioná-los manualmente no painel de gerenciamento.
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="show_on_home"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel>Exibir na Página Inicial</FormLabel>
+                <FormDescription>
+                  Se desativado, o torneio não aparecerá no carrossel da Home.
                 </FormDescription>
               </div>
               <FormControl>

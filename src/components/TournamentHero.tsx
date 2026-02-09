@@ -52,6 +52,7 @@ export const TournamentHero = () => {
           format
         `)
         .eq("status", "Aberto")
+        .eq("show_on_home", true)
         .is("deleted_at", null)
         .gt("event_date", new Date().toISOString())
         .order("event_date", { ascending: true })

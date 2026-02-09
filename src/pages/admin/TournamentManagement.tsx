@@ -282,7 +282,7 @@ const TournamentManagementPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("title, organizer_id, exclusive_organizer_only, tournament_model, is_private, type, format")
+        .select("title, organizer_id, exclusive_organizer_only, tournament_model, is_private, type, format, show_on_home")
         .eq("id", Number(id))
         .single();
       if (error) throw error;
@@ -335,6 +335,7 @@ const TournamentManagementPage = () => {
           team_selection,
           group_name,
           checked_in,
+          is_disqualified,
           clans (
             tag
           ),
@@ -428,42 +429,55 @@ const TournamentManagementPage = () => {
 
   const generateSwissRoundMutation = useMutation({
     mutationFn: async () => {
-      // 1. Generate Pairings using TS logic
       const pairings = await generateSwissPairings(Number(id));
       
-      // 2. Determine Round Number and Name
-      // Get current max round
-      const { data: lastMatch } = await supabase
+      const { data: existingMatches } = await supabase
         .from("tournament_matches")
         .select("round_number")
-        .eq("tournament_id", Number(id))
-        .order("round_number", { ascending: false })
-        .limit(1)
-        .single();
-        
-      const nextRoundNumber = (lastMatch?.round_number || 0) + 1;
-      const roundName = `Rodada ${nextRoundNumber}`;
-
-      // 3. Insert Matches in Bulk
-      const matchesToInsert = pairings.map(pair => ({
+        .eq("tournament_id", Number(id));
+      
+      const nextRound = Math.max(0, ...(existingMatches?.map(m => m.round_number) || [])) + 1;
+      
+      const matchesToInsert = pairings.map(p => ({
         tournament_id: Number(id),
-        player1_id: pair.player1,
-        player2_id: pair.player2, // Can be null for BYE
-        round_number: nextRoundNumber,
-        round_name: roundName,
-        winner_id: pair.player2 === null ? pair.player1 : null, // Auto-win for BYE
-        is_wo: pair.player2 === null ? true : false // Mark BYE as WO implicitly or just win
+        player1_id: p.player1,
+        player2_id: p.player2,
+        round_name: `Rodada ${nextRound}`,
+        round_number: nextRound,
+        // If it's a BYE, player2 is null, and we can auto-set winner as player1
+        winner_id: p.player2 === null ? p.player1 : null,
+        player1_score: p.player2 === null ? 2 : 0,
+        player2_score: p.player2 === null ? 0 : 0
       }));
 
       const { error } = await supabase.from("tournament_matches").insert(matchesToInsert);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Rodada Gerada", description: "Os novos confrontos foram criados com sucesso." });
+      toast({ title: "Rodada Gerada", description: "Novos confrontos criados com sucesso." });
       queryClient.invalidateQueries({ queryKey: ["tournamentMatches", id] });
     },
     onError: (error: any) => {
       toast({ title: "Erro ao gerar rodada", description: error.message, variant: "destructive" });
+    }
+  });
+
+
+
+  const resetBracketMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('reset_tournament_bracket', {
+        p_tournament_id: Number(id)
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Torneio Resetado", description: "Todas as partidas e resultados foram excluídos." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentMatches", id] });
+      queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro ao resetar", description: error.message, variant: "destructive" });
     }
   });
 
@@ -552,6 +566,17 @@ const TournamentManagementPage = () => {
     },
   });
 
+  const toggleShowOnHomeMutation = useMutation({
+    mutationFn: async (showOnHome: boolean) => {
+      const { error } = await supabase.from('tournaments').update({ show_on_home: showOnHome }).eq('id', Number(id));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Sucesso", description: "Visibilidade na Home atualizada." });
+      queryClient.invalidateQueries({ queryKey: ["tournament", id] });
+    },
+  });
+
   const { data: allDecks, isLoading: isLoadingDecks } = useQuery({
     queryKey: ["tournamentDecksForAdmin", id],
     queryFn: async () => {
@@ -593,6 +618,20 @@ const TournamentManagementPage = () => {
     },
     onSuccess: () => {
       toast({ title: "Sucesso", description: "Participante removido." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+    },
+  });
+
+  const toggleDisqualifyMutation = useMutation({
+    mutationFn: async ({ participantId, disqualified }: { participantId: number, disqualified: boolean }) => {
+      const { error } = await supabase
+        .from("tournament_participants")
+        .update({ is_disqualified: disqualified })
+        .eq("id", participantId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Status Atualizado", description: "Status de desclassificação alterado." });
       queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
     },
   });
@@ -851,6 +890,15 @@ const TournamentManagementPage = () => {
                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500" onClick={() => handleUpdateWins(p, 1)}><PlusCircle className="h-4 w-4" /></Button>
                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleUpdateWins(p, -1)} disabled={p.total_wins_in_tournament === 0}><MinusCircle className="h-4 w-4" /></Button>
                                       </div>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className={`h-8 w-8 ${p.is_disqualified ? 'text-red-500 bg-red-500/10' : 'text-muted-foreground'}`}
+                                        title={p.is_disqualified ? "Remover Desclassificação" : "Marcar W.O. (Desclassificar)"}
+                                        onClick={() => toggleDisqualifyMutation.mutate({ participantId: p.id, disqualified: !p.is_disqualified })}
+                                      >
+                                        <ShieldAlert className="h-4 w-4" />
+                                      </Button>
                                       <AlertDialog>
                                         <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive"><UserX className="h-4 w-4" /></Button></AlertDialogTrigger>
                                         <AlertDialogContent>
@@ -1016,6 +1064,28 @@ const TournamentManagementPage = () => {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+
+                        {matches && matches.length > 0 && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" className="h-14 gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-white" disabled={resetBracketMutation.isPending}>
+                                <RotateCcw className="h-6 w-6" /> Resetar Suíço
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Todas as Rodadas?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Isso removerá permanentemente todas as partidas e classificações do suíço. Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => resetBracketMutation.mutate()} className="bg-destructive">Sim, Excluir Tudo</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -1029,6 +1099,14 @@ const TournamentManagementPage = () => {
                     <p className="text-xs text-muted-foreground">Bloqueia inscrições públicas diretas.</p>
                   </div>
                   <Switch checked={tournament?.is_private} onCheckedChange={(val) => togglePrivateMutation.mutate(val)} disabled={togglePrivateMutation.isPending} />
+                </div>
+
+                <div className="p-4 bg-background border rounded-xl flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-base font-bold">Exibir na Página Inicial</Label>
+                    <p className="text-xs text-muted-foreground">Define se o torneio aparece no carrossel da Home.</p>
+                  </div>
+                  <Switch checked={tournament?.show_on_home} onCheckedChange={(val) => toggleShowOnHomeMutation.mutate(val)} disabled={toggleShowOnHomeMutation.isPending} />
                 </div>
               </TabsContent>
             </Tabs>

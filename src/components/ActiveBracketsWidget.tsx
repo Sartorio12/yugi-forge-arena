@@ -23,6 +23,7 @@ export const ActiveBracketsWidget = () => {
           tournament_participants(group_name)
         `)
         .is("deleted_at", null)
+        .eq("show_on_home", true)
         .in("status", ["Aberto", "Em Andamento"])
         .not("format", "is", null)
         .order("event_date", { ascending: true });
