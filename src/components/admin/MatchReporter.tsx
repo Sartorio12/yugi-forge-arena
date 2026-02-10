@@ -10,6 +10,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { FramedAvatar } from "@/components/FramedAvatar";
 
 interface MatchReporterProps {
   tournamentId: string;
@@ -34,7 +35,20 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournament_participants")
-        .select("user_id, group_name, profiles(username, clan_members(clans(tag)))")
+        .select(`
+          user_id, 
+          group_name, 
+          profiles (
+            username, 
+            avatar_url,
+            equipped_frame_url,
+            clan_members (
+              clans (
+                tag
+              )
+            )
+          )
+        `)
         .eq("tournament_id", Number(tournamentId));
 
       if (error) throw error;
@@ -199,9 +213,13 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                 </Select>
                 {player1 && (
                     <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                        <div className="w-20 h-20 rounded-full border-4 border-primary/20 overflow-hidden shadow-2xl">
-                            <img src={participants?.find(p => p.user_id === player1)?.profiles?.avatar_url || "/placeholder.svg"} className="w-full h-full object-cover" alt="" />
-                        </div>
+                         <FramedAvatar 
+                            userId={player1} 
+                            username={(Array.isArray(participants?.find(p => p.user_id === player1)?.profiles) ? (participants?.find(p => p.user_id === player1)?.profiles as any)[0] : participants?.find(p => p.user_id === player1)?.profiles)?.username} 
+                            avatarUrl={(Array.isArray(participants?.find(p => p.user_id === player1)?.profiles) ? (participants?.find(p => p.user_id === player1)?.profiles as any)[0] : participants?.find(p => p.user_id === player1)?.profiles)?.avatar_url}
+                            frameUrl={(Array.isArray(participants?.find(p => p.user_id === player1)?.profiles) ? (participants?.find(p => p.user_id === player1)?.profiles as any)[0] : participants?.find(p => p.user_id === player1)?.profiles)?.equipped_frame_url}
+                            sizeClassName="h-20 w-20 shadow-2xl" 
+                        />
                     </div>
                 )}
             </div>
@@ -232,9 +250,13 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                 </Select>
                 {player2 && (
                     <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                        <div className="w-20 h-20 rounded-full border-4 border-primary/20 overflow-hidden shadow-2xl">
-                            <img src={participants?.find(p => p.user_id === player2)?.profiles?.avatar_url || "/placeholder.svg"} className="w-full h-full object-cover" alt="" />
-                        </div>
+                        <FramedAvatar 
+                            userId={player2} 
+                            username={(Array.isArray(participants?.find(p => p.user_id === player2)?.profiles) ? (participants?.find(p => p.user_id === player2)?.profiles as any)[0] : participants?.find(p => p.user_id === player2)?.profiles)?.username} 
+                            avatarUrl={(Array.isArray(participants?.find(p => p.user_id === player2)?.profiles) ? (participants?.find(p => p.user_id === player2)?.profiles as any)[0] : participants?.find(p => p.user_id === player2)?.profiles)?.avatar_url}
+                            frameUrl={(Array.isArray(participants?.find(p => p.user_id === player2)?.profiles) ? (participants?.find(p => p.user_id === player2)?.profiles as any)[0] : participants?.find(p => p.user_id === player2)?.profiles)?.equipped_frame_url}
+                            sizeClassName="h-20 w-20 shadow-2xl" 
+                        />
                     </div>
                 )}
             </div>

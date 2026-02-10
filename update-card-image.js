@@ -10,17 +10,13 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function updateCardImage() {
-    // Dracotail often allows direct access if you know the pattern, 
-    // but since it's new, let's try a link that works as a generic image proxy or a more public one.
-    // Testing with a Cloudinary or direct static link if possible.
-    // Actually, let's try the Yugipedia link AGAIN but without the /thumb/ prefix which sometimes triggers blocks.
-    
+    // New URLs from Master Duel Meta which are more reliable
     const card = {
-        image_url: 'https://static.wikia.nocookie.net/yugioh/images/a/a2/WPFancyBall-MD.png',
-        image_url_small: 'https://static.wikia.nocookie.net/yugioh/images/a/a2/WPFancyBall-MD.png'
+        image_url: 'https://www.masterduelmeta.com/api/v1/render/card/W:P%20Fancy%20Ball',
+        image_url_small: 'https://www.masterduelmeta.com/api/v1/render/card/W:P%20Fancy%20Ball?width=168'
     };
 
-    console.log('Updating card image for W:P Fancy Ball to static Wikia...');
+    console.log('Updating card image for W:P Fancy Ball...');
     const { error } = await supabase
         .from('cards')
         .update(card)
