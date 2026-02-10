@@ -22,6 +22,9 @@ interface GroupStanding {
   losses: number;
   points: number;
   is_disqualified?: boolean;
+  game_wins: number;
+  game_losses: number;
+  game_difference: number;
 }
 
 interface GroupStandingsPageProps {
@@ -114,6 +117,9 @@ const GroupStandingsPage = ({ user, onLogout }: GroupStandingsPageProps) => {
                         <TableHead className="w-[40px] text-center text-xs font-bold" title="Partidas Jogadas">J</TableHead>
                         <TableHead className="w-[40px] text-center text-xs font-bold text-green-500" title="Vitórias">V</TableHead>
                         <TableHead className="w-[40px] text-center text-xs font-bold text-red-500" title="Derrotas">D</TableHead>
+                        <TableHead className="w-[40px] text-center text-xs font-bold" title="Game Wins (Sets Ganhos)">GW</TableHead>
+                        <TableHead className="w-[40px] text-center text-xs font-bold" title="Game Losses (Sets Perdidos)">GL</TableHead>
+                        <TableHead className="w-[40px] text-center text-xs font-bold text-yellow-500" title="Saldo de Games (SG)">SG</TableHead>
                         <TableHead className="w-[60px] text-center text-xs font-black text-primary bg-primary/5" title="Pontos">PTS</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -158,6 +164,11 @@ const GroupStandingsPage = ({ user, onLogout }: GroupStandingsPageProps) => {
                           <TableCell className="text-center font-medium text-muted-foreground">{player.matches_played}</TableCell>
                           <TableCell className="text-center font-bold text-green-500">{player.wins}</TableCell>
                           <TableCell className="text-center font-medium text-red-500/70">{player.losses}</TableCell>
+                          <TableCell className="text-center font-medium text-muted-foreground">{player.game_wins}</TableCell>
+                          <TableCell className="text-center font-medium text-muted-foreground">{player.game_losses}</TableCell>
+                          <TableCell className={`text-center font-bold ${player.game_difference > 0 ? 'text-green-500' : player.game_difference < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                            {player.game_difference > 0 ? `+${player.game_difference}` : player.game_difference}
+                          </TableCell>
                           <TableCell className="text-center font-black text-lg text-primary bg-primary/5">{player.points}</TableCell>
                         </TableRow>
                       ))}

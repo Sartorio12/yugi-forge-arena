@@ -920,28 +920,9 @@ const TournamentManagementPage = () => {
               </TabsContent>
 
               <TabsContent value="matches" className="p-6 m-0">
-                {((tournament as any)?.format === 'single_elimination' || (tournament as any)?.format === 'swiss') && matches && matches.length > 0 ? (
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold flex items-center gap-2 italic uppercase tracking-tighter">
-                        <Trophy className="text-yellow-500 h-5 w-5" /> Partidas Geradas
-                      </h3>
-                      <Badge variant="outline">{tournament?.format === 'swiss' ? 'Suíço' : 'Mata-mata'}</Badge>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {matches.map((m) => (
-                        <MatchCard 
-                            key={m.id} 
-                            match={m} 
-                            onUpdate={(winnerId, isWO, s1, s2) => updateMatchWinnerMutation.mutate({ matchId: m.id, winnerId, isWO, score1: s1, score2: s2 })}
-                            isPending={updateMatchWinnerMutation.isPending}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : (
+                <div className="max-w-4xl mx-auto py-4">
                   <MatchReporter tournamentId={id!} />
-                )}
+                </div>
               </TabsContent>
 
               <TabsContent value="organization" className="p-6 m-0 space-y-6">
