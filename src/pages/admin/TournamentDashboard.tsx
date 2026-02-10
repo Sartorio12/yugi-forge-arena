@@ -210,10 +210,10 @@ const TournamentDashboard = ({ }: TournamentDashboardProps) => {
             </h1>
             <p className="text-muted-foreground font-medium">Controle total sobre os eventos da comunidade.</p>
           </div>
-          <Button onClick={handleCreateClick} size="lg" className="shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90">
-            <PlusCircle className="mr-2 h-5 w-5" />
-            Criar Novo Torneio
-          </Button>
+            <Button onClick={handleCreateClick} size="lg" className="shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90">
+              <PlusCircle className="mr-2 h-5 w-5" />
+              Criar Novo Torneio
+            </Button>
         </div>
 
         {isLoading ? (

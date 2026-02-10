@@ -29,6 +29,7 @@ import RewardsDistributionPage from "./pages/admin/RewardsDistributionPage";
 import TournamentStatsPage from "./pages/admin/TournamentStatsPage";
 import BroadcastDashboard from "./pages/admin/BroadcastDashboard";
 import MatchManagementPage from "./pages/admin/MatchManagementPage";
+import CardManagementPage from "./pages/admin/CardManagementPage";
 import SweepstakeDashboard from "./pages/admin/SweepstakeDashboard";
 import { RequestPasswordResetPage } from './pages/RequestPasswordResetPage';
 import { UpdatePasswordPage } from './pages/UpdatePasswordPage';
@@ -236,6 +237,10 @@ const App = () => {
                             <Route
                               path="/dashboard/matches"
                               element={<MatchManagementPage />}
+                            />
+                            <Route
+                              path="/dashboard/cards/add"
+                              element={<CardManagementPage />}
                             />
                             <Route
                               path="/dashboard/sweepstakes"

@@ -37,7 +37,7 @@ import { ToastAction } from "@/components/ui/toast";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image, ChevronDown, Info, RotateCcw, Filter, ArrowUpDown } from "lucide-react";
+import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image, ChevronDown, Info, RotateCcw, Filter, ArrowUpDown, PlusCircle } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -1229,6 +1229,16 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 </Button>
               </div>
 
+               {user?.id === '80193776-6790-457c-906d-ed45ea16df9f' && (
+                 <Button 
+                   variant="outline" 
+                   className="w-full border-green-600 text-green-500 hover:bg-green-600/10 mb-2"
+                   onClick={() => navigate('/dashboard/cards/add')}
+                 >
+                   <PlusCircle className="h-4 w-4 mr-2" />
+                   Adicionar Carta Manual
+                 </Button>
+               )}
                <Dialog open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 border-0">
