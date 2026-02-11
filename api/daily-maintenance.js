@@ -93,6 +93,29 @@ async function syncTierList(supabase) {
   }
 }
 
+async function updateTournamentStatuses(supabase) {
+  try {
+    console.log('Checking for tournaments to start...');
+    const { error, count } = await supabase
+      .from('tournaments')
+      .update({ status: 'Em Andamento' })
+      .eq('status', 'Agendado')
+      .lte('event_date', new Date().toISOString());
+
+    if (error) {
+      console.error('Error updating tournament statuses:', error);
+    } else {
+      if (count > 0) {
+        console.log(`Successfully started ${count} tournament(s).`);
+      } else {
+        console.log('No tournaments to start at this time.');
+      }
+    }
+  } catch (e) {
+    console.error('Error in updateTournamentStatuses:', e);
+  }
+}
+
 export default async function handler(req, res) {
   // Allow GET for testing/cron
   if (req.method !== 'GET') {
@@ -112,6 +135,9 @@ export default async function handler(req, res) {
     // Launch Tier List Sync in parallel (fire and forget or await?)
     // Let's await it to log completion properly
     await syncTierList(supabaseAdmin);
+
+    // Update tournament statuses
+    await updateTournamentStatuses(supabaseAdmin);
 
     // Notify participants for today's daily tournaments
     console.log('Sending daily tournament notifications...');

@@ -275,7 +275,10 @@ const TournamentManagementPage = () => {
     enabled: !!currentUser
   });
 
-  const isAdmin = currentUserProfile?.role === 'admin';
+  const isSuperAdmin = currentUserProfile?.role === 'super-admin';
+  const isOrganizer = currentUser?.id === (tournament as any)?.organizer_id;
+  // A general admin has elevated privileges, but not full control like a super-admin.
+  const isAdmin = isSuperAdmin || currentUserProfile?.role === 'admin'; // Keep 'admin' for now for safety during transition
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
@@ -303,11 +306,11 @@ const TournamentManagementPage = () => {
           .eq('id', user.id)
           .single();
 
-        const isAdmin = profile?.role === 'admin';
-        const isOrganizer = user.id === t.organizer_id;
+        const profileIsSuperAdmin = profile?.role === 'super-admin';
+        const profileIsOrganizer = user.id === t.organizer_id;
 
         if (t.exclusive_organizer_only) {
-          if (!isOrganizer && !isAdmin) {
+          if (!profileIsOrganizer && !profileIsSuperAdmin) {
             toast({
               title: "Acesso Negado",
               description: "Este torneio é exclusivo do organizador. Você não tem permissão para gerenciá-lo.",
@@ -733,13 +736,17 @@ const TournamentManagementPage = () => {
                 <TabsTrigger value="participants" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
                   <LayoutDashboard className="h-4 w-4" /> Inscritos
                 </TabsTrigger>
-                <TabsTrigger value="matches" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
-                  <Swords className="h-4 w-4" /> Resultados
-                </TabsTrigger>
-                {((tournament as any)?.format === 'groups' || (tournament as any)?.format === 'single_elimination' || (tournament as any)?.format === 'swiss') && (
-                  <TabsTrigger value="organization" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
-                    <Shuffle className="h-4 w-4" /> Organização
-                  </TabsTrigger>
+                {isSuperAdmin && (
+                  <>
+                    <TabsTrigger value="matches" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                      <Swords className="h-4 w-4" /> Resultados
+                    </TabsTrigger>
+                    {((tournament as any)?.format === 'groups' || (tournament as any)?.format === 'single_elimination' || (tournament as any)?.format === 'swiss') && (
+                      <TabsTrigger value="organization" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
+                        <Shuffle className="h-4 w-4" /> Organização
+                      </TabsTrigger>
+                    )}
+                  </>
                 )}
                 <TabsTrigger value="settings" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
                   <Settings className="h-4 w-4" /> Ajustes
@@ -813,12 +820,11 @@ const TournamentManagementPage = () => {
                               const userDecks = decksByUserId.get(p.user_id);
                               const hasDecks = userDecks && userDecks.length > 0;
                               
-                              const isOrganizer = currentUser?.id === (tournament as any)?.organizer_id;
                               const exclusiveMode = (tournament as any)?.exclusive_organizer_only;
                               
                               // Admins always see, Organizers always see, 
                               // others only see if NOT in exclusive mode
-                              const showDecklistButton = isAdmin || isOrganizer || !exclusiveMode;
+                              const showDecklistButton = isOrganizer || isSuperAdmin || !exclusiveMode;
 
                               return (
                                 <TableRow key={p.id} className="group hover:bg-muted/5">
@@ -873,7 +879,7 @@ const TournamentManagementPage = () => {
                                                     {dl.deck_name || 'Deck'}
                                                   </Link>
                                                 </DropdownMenuItem>
-                                                {isAdmin && (
+                                                {isSuperAdmin && (
                                                   <DropdownMenuItem 
                                                     className="text-[10px] text-primary font-bold bg-primary/5 hover:bg-primary/10 cursor-pointer"
                                                     onClick={() => forceUpdateSnapshotMutation.mutate({ userId: p.user_id, deckId: dl.deck_id })}
@@ -886,10 +892,12 @@ const TournamentManagementPage = () => {
                                           </DropdownMenuContent>
                                         </DropdownMenu>
                                       )}
-                                      <div className="flex bg-muted/20 rounded-lg p-0.5">
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500" onClick={() => handleUpdateWins(p, 1)}><PlusCircle className="h-4 w-4" /></Button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleUpdateWins(p, -1)} disabled={p.total_wins_in_tournament === 0}><MinusCircle className="h-4 w-4" /></Button>
-                                      </div>
+                                      {isSuperAdmin && (
+                                        <div className="flex bg-muted/20 rounded-lg p-0.5">
+                                          <Button variant="ghost" size="icon" className="h-7 w-7 text-green-500" onClick={() => handleUpdateWins(p, 1)}><PlusCircle className="h-4 w-4" /></Button>
+                                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleUpdateWins(p, -1)} disabled={p.total_wins_in_tournament === 0}><MinusCircle className="h-4 w-4" /></Button>
+                                        </div>
+                                      )}
                                       <Button 
                                         variant="ghost" 
                                         size="icon" 
@@ -919,159 +927,163 @@ const TournamentManagementPage = () => {
                 </div>
               </TabsContent>
 
-              <TabsContent value="matches" className="p-6 m-0">
-                <div className="max-w-4xl mx-auto py-4">
-                  <MatchReporter tournamentId={id!} />
-                </div>
-              </TabsContent>
+              {isSuperAdmin && (
+                <>
+                  <TabsContent value="matches" className="p-6 m-0">
+                    <div className="max-w-4xl mx-auto py-4">
+                      <MatchReporter tournamentId={id!} />
+                    </div>
+                  </TabsContent>
 
-              <TabsContent value="organization" className="p-6 m-0 space-y-6">
-                {(tournament as any)?.format === 'groups' && (
-                  <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2"><Shuffle className="h-5 w-5 text-primary" /> Gerador de Grupos</CardTitle>
-                      <CardDescription>Distribua os jogadores em grupos aleatórios.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-end gap-6">
-                        <div className="space-y-2">
-                          <Label>Quantidade de Grupos</Label>
-                          <Input type="number" value={numGroups} onChange={(e) => setNumGroups(Number(e.target.value))} className="w-24 h-12 text-xl font-bold text-center" />
-                        </div>
-                        <Button className="h-12 gap-2 flex-1" onClick={() => shuffleGroupsMutation.mutate()} disabled={shuffleGroupsMutation.isPending}><Shuffle className="h-5 w-5" /> Sortear Agora</Button>
-                        {participants?.some(p => p.group_name) && <Button variant="outline" className="h-12 border-dashed" onClick={() => resetGroupsMutation.mutate()} disabled={resetGroupsMutation.isPending}>Limpar</Button>}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                  <TabsContent value="organization" className="p-6 m-0 space-y-6">
+                    {(tournament as any)?.format === 'groups' && (
+                      <Card className="bg-primary/5 border-primary/20">
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2"><Shuffle className="h-5 w-5 text-primary" /> Gerador de Grupos</CardTitle>
+                          <CardDescription>Distribua os jogadores em grupos aleatórios.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-end gap-6">
+                            <div className="space-y-2">
+                              <Label>Quantidade de Grupos</Label>
+                              <Input type="number" value={numGroups} onChange={(e) => setNumGroups(Number(e.target.value))} className="w-24 h-12 text-xl font-bold text-center" />
+                            </div>
+                            <Button className="h-12 gap-2 flex-1" onClick={() => shuffleGroupsMutation.mutate()} disabled={shuffleGroupsMutation.isPending}><Shuffle className="h-5 w-5" /> Sortear Agora</Button>
+                            {participants?.some(p => p.group_name) && <Button variant="outline" className="h-12 border-dashed" onClick={() => resetGroupsMutation.mutate()} disabled={resetGroupsMutation.isPending}>Limpar</Button>}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
 
-                {(tournament as any)?.format === 'single_elimination' && (
-                  <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2"><Trophy className="h-5 w-5 text-primary" /> Chaveamento Mata-mata</CardTitle>
-                      <CardDescription>Gere a árvore de eliminatória simples baseada nos inscritos atuais.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="p-4 bg-muted/20 border border-dashed rounded-lg text-sm space-y-2">
-                        <p className="font-bold flex items-center gap-2 text-primary"><ShieldAlert className="h-4 w-4" /> Informações Importantes:</p>
-                        <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-                          <li>O sistema criará chaves automáticas (2, 4, 8, 16 ou 32 vagas).</li>
-                          <li>Jogadores sem oponente inicial avançarão automaticamente para a 2ª rodada.</li>
-                          <li>Isso irá <strong>RESETAR</strong> todas as partidas existentes deste torneio.</li>
-                        </ul>
-                      </div>
+                    {(tournament as any)?.format === 'single_elimination' && (
+                      <Card className="bg-primary/5 border-primary/20">
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2"><Trophy className="h-5 w-5 text-primary" /> Chaveamento Mata-mata</CardTitle>
+                          <CardDescription>Gere a árvore de eliminatória simples baseada nos inscritos atuais.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                          <div className="p-4 bg-muted/20 border border-dashed rounded-lg text-sm space-y-2">
+                            <p className="font-bold flex items-center gap-2 text-primary"><ShieldAlert className="h-4 w-4" /> Informações Importantes:</p>
+                            <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                              <li>O sistema criará chaves automáticas (2, 4, 8, 16 ou 32 vagas).</li>
+                              <li>Jogadores sem oponente inicial avançarão automaticamente para a 2ª rodada.</li>
+                              <li>Isso irá <strong>RESETAR</strong> todas as partidas existentes deste torneio.</li>
+                            </ul>
+                          </div>
 
-                      <div className="flex flex-col md:flex-row gap-4">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button className="h-14 gap-2 flex-1 text-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" disabled={generateBracketMutation.isPending || !participants || participants.length < 2}>
-                              <Trophy className="h-6 w-6" /> Gerar Árvore de Torneio
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Criar Novo Chaveamento?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta ação irá apagar todos os resultados atuais e criar uma nova árvore de partidas. Tem certeza?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => generateBracketMutation.mutate()} className="bg-primary">Sim, Gerar Chave</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          <div className="flex flex-col md:flex-row gap-4">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button className="h-14 gap-2 flex-1 text-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" disabled={generateBracketMutation.isPending || !participants || participants.length < 2}>
+                                  <Trophy className="h-6 w-6" /> Gerar Árvore de Torneio
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Criar Novo Chaveamento?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação irá apagar todos os resultados atuais e criar uma nova árvore de partidas. Tem certeza?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => generateBracketMutation.mutate()} className="bg-primary">Sim, Gerar Chave</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
 
-                        {matches && matches.length > 0 && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" className="h-14 gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-white" disabled={resetBracketMutation.isPending}>
-                                <UserX className="h-6 w-6" /> Excluir Chaveamento
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir Chaveamento Completo?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Isso removerá permanentemente todas as partidas e resultados da árvore. Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => resetBracketMutation.mutate()} className="bg-destructive">Sim, Excluir Tudo</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                            {matches && matches.length > 0 && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" className="h-14 gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-white" disabled={resetBracketMutation.isPending}>
+                                    <UserX className="h-6 w-6" /> Excluir Chaveamento
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir Chaveamento Completo?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Isso removerá permanentemente todas as partidas e resultados da árvore. Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => resetBracketMutation.mutate()} className="bg-destructive">Sim, Excluir Tudo</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
 
-                {(tournament as any)?.format === 'swiss' && (
-                  <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2"><Layers className="h-5 w-5 text-primary" /> Sistema Suíço</CardTitle>
-                      <CardDescription>Gerencie as rodadas com base na pontuação e Buchholz.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="p-4 bg-muted/20 border border-dashed rounded-lg text-sm space-y-2">
-                        <p className="font-bold flex items-center gap-2 text-primary"><ShieldAlert className="h-4 w-4" /> Como funciona:</p>
-                        <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-                          <li>O sistema emparealha jogadores com pontuações similares.</li>
-                          <li>Evita repetição de oponentes (sempre que possível).</li>
-                          <li>BYEs são atribuídos automaticamente se o número de jogadores for ímpar.</li>
-                          <li>Certifique-se de que <strong>TODOS</strong> os resultados da rodada anterior foram registrados antes de gerar a próxima.</li>
-                        </ul>
-                      </div>
+                    {(tournament as any)?.format === 'swiss' && (
+                      <Card className="bg-primary/5 border-primary/20">
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2"><Layers className="h-5 w-5 text-primary" /> Sistema Suíço</CardTitle>
+                          <CardDescription>Gerencie as rodadas com base na pontuação e Buchholz.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                          <div className="p-4 bg-muted/20 border border-dashed rounded-lg text-sm space-y-2">
+                            <p className="font-bold flex items-center gap-2 text-primary"><ShieldAlert className="h-4 w-4" /> Como funciona:</p>
+                            <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                              <li>O sistema emparealha jogadores com pontuações similares.</li>
+                              <li>Evita repetição de oponentes (sempre que possível).</li>
+                              <li>BYEs são atribuídos automaticamente se o número de jogadores for ímpar.</li>
+                              <li>Certifique-se de que <strong>TODOS</strong> os resultados da rodada anterior foram registrados antes de gerar a próxima.</li>
+                            </ul>
+                          </div>
 
-                      <div className="flex flex-col md:flex-row gap-4">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button className="h-14 gap-2 flex-1 text-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" disabled={generateSwissRoundMutation.isPending || !participants || participants.length < 2}>
-                              <Shuffle className="h-6 w-6" /> Gerar Próxima Rodada
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Gerar Nova Rodada?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Isso criará novos confrontos com base na classificação atual. Verifique se todos os resultados anteriores estão corretos.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => generateSwissRoundMutation.mutate()} className="bg-primary">Sim, Gerar</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          <div className="flex flex-col md:flex-row gap-4">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button className="h-14 gap-2 flex-1 text-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" disabled={generateSwissRoundMutation.isPending || !participants || participants.length < 2}>
+                                  <Shuffle className="h-6 w-6" /> Gerar Próxima Rodada
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Gerar Nova Rodada?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Isso criará novos confrontos com base na classificação atual. Verifique se todos os resultados anteriores estão corretos.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => generateSwissRoundMutation.mutate()} className="bg-primary">Sim, Gerar</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
 
-                        {matches && matches.length > 0 && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" className="h-14 gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-white" disabled={resetBracketMutation.isPending}>
-                                <RotateCcw className="h-6 w-6" /> Resetar Suíço
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir Todas as Rodadas?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Isso removerá permanentemente todas as partidas e classificações do suíço. Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => resetBracketMutation.mutate()} className="bg-destructive">Sim, Excluir Tudo</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
+                            {matches && matches.length > 0 && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" className="h-14 gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-white" disabled={resetBracketMutation.isPending}>
+                                    <RotateCcw className="h-6 w-6" /> Resetar Suíço
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir Todas as Rodadas?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Isso removerá permanentemente todas as partidas e classificações do suíço. Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => resetBracketMutation.mutate()} className="bg-destructive">Sim, Excluir Tudo</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </TabsContent>
+                </>
+              )}
 
               <TabsContent value="settings" className="p-6 m-0 space-y-6">
                 <div className="p-4 bg-background border rounded-xl flex items-center justify-between">

@@ -93,7 +93,7 @@ BEGIN
     JOIN 
         public.profiles p2 ON (CASE WHEN m.player1_id < m.player2_id THEN m.player2_id ELSE m.player1_id END) = p2.id
     WHERE 
-        m.created_at >= '2026-01-01'
+        m.created_at >= '2026-01-01' AND m.is_wo = false
     GROUP BY 
         p1_id, p1_name, p1_avatar, p2_id, p2_name, p2_avatar
     ORDER BY 

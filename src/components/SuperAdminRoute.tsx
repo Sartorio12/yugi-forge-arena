@@ -4,12 +4,12 @@ import { useProfile } from "@/hooks/useProfile";
 import { Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
-interface AdminRouteProps {
+interface SuperAdminRouteProps {
   user: User | null;
   onLogout: () => void;
 }
 
-const AdminRoute = ({ user, onLogout }: AdminRouteProps) => {
+const SuperAdminRoute = ({ user, onLogout }: SuperAdminRouteProps) => {
   const { profile, isLoading } = useProfile(user?.id);
 
   if (isLoading) {
@@ -21,14 +21,12 @@ const AdminRoute = ({ user, onLogout }: AdminRouteProps) => {
     );
   }
 
-  const isAuthorized = profile?.role === "admin" || profile?.role === "organizer" || profile?.role === "super-admin";
+  // This route is only for super-admins
+  const isAuthorized = profile?.role === "super-admin";
 
   if (!user || !isAuthorized) {
-    // Redirect them to the home page, but save the current location they were
-    // trying to go to when they were redirected. This allows us to send them
-    // along to that page after they login, which is a nicer user experience
-    // than dropping them off on the home page.
-    return <Navigate to="/" replace />;
+    // Redirect non-super-admins to the main admin dashboard or home
+    return <Navigate to="/dashboard/tournaments" replace />;
   }
 
   return (
@@ -39,4 +37,4 @@ const AdminRoute = ({ user, onLogout }: AdminRouteProps) => {
   );
 };
 
-export default AdminRoute;
+export default SuperAdminRoute;

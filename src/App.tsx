@@ -18,6 +18,7 @@ import DeckPage from "./pages/DeckPage";
 import CommunityDecksPage from "./pages/CommunityDecksPage";
 import RankingPage from "./pages/Ranking";
 import NotFound from "./pages/NotFound";
+import SuperAdminRoute from "./components/SuperAdminRoute";
 import AdminRoute from "./components/AdminRoute";
 import TournamentDashboard from "./pages/admin/TournamentDashboard";
 import TournamentManagementPage from "./pages/admin/TournamentManagement";
@@ -200,7 +201,7 @@ const App = () => {
                           <Route path="/contact" element={<Contact />} />
                           <Route path="/privacy" element={<PrivacyPolicy user={user} onLogout={handleLogout} />} />
           
-                          {/* Admin Routes */}
+                          {/* Admin Routes (Organizers and Super-Admins) */}
                           <Route element={<AdminRoute user={user} onLogout={handleLogout} />}>
                             <Route
                               path="/dashboard/tournaments"
@@ -222,11 +223,7 @@ const App = () => {
                               path="/dashboard/news/:id/edit"
                               element={<NewsEditorFormPage user={user} />}
                             />
-                            <Route
-                              path="/dashboard/titles"
-                              element={<RewardsDistributionPage />}
-                            />
-                            <Route
+                             <Route
                               path="/dashboard/stats"
                               element={<TournamentStatsPage />}
                             />
@@ -234,7 +231,15 @@ const App = () => {
                               path="/dashboard/broadcasts"
                               element={<BroadcastDashboard />}
                             />
+                          </Route>
+
+                          {/* Super-Admin Only Routes */}
+                          <Route element={<SuperAdminRoute user={user} onLogout={handleLogout} />}>
                             <Route
+                              path="/dashboard/titles"
+                              element={<RewardsDistributionPage />}
+                            />
+                             <Route
                               path="/dashboard/matches"
                               element={<MatchManagementPage />}
                             />

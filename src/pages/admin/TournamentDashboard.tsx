@@ -223,8 +223,13 @@ const TournamentDashboard = ({ }: TournamentDashboardProps) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {tournaments?.map((tournament) => {
-              const canManage = !((tournament as any).exclusive_organizer_only && (tournament as any).organizer_id !== currentUserId && profile?.role !== 'admin');
-              const canEdit = !isLoadingProfile && profile?.role === 'admin';
+              const isUserOrganizer = (tournament as any).organizer_id === currentUserId;
+              const isSuperAdmin = !isLoadingProfile && profile?.role === 'super-admin';
+              const isOrganizerRole = !isLoadingProfile && profile?.role === 'organizer';
+
+              const canManage = !((tournament as any).exclusive_organizer_only && !isUserOrganizer && !isSuperAdmin);
+              const canEdit = isSuperAdmin || isOrganizerRole;
+              const canDelete = isSuperAdmin;
 
               return (
                 <Card key={tournament.id} className="overflow-hidden group border-border bg-gray-800/50 hover:shadow-glow transition-all duration-300">
@@ -291,13 +296,14 @@ const TournamentDashboard = ({ }: TournamentDashboardProps) => {
                           >
                             <Pencil className="h-4 w-4" /> Editar Torneio
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(tournament.id)}
-                            className="text-destructive gap-2"
-                            disabled={!canEdit}
-                          >
-                            <Trash2 className="h-4 w-4" /> Excluir Permanentemente
-                          </DropdownMenuItem>
+                          {canDelete && (
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(tournament.id)}
+                              className="text-destructive gap-2"
+                            >
+                              <Trash2 className="h-4 w-4" /> Excluir Permanentemente
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

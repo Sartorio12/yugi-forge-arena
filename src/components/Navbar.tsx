@@ -158,7 +158,7 @@ const NavMenu = ({ user, profile }) => {
             <Link to="/deck-builder">{t('navbar.deck_builder')}</Link>
           </DropdownMenuItem>
         )}
-        {user && (profile?.role === "admin" || profile?.role === "organizer") && (
+        {user && (profile?.role === "admin" || profile?.role === "organizer" || profile?.role === "super-admin") && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>{t('navbar.admin')}</DropdownMenuLabel>
