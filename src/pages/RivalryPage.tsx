@@ -285,7 +285,7 @@ export const RivalryPage = ({ user, onLogout }: RivalryPageProps) => {
                                                         {match.winner_name}
                                                     </span>
                                                 </div>
-                                                <FramedAvatar userId={match.winner_id} avatarUrl={match.winner_avatar} sizeClassName="h-12 w-12" />
+                                                <FramedAvatar userId={match.winner_id} avatarUrl={match.winner_avatar} frameUrl={match.winner_frame} sizeClassName="h-12 w-12" />
                                                 <ChevronRight className="h-5 w-5 text-white/10 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                                             </div>
                                         </div>

@@ -81,7 +81,7 @@ export const MatchHistoryList = ({ userId }: MatchHistoryListProps) => {
                     {match.opponent_name}
                 </Link>
               </div>
-              <FramedAvatar userId={match.opponent_id} avatarUrl={match.opponent_avatar} sizeClassName="h-8 w-8 md:h-10 md:w-10" />
+              <FramedAvatar userId={match.opponent_id} avatarUrl={match.opponent_avatar} frameUrl={match.opponent_frame} sizeClassName="h-8 w-8 md:h-10 md:w-10" />
             </div>
 
           </CardContent>
