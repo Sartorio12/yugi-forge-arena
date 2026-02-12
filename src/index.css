@@ -105,4 +105,13 @@ All colors MUST be HSL.
     color: hsl(var(--primary));
     text-decoration: underline;
   }
+
+  /* Custom class to hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari, Opera */
+  }
 }

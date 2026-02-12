@@ -199,29 +199,35 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                     <SelectValue placeholder="Selecionar..." />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-950 border-primary/20">
-                    {participants?.sort((a,b) => (a.group_name || "").localeCompare(b.group_name || "")).map((p) => {
-                       const tag = (p.profiles as any)?.clan_members?.[0]?.clans?.tag || (p.profiles as any)?.clan_members?.clans?.tag;
+                    {participants?.sort((a,b) => (a.group_name || "").localeCompare(b.group_name || ""))?.map((p) => {
+                       const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+                       const clanMembers = profile?.clan_members;
+                       const tag = Array.isArray(clanMembers) ? clanMembers[0]?.clans?.tag : (clanMembers as any)?.clans?.tag;
                        const group = p.group_name ? `[${p.group_name}] ` : "";
                        return (
                         <SelectItem key={p.user_id} value={p.user_id} className="text-lg py-3 focus:bg-primary/20">
                             <span className="text-primary/50 font-black mr-2">{group}</span>
-                            <span className="font-bold">{tag ? `[${tag}] ` : ""}{p.profiles?.username}</span>
+                            <span className="font-bold">{tag ? `[${tag}] ` : ""}{profile?.username}</span>
                         </SelectItem>
                        );
                     })}
                 </SelectContent>
                 </Select>
-                {player1 && (
-                    <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                         <FramedAvatar 
-                            userId={player1} 
-                            username={(Array.isArray(participants?.find(p => p.user_id === player1)?.profiles) ? (participants?.find(p => p.user_id === player1)?.profiles as any)[0] : participants?.find(p => p.user_id === player1)?.profiles)?.username} 
-                            avatarUrl={(Array.isArray(participants?.find(p => p.user_id === player1)?.profiles) ? (participants?.find(p => p.user_id === player1)?.profiles as any)[0] : participants?.find(p => p.user_id === player1)?.profiles)?.avatar_url}
-                            frameUrl={(Array.isArray(participants?.find(p => p.user_id === player1)?.profiles) ? (participants?.find(p => p.user_id === player1)?.profiles as any)[0] : participants?.find(p => p.user_id === player1)?.profiles)?.equipped_frame_url}
-                            sizeClassName="h-20 w-20 shadow-2xl" 
-                        />
-                    </div>
-                )}
+                {player1 && (() => {
+                    const participant = participants?.find(p => p.user_id === player1);
+                    const profile = Array.isArray(participant?.profiles) ? participant?.profiles[0] : participant?.profiles;
+                    return (
+                        <div className="flex flex-col items-center animate-in zoom-in duration-300">
+                             <FramedAvatar 
+                                userId={player1} 
+                                username={profile?.username} 
+                                avatarUrl={profile?.avatar_url}
+                                frameUrl={profile?.equipped_frame_url}
+                                sizeClassName="h-20 w-20 shadow-2xl" 
+                            />
+                        </div>
+                    );
+                })()}
             </div>
 
             <div className="flex flex-col items-center">
@@ -236,29 +242,35 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                     <SelectValue placeholder="Selecionar..." />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-950 border-primary/20">
-                    {participants?.filter(p => p.user_id !== player1).map((p) => {
-                       const tag = (p.profiles as any)?.clan_members?.[0]?.clans?.tag || (p.profiles as any)?.clan_members?.clans?.tag;
+                    {participants?.filter(p => p.user_id !== player1)?.map((p) => {
+                       const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+                       const clanMembers = profile?.clan_members;
+                       const tag = Array.isArray(clanMembers) ? clanMembers[0]?.clans?.tag : (clanMembers as any)?.clans?.tag;
                        const group = p.group_name ? `[${p.group_name}] ` : "";
                        return (
                         <SelectItem key={p.user_id} value={p.user_id} className="text-lg py-3 focus:bg-primary/20">
                             <span className="text-primary/50 font-black mr-2">{group}</span>
-                            <span className="font-bold">{tag ? `[${tag}] ` : ""}{p.profiles?.username}</span>
+                            <span className="font-bold">{tag ? `[${tag}] ` : ""}{profile?.username}</span>
                         </SelectItem>
                        );
                     })}
                 </SelectContent>
                 </Select>
-                {player2 && (
-                    <div className="flex flex-col items-center animate-in zoom-in duration-300">
-                        <FramedAvatar 
-                            userId={player2} 
-                            username={(Array.isArray(participants?.find(p => p.user_id === player2)?.profiles) ? (participants?.find(p => p.user_id === player2)?.profiles as any)[0] : participants?.find(p => p.user_id === player2)?.profiles)?.username} 
-                            avatarUrl={(Array.isArray(participants?.find(p => p.user_id === player2)?.profiles) ? (participants?.find(p => p.user_id === player2)?.profiles as any)[0] : participants?.find(p => p.user_id === player2)?.profiles)?.avatar_url}
-                            frameUrl={(Array.isArray(participants?.find(p => p.user_id === player2)?.profiles) ? (participants?.find(p => p.user_id === player2)?.profiles as any)[0] : participants?.find(p => p.user_id === player2)?.profiles)?.equipped_frame_url}
-                            sizeClassName="h-20 w-20 shadow-2xl" 
-                        />
-                    </div>
-                )}
+                {player2 && (() => {
+                    const participant = participants?.find(p => p.user_id === player2);
+                    const profile = Array.isArray(participant?.profiles) ? participant?.profiles[0] : participant?.profiles;
+                    return (
+                        <div className="flex flex-col items-center animate-in zoom-in duration-300">
+                            <FramedAvatar 
+                                userId={player2} 
+                                username={profile?.username} 
+                                avatarUrl={profile?.avatar_url}
+                                frameUrl={profile?.equipped_frame_url}
+                                sizeClassName="h-20 w-20 shadow-2xl" 
+                            />
+                        </div>
+                    );
+                })()}
             </div>
         </div>
 

@@ -127,6 +127,7 @@ const UserDropdown = ({ user, onLogout, profile, clan }) => {
 
 const NavMenu = ({ user, profile }) => {
   const { t } = useTranslation();
+  const isSuperAdmin = profile?.role === 'super-admin';
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -168,15 +169,19 @@ const NavMenu = ({ user, profile }) => {
             <DropdownMenuItem asChild>
               <Link to="/dashboard/news">{t('navbar.manage_news')}</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/dashboard/matches">{t('navbar.manage_matches')}</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/dashboard/sweepstakes">Gerenciar Bolões</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/dashboard/titles">{t('navbar.distribute_titles')}</Link>
-            </DropdownMenuItem>
+            {isSuperAdmin && (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard/matches">{t('navbar.manage_matches')}</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard/sweepstakes">Gerenciar Bolões</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard/titles">{t('navbar.distribute_titles')}</Link>
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuItem asChild>
               <Link to="/dashboard/stats">{t('navbar.stats')}</Link>
             </DropdownMenuItem>

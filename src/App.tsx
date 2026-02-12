@@ -239,11 +239,11 @@ const App = () => {
                               path="/dashboard/titles"
                               element={<RewardsDistributionPage />}
                             />
-                             <Route
+                            <Route
                               path="/dashboard/matches"
                               element={<MatchManagementPage />}
                             />
-                            <Route
+                             <Route
                               path="/dashboard/cards/add"
                               element={<CardManagementPage />}
                             />
