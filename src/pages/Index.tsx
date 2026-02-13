@@ -1,79 +1,94 @@
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { lazy, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import { User } from "@supabase/supabase-js";
+import { Loader2 } from "lucide-react";
 
-// Import components
-import { HeroSection } from "@/components/Hero"; // Re-import HeroSection
-import { TournamentHero } from "@/components/TournamentHero";
-import { ActiveBracketsWidget } from "@/components/ActiveBracketsWidget";
+// Import core components eagerly
+import { HeroSection } from "@/components/Hero";
 import { BroadcastBar } from "@/components/BroadcastBar";
-import { FeaturedDecks } from "@/components/FeaturedDecks";
-import { NewsSection } from "@/components/NewsSection";
-import { RankingsWidget } from "@/components/RankingsWidget";
-import { CardOfTheDay } from "@/components/CardOfTheDay";
-import { DiscordWidget } from "@/components/DiscordWidget";
-import { ActivityTimeline } from "@/components/ActivityTimeline";
-import { TierListWidget } from "@/components/TierListWidget";
-import { WinStreakWidget } from "@/components/analytics/WinStreakWidget";
-import { TopRivalriesWidget } from "@/components/analytics/TopRivalriesWidget";
+
+// Lazy load widgets
+const TournamentHero = lazy(() => import("@/components/TournamentHero").then(m => ({ default: m.TournamentHero })));
+const ActiveBracketsWidget = lazy(() => import("@/components/ActiveBracketsWidget").then(m => ({ default: m.ActiveBracketsWidget })));
+const FeaturedDecks = lazy(() => import("@/components/FeaturedDecks").then(m => ({ default: m.FeaturedDecks })));
+const NewsSection = lazy(() => import("@/components/NewsSection").then(m => ({ default: m.NewsSection })));
+const RankingsWidget = lazy(() => import("@/components/RankingsWidget").then(m => ({ default: m.RankingsWidget })));
+const CardOfTheDay = lazy(() => import("@/components/CardOfTheDay").then(m => ({ default: m.CardOfTheDay })));
+const DiscordWidget = lazy(() => import("@/components/DiscordWidget").then(m => ({ default: m.DiscordWidget })));
+const ActivityTimeline = lazy(() => import("@/components/ActivityTimeline").then(m => ({ default: m.ActivityTimeline })));
+const TierListWidget = lazy(() => import("@/components/TierListWidget").then(m => ({ default: m.TierListWidget })));
+const WinStreakWidget = lazy(() => import("@/components/analytics/WinStreakWidget").then(m => ({ default: m.WinStreakWidget })));
+const TopRivalriesWidget = lazy(() => import("@/components/analytics/TopRivalriesWidget").then(m => ({ default: m.TopRivalriesWidget })));
 
 interface IndexProps {
   user: User | null;
   onLogout: () => void;
 }
 
+const WidgetLoader = () => (
+  <div className="flex justify-center py-10 opacity-50">
+    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+  </div>
+);
+
 const Index = ({ user, onLogout }: IndexProps) => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={user} onLogout={onLogout} />
       
-      {/* 1. HERO SECTION (Restored to top) */}
       <div className="container mx-auto max-w-7xl px-4 pt-6 pb-2 space-y-6">
         <HeroSection />
-        {/* A. Barra de Transmissão (Ao Vivo) - Movida para cá para ocupar largura total */}
         <BroadcastBar />
       </div>
 
-      {/* Main Grid Container */}
       <div className="container mx-auto max-w-7xl px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
 
-          {/* MAIN COLUMN (Left - 70% approx) */}
           <div className="lg:col-span-7 space-y-8">
-            {/* B. Banner de Destaque (Tournament Carousel) */}
-            <TournamentHero />
+            <Suspense fallback={<WidgetLoader />}>
+              <TournamentHero />
+            </Suspense>
 
-            {/* C. Chaveamentos Ativos */}
-            <ActiveBracketsWidget />
+            <Suspense fallback={<WidgetLoader />}>
+              <ActiveBracketsWidget />
+            </Suspense>
 
-            {/* Meta Tier List */}
-            <TierListWidget />
+            <Suspense fallback={<WidgetLoader />}>
+              <TierListWidget />
+            </Suspense>
 
-            {/* B. Seção de Notícias */}
-            <NewsSection />
+            <Suspense fallback={<WidgetLoader />}>
+              <NewsSection />
+            </Suspense>
 
-            {/* C. Decks da Comunidade */}
-            <FeaturedDecks />
+            <Suspense fallback={<WidgetLoader />}>
+              <FeaturedDecks />
+            </Suspense>
 
-            {/* D. Atividade Recente - Agora abaixo dos decks e à esquerda do Discord */}
-            <ActivityTimeline />
+            <Suspense fallback={<WidgetLoader />}>
+              <ActivityTimeline />
+            </Suspense>
           </div>
 
-          {/* SIDEBAR (Right - 30% approx) */}
           <div className="lg:col-span-3 space-y-6">
-            {/* A. Widget de Rankings (Tabs) */}
-            <RankingsWidget />
+            <Suspense fallback={<WidgetLoader />}>
+              <RankingsWidget />
+            </Suspense>
 
-            {/* B. Analytics Widgets */}
-            <WinStreakWidget />
-            <TopRivalriesWidget />
+            <Suspense fallback={<WidgetLoader />}>
+              <div className="space-y-6">
+                <WinStreakWidget />
+                <TopRivalriesWidget />
+              </div>
+            </Suspense>
 
-            {/* C. Card do Dia */}
-            <CardOfTheDay />
+            <Suspense fallback={<WidgetLoader />}>
+              <CardOfTheDay />
+            </Suspense>
 
-            {/* C. Widget do Discord */}
-            <DiscordWidget />
+            <Suspense fallback={<WidgetLoader />}>
+              <DiscordWidget />
+            </Suspense>
           </div>
           
         </div>

@@ -204,7 +204,10 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
       // Handle File Upload for Avatar
       if (avatarFile) {
         const filePath = `public/${user.id}/avatar.jpg`;
-        const { error: uploadError } = await supabase.storage.from("profiles").upload(filePath, avatarFile, { upsert: true });
+        const { error: uploadError } = await supabase.storage.from("profiles").upload(filePath, avatarFile, { 
+          upsert: true,
+          cacheControl: '31536000'
+        });
         if (uploadError) throw uploadError;
         const { data: urlData } = supabase.storage.from("profiles").getPublicUrl(filePath);
         avatar_url = `${urlData.publicUrl}?t=${new Date().getTime()}`;
@@ -216,7 +219,10 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
       let banner_url = profile?.banner_url;
       if (bannerFile) {
         const filePath = `public/${user.id}/banner.jpg`;
-        const { error: uploadError } = await supabase.storage.from("profiles").upload(filePath, bannerFile, { upsert: true });
+        const { error: uploadError } = await supabase.storage.from("profiles").upload(filePath, bannerFile, { 
+          upsert: true,
+          cacheControl: '31536000'
+        });
         if (uploadError) throw uploadError;
         const { data: urlData } = supabase.storage.from("profiles").getPublicUrl(filePath);
         banner_url = `${urlData.publicUrl}?t=${new Date().getTime()}`;

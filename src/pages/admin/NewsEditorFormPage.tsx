@@ -44,7 +44,9 @@ const NewsEditorFormPage = ({ user }) => {
         const filePath = `public/news-banners/${profile.id}/${Date.now()}`;
         const { error: uploadError } = await supabase.storage
           .from('news_content')
-          .upload(filePath, file);
+          .upload(filePath, file, {
+            cacheControl: '31536000'
+          });
 
         if (uploadError) {
           throw new Error(`Falha no upload do banner: ${uploadError.message}`);

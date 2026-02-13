@@ -42,7 +42,9 @@ const TiptapToolbar = ({ editor }) => {
 
     const { error: uploadError } = await supabase.storage
       .from('news_content')
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        cacheControl: '31536000'
+      });
 
     if (uploadError) {
       console.error('Error uploading image:', uploadError);

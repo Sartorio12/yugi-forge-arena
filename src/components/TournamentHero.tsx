@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/carousel";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { getOptimizedStorageUrl } from "@/lib/utils-img";
 
 interface Tournament {
   id: number;
@@ -61,6 +62,7 @@ export const TournamentHero = () => {
       if (error) throw error;
       return data as Tournament[];
     },
+    staleTime: 1000 * 60 * 30, // 30 minutes cache
   });
 
   useEffect(() => {
@@ -109,9 +111,10 @@ export const TournamentHero = () => {
                 {/* Background Image */}
                 {tournament.banner_image_url ? (
                   <img
-                    src={tournament.banner_image_url}
+                    src={getOptimizedStorageUrl(tournament.banner_image_url, { width: 1200, quality: 85 }) || ""}
                     alt={tournament.title}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/20 to-background" />

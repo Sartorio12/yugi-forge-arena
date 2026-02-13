@@ -13,6 +13,7 @@ import UserDisplay from "@/components/UserDisplay";
 import { FeaturedDeckDisplay } from "@/components/FeaturedDeckDisplay";
 import { MetagameStats } from "@/components/MetagameStats";
 import { PollWidget } from "@/components/polls/PollWidget";
+import { getOptimizedStorageUrl } from "@/lib/utils-img";
 
 interface NewsPostPageProps {
   user: User | null;
@@ -107,12 +108,20 @@ const NewsPostPage = ({ user, onLogout }: NewsPostPageProps) => {
   if (isLoading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (isError || !post) return <div className="min-h-screen bg-background flex items-center justify-center"><p>Post não encontrado.</p></div>;
 
+  const optimizedBannerUrl = getOptimizedStorageUrl(post.banner_url, { width: 1000, quality: 80 });
+
   return (
     <div className="min-h-screen bg-background text-white">
       <Navbar user={user} onLogout={onLogout} />
       <div className="container mx-auto max-w-3xl py-12">
         <header className="mb-8">
-                      <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">{post.title}</h1>          <div className="flex flex-wrap items-center justify-between gap-4">
+          {optimizedBannerUrl && (
+            <div className="w-full aspect-video mb-8 rounded-xl overflow-hidden shadow-2xl border border-border">
+              <img src={optimizedBannerUrl} alt={post.title} className="w-full h-full object-cover" />
+            </div>
+          )}
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">{post.title}</h1>
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center space-x-2 text-secondary-foreground">
               {post.profiles && (
                 <>

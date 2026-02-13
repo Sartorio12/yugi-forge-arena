@@ -46,7 +46,9 @@ const BannerUploadForm: React.FC<BannerUploadFormProps> = ({ userId, onUploadSuc
 
       const { error: uploadError } = await supabase.storage
         .from('tournament_banners')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '31536000'
+        });
 
       if (uploadError) {
         throw uploadError;

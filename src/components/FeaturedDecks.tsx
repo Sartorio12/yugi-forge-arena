@@ -39,6 +39,7 @@ export const FeaturedDecks = () => {
       if (error) throw error;
       return data as any[];
     },
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
   });
 
   return (

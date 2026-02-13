@@ -133,7 +133,7 @@ export const TournamentForm = ({
 
     const { error: uploadError } = await supabase.storage
       .from('tournament_banners')
-      .upload(filePath, bannerFile, { cacheControl: '3600', upsert: false });
+      .upload(filePath, bannerFile, { cacheControl: '31536000', upsert: false });
 
     setUploadingBanner(false);
 

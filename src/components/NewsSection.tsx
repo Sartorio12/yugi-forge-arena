@@ -5,8 +5,8 @@ import { Loader2, Newspaper } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR, enUS, es } from "date-fns/locale";
 import { FramedAvatar } from "./FramedAvatar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTranslation } from "react-i18next";
+import { getOptimizedStorageUrl } from "@/lib/utils-img";
 
 interface NewsPost {
   id: number;
@@ -63,6 +63,7 @@ export const NewsSection = () => {
       if (error) throw error;
       return data as NewsPost[];
     },
+    staleTime: 1000 * 60 * 20, // 20 minutes cache
   });
 
   return (
@@ -93,9 +94,10 @@ export const NewsSection = () => {
                           <div className="absolute inset-0 w-full h-full">
                             {post.banner_url ? (
                               <img
-                                src={post.banner_url}
+                                src={getOptimizedStorageUrl(post.banner_url, { width: 600, quality: 80 }) || ""}
                                 alt={post.title}
                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                loading="lazy"
                               />
                             ) : (
                               <div className="w-full h-full bg-secondary/20 flex items-center justify-center">

@@ -55,10 +55,10 @@ export const PresenceProvider = ({ user, children }: PresenceProviderProps) => {
         await channel.track({ online_at: new Date().toISOString() });
         await updateUserStatus(true);
 
-        // Send a heartbeat every 60 seconds to keep `last_seen` fresh
+        // Send a heartbeat every 5 minutes to keep `last_seen` fresh
         intervalId = setInterval(async () => {
           await updateUserStatus(true);
-        }, 60000);
+        }, 300000);
       }
     });
 

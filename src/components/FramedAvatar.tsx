@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getOptimizedStorageUrl } from "@/lib/utils-img";
 
 interface FramedAvatarProps {
   avatarUrl?: string | null;
@@ -46,10 +47,13 @@ export const FramedAvatar = ({
   const avatarWidthClass = shouldShowFrame ? (isRound ? 'w-[94%]' : 'w-[97%]') : 'w-full';
   const avatarHeightClass = shouldShowFrame ? 'h-[99%]' : 'h-full';
 
+  // Request an optimized version of the avatar (e.g., max 200px)
+  const optimizedAvatarUrl = getOptimizedStorageUrl(avatarUrl, { width: 200, height: 200, quality: 80 });
+
   return (
     <div className={`relative ${sizeClassName} flex items-center justify-center`}>
       <Avatar className={`${avatarWidthClass} ${avatarHeightClass} ${clippingClass} overflow-hidden transition-all duration-300`}>
-        <AvatarImage src={avatarUrl ?? undefined} alt={username ?? "Avatar"} className="object-cover w-full h-full" />
+        <AvatarImage src={optimizedAvatarUrl ?? undefined} alt={username ?? "Avatar"} className="object-cover w-full h-full" />
         <AvatarFallback>{username?.charAt(0).toUpperCase() ?? "A"}</AvatarFallback>
       </Avatar>
 

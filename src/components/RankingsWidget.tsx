@@ -43,12 +43,13 @@ export const RankingsWidget = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("player_rankings_view")
-        .select('*')
+        .select('user_id, username, avatar_url, total_points, clan_tag, equipped_frame_url')
         .limit(5);
         
       if (error) throw error;
       return data as PlayerRanking[];
     },
+    staleTime: 1000 * 60 * 15,
   });
 
   const { data: clans, isLoading: isLoadingClans } = useQuery({
@@ -56,11 +57,12 @@ export const RankingsWidget = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clan_rankings_view")
-        .select('*')
+        .select('clan_id, clan_name, clan_tag, clan_image_url, total_clan_points')
         .limit(5);
       if (error) throw error;
       return data as ClanRanking[];
     },
+    staleTime: 1000 * 60 * 15,
   });
 
   const getRankColor = (rank: number) => {
