@@ -25,6 +25,7 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
   const [isWO, setIsWO] = useState<boolean>(false);
   const [score1, setScore1] = useState<number>(0);
   const [score2, setScore2] = useState<number>(0);
+  const [isTiebreaker, setIsTiebreaker] = useState<boolean>(false);
   
   // State to track existing match if found
   const [existingMatchId, setExistingMatchId] = useState<number | null>(null);
@@ -72,6 +73,7 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                 setRoundName(data.round_name || "");
                 if (data.winner_id) setWinner(data.winner_id);
                 if (data.is_wo) setIsWO(data.is_wo);
+                if ((data as any).is_tiebreaker) setIsTiebreaker((data as any).is_tiebreaker);
                 if (data.player1_score !== null) setScore1(data.player1_id === player1 ? data.player1_score : data.player2_score);
                 if (data.player2_score !== null) setScore2(data.player1_id === player1 ? data.player2_score : data.player1_score);
             } else {
@@ -79,6 +81,7 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                 setRoundName("");
                 setWinner("");
                 setIsWO(false);
+                setIsTiebreaker(false);
                 setScore1(0);
                 setScore2(0);
             }
@@ -132,10 +135,11 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
             .update({
               winner_id: winner,
               is_wo: isWO,
+              is_tiebreaker: isTiebreaker,
               player1_score: p1_score_db,
               player2_score: p2_score_db,
               // round_name: roundName -- Don't overwrite round name for existing structure usually
-            })
+            } as any)
             .eq("id", existingMatchId);
            if (error) throw error;
       } else {
@@ -147,11 +151,12 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
               player1_id: p1_id_db,
               player2_id: p2_id_db,
               winner_id: winner,
-              round_name: roundName || "Rodada Regular",
+              round_name: isTiebreaker ? "Desempate (MD1)" : (roundName || "Rodada Regular"),
               is_wo: isWO,
+              is_tiebreaker: isTiebreaker,
               player1_score: p1_score_db,
               player2_score: p2_score_db
-            });
+            } as any);
            if (error) throw error;
       }
     },
@@ -352,6 +357,30 @@ export const MatchReporter = ({ tournamentId }: MatchReporterProps) => {
                         </Label>
                         <p className="text-xs text-red-400 font-bold">
                             Marque apenas se o oponente não compareceu.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center space-x-4 bg-yellow-500/10 p-5 rounded-2xl border-2 border-yellow-500/20 transition-all hover:bg-yellow-500/20">
+                    <Checkbox 
+                        id="tiebreaker" 
+                        checked={isTiebreaker} 
+                        className="w-6 h-6 border-yellow-500 data-[state=checked]:bg-yellow-500"
+                        onCheckedChange={(checked) => {
+                            setIsTiebreaker(checked as boolean);
+                            if (checked) {
+                                // If tiebreaker (MD1), usually 1-0 or 0-1
+                                if (winner === player1) { setScore1(1); setScore2(0); }
+                                else if (winner === player2) { setScore1(0); setScore2(1); }
+                            }
+                        }} 
+                    />
+                    <div className="grid gap-1.5 leading-none">
+                        <Label htmlFor="tiebreaker" className="text-base font-black flex items-center gap-2 text-yellow-500 uppercase tracking-tighter">
+                            <Trophy className="h-5 w-5" /> Desempate (MD1)
+                        </Label>
+                        <p className="text-xs text-yellow-400 font-bold">
+                            Marque se esta partida for um desempate oficial (não conta para saldo regular).
                         </p>
                     </div>
                 </div>
