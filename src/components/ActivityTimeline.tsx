@@ -36,14 +36,14 @@ export const ActivityTimeline = () => {
         // Fetch recent user registrations
         const { data: users } = await supabase
           .from("profiles")
-          .select("id, username, updated_at")
-          .order("updated_at", { ascending: false })
+          .select("id, username, created_at")
+          .order("created_at", { ascending: false })
           .limit(5);
         (users || []).forEach((user) =>
           allActivities.push({
             id: `user-${user.id}`,
             type: "user_registration",
-            timestamp: user.updated_at,
+            timestamp: user.created_at,
             link: `/profile/${user.id}`,
             data: { username: user.username },
           })
