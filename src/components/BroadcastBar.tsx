@@ -72,11 +72,12 @@ export const BroadcastBar = () => {
       if (!channel_id) return null;
       
       const isChannelId = channel_id.startsWith("UC") && channel_id.length > 20;
+      const origin = window.location.origin;
       
-      // Use a more robust and simplified embed URL for YouTube
+      // Use the most compatible embed URL format
       const src = isChannelId
-        ? `https://www.youtube.com/embed/live_stream?channel=${channel_id}&autoplay=1&mute=1`
-        : `https://www.youtube.com/embed/${channel_id}?autoplay=1&mute=1`;
+        ? `https://www.youtube.com/embed/live_stream?channel=${channel_id}&autoplay=1&mute=1&origin=${origin}`
+        : `https://www.youtube.com/embed/${channel_id}?autoplay=1&mute=1&origin=${origin}`;
 
       return (
         <div className="flex w-full flex-col lg:flex-row lg:h-full">
