@@ -86,6 +86,38 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Local Auto-Login logic for development
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    const targetUserId = "80193776-6790-457c-906d-ed45ea16df9f";
+
+    const setupSession = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (isLocal && !currentSession) {
+        console.log("🛠️ Local environment detected. Forcing auto-login for Admin ID...");
+        // Fetch the user data manually to mock the session if needed
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', targetUserId)
+          .single();
+
+        if (profile) {
+          // Note: We use a simplified mock user object for local dev UI
+          const mockUser = { id: targetUserId, email: "admin@local.test", user_metadata: { username: profile.username } } as any;
+          setUser(mockUser);
+          setLoading(false);
+          return;
+        }
+      }
+
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setLoading(false);
+    };
+
+    setupSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);

@@ -24,9 +24,10 @@ import { useTranslation } from "react-i18next";
 interface NavbarProps {
   user: User | null;
   onLogout: () => void;
+  hideLogo?: boolean;
 }
 
-const Navbar = ({ user, onLogout }: NavbarProps) => {
+const Navbar = ({ user, onLogout, hideLogo = false }: NavbarProps) => {
   const { profile } = useProfile(user?.id);
   const { data: clan } = useQuery({
     queryKey: ["user-clan", user?.id],
@@ -46,12 +47,14 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
     <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group">
-            <Swords className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
-            <span className="text-xl font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
-              STAFF YUGIOH
-            </span>
-          </Link>
+          {!hideLogo ? (
+            <Link to="/" className="flex items-center gap-2 group">
+              <Swords className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
+              <span className="text-xl font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
+                STAFF YUGIOH
+              </span>
+            </Link>
+          ) : <div />}
 
           <div className="hidden md:block flex-1 max-w-2xl mx-8">
             <GlobalSearch />
@@ -70,7 +73,14 @@ const Navbar = ({ user, onLogout }: NavbarProps) => {
   );
 };
 
-const UserDropdown = ({ user, onLogout, profile, clan }) => {
+interface UserDropdownProps {
+  user: User;
+  onLogout: () => void;
+  profile: any;
+  clan: any;
+}
+
+const UserDropdown = ({ user, onLogout, profile, clan }: UserDropdownProps) => {
   const { t } = useTranslation();
   return (
     <DropdownMenu>
@@ -87,9 +97,9 @@ const UserDropdown = ({ user, onLogout, profile, clan }) => {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
+            <div className="text-sm font-medium leading-none">
               {profile && <UserDisplay profile={profile} clan={clan} />}
-            </p>
+            </div>
             <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
           </div>
         </DropdownMenuLabel>
@@ -125,7 +135,12 @@ const UserDropdown = ({ user, onLogout, profile, clan }) => {
   );
 };
 
-const NavMenu = ({ user, profile }) => {
+interface NavMenuProps {
+  user: User | null;
+  profile: any;
+}
+
+const NavMenu = ({ user, profile }: NavMenuProps) => {
   const { t } = useTranslation();
   const isSuperAdmin = profile?.role === 'super-admin' || user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
   return (

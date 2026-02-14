@@ -45,6 +45,12 @@ All colors MUST be HSL.
     --shadow-glow: 0 0 40px hsl(258 70% 65% / 0.3);
     --shadow-card: 0 10px 30px -10px hsl(0 0% 0% / 0.5);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Rarity Colors */
+    --rarity-ur: 45 100% 50%;
+    --rarity-sr: 0 0% 80%;
+    --rarity-r: 210 100% 60%;
+    --rarity-n: 0 0% 40%;
     
     --sidebar-background: 240 10% 8%;
     --sidebar-foreground: 0 0% 98%;
