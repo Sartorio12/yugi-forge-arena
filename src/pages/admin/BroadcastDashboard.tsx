@@ -149,10 +149,10 @@ const BroadcastDashboard = () => {
         } else {
           toast({ 
             title: "Erro na busca automática", 
-            description: "Não foi possível extrair o ID do vídeo atual. Tente usar o link direto no modo manual.",
+            description: data.detail || data.error,
             variant: "destructive"
           });
-          return; // Stop here to prevent saving the useless Channel ID
+          return;
         }
       } catch (err) {
         console.error("Failed to fetch live ID:", err);

@@ -245,9 +245,11 @@ export const ActivityTimeline = () => {
                     <p className="text-sm text-muted-foreground">
                       {renderActivityMessage(activity)}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true, locale: currentLocale })}
-                    </p>
+                    {activity.timestamp && !isNaN(new Date(activity.timestamp).getTime()) && (
+                      <p className="text-xs text-gray-500">
+                        {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true, locale: currentLocale })}
+                      </p>
+                    )}
                   </div>
                 </li>
               ))}
