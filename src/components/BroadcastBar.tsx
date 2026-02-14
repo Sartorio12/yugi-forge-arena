@@ -72,13 +72,11 @@ export const BroadcastBar = () => {
       if (!channel_id) return null;
       
       const isChannelId = channel_id.startsWith("UC") && channel_id.length > 20;
-      const origin = window.location.origin;
-      const domain = window.location.hostname;
       
-      // Use a more robust embed URL for YouTube
+      // Use a more robust and simplified embed URL for YouTube
       const src = isChannelId
-        ? `https://www.youtube.com/embed/live_stream?channel=${channel_id}&autoplay=1&mute=1&origin=${origin}&enablejsapi=1`
-        : `https://www.youtube.com/embed/${channel_id}?autoplay=1&mute=1&origin=${origin}&enablejsapi=1`;
+        ? `https://www.youtube.com/embed/live_stream?channel=${channel_id}&autoplay=1&mute=1`
+        : `https://www.youtube.com/embed/${channel_id}?autoplay=1&mute=1`;
 
       return (
         <div className="flex w-full flex-col lg:flex-row lg:h-full">
@@ -86,16 +84,16 @@ export const BroadcastBar = () => {
             <iframe
               src={src}
               className="absolute inset-0 w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               title="YouTube Stream"
             />
           </div>
-          {/* Only show chat for specific video IDs, not channel IDs (unless we have a way to get video ID) */}
+          {/* Only show chat for specific video IDs, not channel IDs */}
           {!isChannelId && showChat && (
             <div className="w-full h-[400px] lg:w-[400px] lg:h-full border-t lg:border-t-0 lg:border-l border-white/10 bg-zinc-900">
               <iframe
-                src={`https://www.youtube.com/live_chat?v=${channel_id}&embed_domain=${domain}`}
+                src={`https://www.youtube.com/live_chat?v=${channel_id}&embed_domain=${window.location.hostname}`}
                 className="w-full h-full"
                 title="YouTube Chat"
               />
