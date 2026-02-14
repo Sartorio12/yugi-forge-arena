@@ -6,6 +6,7 @@ import checkMpStatus from './api/check-mercadopago-status.js';
 import createPaypalOrder from './api/create-paypal-order.js';
 import capturePaypalOrder from './api/capture-paypal-order.js';
 import webhookMp from './api/webhooks/mercadopago.js';
+import getYoutubeLive from './api/get-youtube-live.js';
 
 const app = express();
 const port = 3000;
@@ -40,6 +41,7 @@ app.post('/api/check-mercadopago-status', adapter(checkMpStatus));
 app.post('/api/create-paypal-order', adapter(createPaypalOrder));
 app.post('/api/capture-paypal-order', adapter(capturePaypalOrder));
 app.post('/api/webhooks/mercadopago', adapter(webhookMp));
+app.get('/api/get-youtube-live', adapter(getYoutubeLive));
 
 app.listen(port, () => {
   console.log(`Local API Server running at http://localhost:${port}`);

@@ -134,13 +134,32 @@ const BroadcastDashboard = () => {
   });
 
 
-  const goLive = (platform: 'twitch' | 'youtube', channel_id: string, title?: string) => {
+  const goLive = async (platform: 'twitch' | 'youtube', channel_id: string, title?: string) => {
+    let finalId = channel_id;
+
+    // If it's YouTube and looks like a Channel ID (starts with UC)
+    if (platform === 'youtube' && channel_id.startsWith('UC')) {
+      toast({ title: "Buscando live...", description: "Localizando o vídeo ativo no canal..." });
+      try {
+        // We use the local API proxy
+        const response = await fetch(`${window.location.origin.replace('5173', '3000')}/api/get-youtube-live?channelId=${channel_id}`);
+        const data = await response.json();
+        
+        if (data.videoId) {
+          finalId = data.videoId;
+          toast({ title: "Live encontrada!", description: `Iniciando com o vídeo: ${finalId}` });
+        }
+      } catch (err) {
+        console.error("Failed to fetch live ID:", err);
+        // Fallback to original channel ID if API fails
+      }
+    }
+
     updateBroadcastMutation.mutate({
       is_active: true,
       platform,
-      channel_id,
+      channel_id: finalId,
       title: title || "Transmissão Ao Vivo",
-      // updated_at will be handled by DB or trigger if exists, or we leave it
     });
   };
 
