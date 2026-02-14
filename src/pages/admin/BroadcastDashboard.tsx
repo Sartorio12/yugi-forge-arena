@@ -148,13 +148,16 @@ const BroadcastDashboard = () => {
           toast({ title: "Live encontrada!", description: `ID: ${finalId}` });
         } else {
           toast({ 
-            title: "Live não encontrada", 
-            description: "O canal pode estar offline ou oculto. Usando ID do canal como fallback.",
+            title: "Erro na busca automática", 
+            description: "Não foi possível extrair o ID do vídeo atual. Tente usar o link direto no modo manual.",
             variant: "destructive"
           });
+          return; // Stop here to prevent saving the useless Channel ID
         }
       } catch (err) {
         console.error("Failed to fetch live ID:", err);
+        toast({ title: "Erro de conexão", description: "Certifique-se que o servidor de API local está rodando.", variant: "destructive" });
+        return;
       }
     }
 
