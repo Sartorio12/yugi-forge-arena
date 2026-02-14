@@ -209,10 +209,10 @@ const SweepstakePage = ({ user, onLogout }: SweepstakePageProps) => {
   const capturePayPalPayment = async (orderID: string, betId: string) => {
       setIsPaymentLoading(true);
       try {
-          const response = await fetch('/api/capture-paypal-order', {
+          const response = await fetch('/api/payments?action=capture-paypal', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderID })
+              body: JSON.stringify({ orderId: orderID, betId: betId })
           });
           const data = await response.json();
           if (response.ok) {
@@ -236,7 +236,7 @@ const SweepstakePage = ({ user, onLogout }: SweepstakePageProps) => {
       try {
           if (!user?.email) throw new Error("Email necessário");
 
-          const response = await fetch('/api/create-mercadopago-payment', {
+          const response = await fetch('/api/payments?action=create-mercadopago', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
@@ -263,7 +263,7 @@ const SweepstakePage = ({ user, onLogout }: SweepstakePageProps) => {
   const handlePayPalPayment = async (betId: number) => {
       setIsPaymentLoading(true);
       try {
-          const response = await fetch('/api/create-paypal-order', {
+          const response = await fetch('/api/payments?action=create-paypal', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ betId })
@@ -297,7 +297,7 @@ const SweepstakePage = ({ user, onLogout }: SweepstakePageProps) => {
       try {
           if (!sweepstake?.user_bet?.id) return;
 
-          const response = await fetch('/api/check-mercadopago-status', {
+          const response = await fetch('/api/payments?action=check-mercadopago', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ betId: sweepstake.user_bet.id })

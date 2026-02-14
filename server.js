@@ -1,25 +1,19 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import createMpPayment from './api/create-mercadopago-payment.js';
-import checkMpStatus from './api/check-mercadopago-status.js';
-import createPaypalOrder from './api/create-paypal-order.js';
-import capturePaypalOrder from './api/capture-paypal-order.js';
+import paymentsHandler from './api/payments.js';
+import metabotHandler from './api/metabot.js';
+import systemHandler from './api/system.js';
 import webhookMp from './api/webhooks/mercadopago.js';
-import getYoutubeLive from './api/get-youtube-live.js';
 
 const app = express();
 const port = 3000;
 
-// Manual CORS middleware since we can't install 'cors' package
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*'); // Allow all origins for dev
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
 
@@ -35,18 +29,18 @@ const adapter = (handler) => async (req, res) => {
     }
 };
 
-// Routes
-app.post('/api/create-mercadopago-payment', adapter(createMpPayment));
-app.post('/api/check-mercadopago-status', adapter(checkMpStatus));
-app.post('/api/create-paypal-order', adapter(createPaypalOrder));
-app.post('/api/capture-paypal-order', adapter(capturePaypalOrder));
+// Consolidated Routes
+app.all('/api/payments', adapter(paymentsHandler));
+app.all('/api/metabot', adapter(metabotHandler));
+app.all('/api/system', adapter(systemHandler));
 app.post('/api/webhooks/mercadopago', adapter(webhookMp));
-app.get('/api/get-youtube-live', adapter(getYoutubeLive));
+
+// Compatibility redirects for local dev if needed
+app.get('/api/get-youtube-live', (req, res) => {
+    req.query.action = 'get-youtube-live';
+    systemHandler(req, res);
+});
 
 app.listen(port, () => {
-  console.log(`Local API Server running at http://localhost:${port}`);
-  console.log(`- POST /api/create-mercadopago-payment`);
-  console.log(`- POST /api/check-mercadopago-status`);
-  console.log(`- POST /api/create-paypal-order`);
-  console.log(`- POST /api/capture-paypal-order`);
+  console.log(`Consolidated API Server running at http://localhost:${port}`);
 });

@@ -141,8 +141,8 @@ const BroadcastDashboard = () => {
     if (platform === 'youtube' && channel_id.startsWith('UC')) {
       toast({ title: "Buscando live...", description: "Localizando o vídeo ativo no canal..." });
       try {
-        // We use the local API proxy
-        const response = await fetch(`${window.location.origin.replace('5173', '3000')}/api/get-youtube-live?channelId=${channel_id}`);
+        // We use the local API proxy with the new consolidated route
+        const response = await fetch(`${window.location.origin.replace('5173', '3000')}/api/system?action=get-youtube-live&channelId=${channel_id}`);
         const data = await response.json();
         
         if (data.videoId) {
