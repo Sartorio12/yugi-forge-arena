@@ -40,7 +40,7 @@ const UserCardDetails = ({ initialProfile, clan }: { initialProfile: UserDisplay
          {/* Banner Area */}
          <div className="h-24 w-full bg-muted relative">
             {bannerUrl ? (
-              <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+              <img src={getOptimizedStorageUrl(bannerUrl, { width: 400, quality: 60 })} alt="Banner" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-r from-primary/40 to-secondary/40" />
             )}

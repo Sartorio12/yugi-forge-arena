@@ -1,8 +1,11 @@
 export const getOptimizedStorageUrl = (url: string | null | undefined, options: { width?: number; height?: number; quality?: number; format?: 'webp' | 'origin' } = {}) => {
   if (!url) return url;
   
-  // Only apply to Supabase Storage URLs
-  if (!url.includes('.supabase.co/storage/v1/object/public/')) {
+  // Apply to Supabase Storage URLs (Cloud or Local)
+  const isSupabaseUrl = url.includes('.supabase.co/storage/v1/object/public/') || 
+                        url.includes('api.staffygo.com.br/storage/v1/object/public/');
+
+  if (!isSupabaseUrl) {
     return url;
   }
 
@@ -12,8 +15,7 @@ export const getOptimizedStorageUrl = (url: string | null | undefined, options: 
   params.append('quality', (options.quality || 70).toString());
   params.append('format', options.format || 'webp');
   
+  // Cloudflare and Supabase Optimization params
   const separator = url.includes('?') ? '&' : '?';
-  const paramString = params.toString();
-  
-  return `${url}${separator}${paramString}`;
+  return `${url}${separator}${params.toString()}`;
 };
