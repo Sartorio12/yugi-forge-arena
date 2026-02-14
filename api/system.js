@@ -27,10 +27,29 @@ export default async function handler(req, res) {
     if (action === 'get-youtube-live') {
       const { channelId } = req.query;
       if (!channelId) return res.status(400).json({ error: 'Missing channelId' });
-      const response = await fetch(`https://www.youtube.com/channel/${channelId}/live`);
+      
+      const response = await fetch(`https://www.youtube.com/channel/${channelId}/live`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
       const text = await response.text();
-      const match = text.match(/"videoId":"([^"]+)"/);
-      return res.status(200).json({ videoId: match ? match[1] : null });
+      
+      // 1. Try canonical link (the most reliable for the main video on the page)
+      let videoId = null;
+      const canonicalMatch = text.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/watch\?v=([^"]+)">/);
+      
+      if (canonicalMatch && canonicalMatch[1]) {
+        videoId = canonicalMatch[1];
+      } else {
+        // 2. Fallback to og:url
+        const ogMatch = text.match(/<meta property="og:url" content="https:\/\/www\.youtube\.com\/watch\?v=([^"]+)">/);
+        if (ogMatch && ogMatch[1]) {
+          videoId = ogMatch[1];
+        }
+      }
+
+      return res.status(200).json({ videoId: videoId });
     }
 
     // ACTION: FETCH CHALLONGE
