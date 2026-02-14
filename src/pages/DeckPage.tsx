@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, Loader2, Heart, MessageSquare, Copy, Pencil } from "lucide-react";
+import { Home, Loader2, Heart, MessageSquare, Copy, Pencil, PenTool } from "lucide-react";
 import { DeckCommentSection } from "@/components/comments/DeckCommentSection";
 import UserDisplay from "@/components/UserDisplay";
 import { Tables } from "@/integrations/supabase/types";
@@ -14,6 +14,8 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 
 // Interfaces
 interface CardData {
@@ -45,6 +47,7 @@ interface Deck {
   is_genesys?: boolean;
   user_id: string;
   profiles: Profile | null;
+  deck_notes?: string | null;
 }
 
 interface DeckCard {
@@ -590,6 +593,18 @@ const DeckPage = ({ user, onLogout }: DeckPageProps) => {
             </div>
           </CardContent>
         </Card>
+
+        {deck.deck_notes && (
+          <Card className="mt-8 bg-[#121212] border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
+            <div className="flex items-center gap-3 px-8 pt-6 border-b border-white/5 pb-4">
+              <PenTool className="w-5 h-5 text-primary" />
+              <h3 className="font-black uppercase italic tracking-tighter text-lg text-white">Notas & Combos</h3>
+            </div>
+            <CardContent className="p-8 prose prose-invert max-w-none prose-p:text-stone-400 prose-headings:text-white prose-strong:text-primary italic">
+              <ReactMarkdown rehypePlugins={[rehypeRaw]}>{deck.deck_notes}</ReactMarkdown>
+            </CardContent>
+          </Card>
+        )}
 
         {!snapshotId && (
             <div className="mt-8" ref={commentsRef}>

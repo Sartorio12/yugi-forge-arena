@@ -24,10 +24,9 @@ import { useTranslation } from "react-i18next";
 interface NavbarProps {
   user: User | null;
   onLogout: () => void;
-  hideLogo?: boolean;
 }
 
-const Navbar = ({ user, onLogout, hideLogo = false }: NavbarProps) => {
+const Navbar = ({ user, onLogout }: NavbarProps) => {
   const { profile } = useProfile(user?.id);
   const { data: clan } = useQuery({
     queryKey: ["user-clan", user?.id],
@@ -47,14 +46,12 @@ const Navbar = ({ user, onLogout, hideLogo = false }: NavbarProps) => {
     <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          {!hideLogo ? (
-            <Link to="/" className="flex items-center gap-2 group">
-              <Swords className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
-              <span className="text-xl font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
-                STAFF YUGIOH
-              </span>
-            </Link>
-          ) : <div />}
+          <Link to="/" className="flex items-center gap-2 group">
+            <Swords className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
+            <span className="text-xl font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">
+              STAFF YUGIOH
+            </span>
+          </Link>
 
           <div className="hidden md:block flex-1 max-w-2xl mx-8">
             <GlobalSearch />

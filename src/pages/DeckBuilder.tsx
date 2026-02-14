@@ -130,29 +130,14 @@ const ItemTypes = {
 
 const RarityIcon = ({ rarity }: { rarity: string | undefined | null }) => {
   if (!rarity) return null;
-  
-  const rarityColors: Record<string, string> = {
-    "Normal": "bg-stone-500",
-    "Rare": "bg-blue-500",
-    "Super Rare": "bg-zinc-300 text-black",
-    "Ultra Rare": "bg-yellow-500 text-black shadow-[0_0_10px_rgba(234,179,8,0.5)]"
-  };
+  let imageUrl: string | undefined;
+  if (rarity === "Normal") imageUrl = "/normal.png";
+  else if (rarity === "Rare") imageUrl = "/rare.png";
+  else if (rarity === "Super Rare") imageUrl = "/super_rare.png";
+  else if (rarity === "Ultra Rare") imageUrl = "/ultra_rare.png";
+  else return null;
 
-  const labels: Record<string, string> = {
-    "Normal": "N",
-    "Rare": "R",
-    "Super Rare": "SR",
-    "Ultra Rare": "UR"
-  };
-
-  return (
-    <div className={cn(
-      "absolute top-1 right-1 px-1 rounded-[2px] text-[8px] font-black z-20 pointer-events-none uppercase tracking-tighter",
-      rarityColors[rarity] || "bg-stone-500"
-    )}>
-      {labels[rarity] || rarity}
-    </div>
-  );
+  return <div style={{ position: "absolute", top: -10, right: 0, width: "35px", height: "35px", backgroundImage: `url('${imageUrl}')`, backgroundRepeat: "no-repeat", backgroundSize: "contain", zIndex: 10 }} />;
 };
 
 const BanlistIcon = ({ banStatus }: { banStatus: string | undefined | null }) => {
@@ -265,37 +250,43 @@ const CardPreviewContent = ({ card }: { card: CardData }) => (
   </div>
 );
 
-const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCard, isDeckLocked }: { card: CardData, isGenesysMode: boolean, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, isDeckLocked: boolean }) => {
+const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCard, isDeckLocked, showHovers }: { card: CardData, isGenesysMode: boolean, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, isDeckLocked: boolean, showHovers: boolean }) => {
   const [{ isDragging }, drag, preview] = useDrag(() => ({ type: ItemTypes.CARD, item: { card }, canDrag: !isDeckLocked, collect: (monitor) => ({ isDragging: !!monitor.isDragging() }) }), [card, isDeckLocked]);
   const handleRightClick = useCallback((event: React.MouseEvent) => { event.preventDefault(); addCardToDeck(card, 'main'); }, [card, addCardToDeck]);
+
+  const content = (
+    <div 
+      ref={drag} 
+      className={cn(
+        "group relative flex items-center gap-3 p-2 rounded-lg transition-all border border-transparent hover:border-primary/30 hover:bg-white/5 cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-50"
+      )}
+      onContextMenu={handleRightClick}
+    >
+      <div className="relative shrink-0" ref={preview}>
+        <img src={card.image_url_small} alt={card.name} className="w-12 rounded shadow-lg group-hover:scale-105 transition-transform" />
+        {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+        {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
+        <RarityIcon rarity={card.md_rarity} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-black text-xs uppercase truncate tracking-tighter group-hover:text-primary transition-colors">{card.name}</p>
+        <p className="text-[10px] text-muted-foreground truncate italic">{card.race} / {card.type}</p>
+      </div>
+      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button size="icon" variant="secondary" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}}>
+          <Plus className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (!showHovers) return content;
 
   return (
     <HoverCard openDelay={100}>
       <HoverCardTrigger asChild>
-        <div 
-          ref={drag} 
-          className={cn(
-            "group relative flex items-center gap-3 p-2 rounded-lg transition-all border border-transparent hover:border-primary/30 hover:bg-white/5 cursor-grab active:cursor-grabbing",
-            isDragging && "opacity-50"
-          )}
-          onContextMenu={handleRightClick}
-        >
-          <div className="relative shrink-0" ref={preview}>
-            <img src={card.image_url_small} alt={card.name} className="w-12 rounded shadow-lg group-hover:scale-105 transition-transform" />
-            {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
-            {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
-            <RarityIcon rarity={card.md_rarity} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-black text-xs uppercase truncate tracking-tighter group-hover:text-primary transition-colors">{card.name}</p>
-            <p className="text-[10px] text-muted-foreground truncate italic">{card.race} / {card.type}</p>
-          </div>
-          <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button size="icon" variant="secondary" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}}>
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
+        {content}
       </HoverCardTrigger>
       <HoverCardContent side="left" className="w-[500px] p-0 bg-[#121212] border-primary/30 shadow-2xl z-[100]">
         <CardPreviewContent card={card} />
@@ -304,7 +295,7 @@ const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtra
   );
 };
 
-const PopularCardGridItem = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCard, isDeckLocked }: { card: CardData, isGenesysMode: boolean, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, isDeckLocked: boolean }) => {
+const PopularCardGridItem = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCard, isDeckLocked, showHovers }: { card: CardData, isGenesysMode: boolean, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, isDeckLocked: boolean, showHovers: boolean }) => {
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: ItemTypes.CARD,
     item: { card },
@@ -319,37 +310,43 @@ const PopularCardGridItem = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCa
     addCardToDeck(card, 'main');
   }, [card, addCardToDeck]);
 
+  const content = (
+    <div 
+      ref={drag} 
+      className={cn(
+        "relative aspect-[2/3] rounded-md overflow-hidden cursor-grab active:cursor-grabbing group border border-white/5 hover:border-primary/50 transition-all",
+        isDragging && "opacity-50"
+      )}
+      onContextMenu={handleRightClick}
+    >
+      <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" ref={preview} />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      
+      {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+      {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
+      <RarityIcon rarity={card.md_rarity} />
+      
+      {!isDeckLocked && (
+        <div className="absolute inset-0 flex flex-col items-center justify-end p-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+          <div className="flex gap-1 w-full">
+            <Button size="sm" className="flex-1 h-7 bg-primary text-black font-black text-[10px]" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}}>
+              ADD
+            </Button>
+            <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, 'side')}}>
+              <PlusCircle className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (!showHovers) return content;
+
   return (
     <HoverCard openDelay={100}>
       <HoverCardTrigger asChild>
-        <div 
-          ref={drag} 
-          className={cn(
-            "relative aspect-[2/3] rounded-md overflow-hidden cursor-grab active:cursor-grabbing group border border-white/5 hover:border-primary/50 transition-all",
-            isDragging && "opacity-50"
-          )}
-          onContextMenu={handleRightClick}
-        >
-          <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" ref={preview} />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          
-          {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
-          {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
-          <RarityIcon rarity={card.md_rarity} />
-          
-          {!isDeckLocked && (
-            <div className="absolute inset-0 flex flex-col items-center justify-end p-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-              <div className="flex gap-1 w-full">
-                <Button size="sm" className="flex-1 h-7 bg-primary text-black font-black text-[10px]" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}}>
-                  ADD
-                </Button>
-                <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, 'side')}}>
-                  <PlusCircle className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        {content}
       </HoverCardTrigger>
       <HoverCardContent side="left" className="w-[500px] p-0 bg-[#121212] border-primary/30 shadow-2xl z-[100]">
         <CardPreviewContent card={card} />
@@ -359,35 +356,41 @@ const PopularCardGridItem = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCa
 };
 
 
-const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode, isDeckLocked }: { card: CardData, index: number, section: "main" | "extra" | "side", removeCard: (index: number, section: "main" | "extra" | "side") => void, isGenesysMode: boolean, isDeckLocked: boolean }) => {
+const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode, isDeckLocked, showHovers }: { card: CardData, index: number, section: "main" | "extra" | "side", removeCard: (index: number, section: "main" | "extra" | "side") => void, isGenesysMode: boolean, isDeckLocked: boolean, showHovers: boolean }) => {
   const [{ isDragging }, drag] = useDrag(() => ({ type: ItemTypes.DECK_CARD, item: { card, index, section }, canDrag: !isDeckLocked, end: (item, monitor) => { if (!monitor.didDrop() && !isDeckLocked) { removeCard(item.index, item.section); } }, collect: (monitor) => ({ isDragging: !!monitor.isDragging() }) }), [card, index, section, removeCard, isDeckLocked]);
   
+  const content = (
+    <div 
+      ref={drag} 
+      className={cn(
+        "relative aspect-[2/3] rounded shadow-md cursor-grab active:cursor-grabbing group hover:ring-2 hover:ring-primary/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all",
+        isDragging && "opacity-0"
+      )}
+    >
+      <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover rounded" />
+      {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+      {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
+      <RarityIcon rarity={card.md_rarity} />
+      
+      {!isDeckLocked && (
+        <Button 
+          size="icon" 
+          variant="destructive" 
+          className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 z-30 shadow-lg scale-75 group-hover:scale-100 transition-all" 
+          onClick={() => removeCard(index, section)}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      )}
+    </div>
+  );
+
+  if (!showHovers) return content;
+
   return (
     <HoverCard openDelay={100}>
       <HoverCardTrigger asChild>
-        <div 
-          ref={drag} 
-          className={cn(
-            "relative aspect-[2/3] rounded shadow-md cursor-grab active:cursor-grabbing group hover:ring-2 hover:ring-primary/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all",
-            isDragging && "opacity-0"
-          )}
-        >
-          <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover rounded" />
-          {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
-          {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
-          <RarityIcon rarity={card.md_rarity} />
-          
-          {!isDeckLocked && (
-            <Button 
-              size="icon" 
-              variant="destructive" 
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 z-30 shadow-lg scale-75 group-hover:scale-100 transition-all" 
-              onClick={() => removeCard(index, section)}
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
+        {content}
       </HoverCardTrigger>
       <HoverCardContent side="top" className="w-[500px] p-0 bg-[#121212] border-primary/30 shadow-2xl z-[100]">
         <CardPreviewContent card={card} />
@@ -461,6 +464,15 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [isDrawSimulatorOpen, setIsDrawSimulatorOpen] = useState(false);
   const [simulatedHand, setSimulatedHand] = useState<CardData[]>([]);
   const [remainingSimDeck, setRemainingSimDeck] = useState<CardData[]>([]);
+  
+  const [showHovers, setShowHovers] = useState(() => {
+    const saved = localStorage.getItem("deck_builder_show_hovers");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("deck_builder_show_hovers", JSON.stringify(showHovers));
+  }, [showHovers]);
 
   const fetchPopularCards = useCallback(async () => {
     setIsSearching(true);
@@ -816,38 +828,14 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-stone-200 selection:bg-primary/30 selection:text-white">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-[50] w-full border-b border-white/5 bg-[#0a0a0a]/80 backdrop-blur-xl transition-all">
-        <div className="container-fluid px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 bg-primary rounded flex items-center justify-center shadow-lg shadow-primary/20 group-hover:rotate-12 transition-transform">
-                <Layout className="w-5 h-5 text-black" />
-              </div>
-              <span className="font-black uppercase italic tracking-tighter text-xl text-white">YuGi<span className="text-primary">Forge</span></span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-6">
-              <Link to="/tournaments" className="text-sm font-bold uppercase tracking-widest text-stone-400 hover:text-white transition-colors">Torneios</Link>
-              <Link to="/ranking" className="text-sm font-bold uppercase tracking-widest text-stone-400 hover:text-white transition-colors">Ranking</Link>
-              <Link to="/news" className="text-sm font-bold uppercase tracking-widest text-stone-400 hover:text-white transition-colors">Blog</Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/10">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Builder v2.0</span>
-            </div>
-            <Navbar user={user} onLogout={onLogout} hideLogo />
-          </div>
-        </div>
-      </header>
+      <Navbar user={user} onLogout={onLogout} />
 
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".ydk" style={{ display: 'none' }} />
       
-      <main className="container-fluid px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8 mb-8">
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <main className="container-fluid px-2 md:px-6 py-4 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-4 md:gap-8 mb-8">
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
               <div className="flex-1 space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Identificação do Deck</Label>
                 <div className="relative group">
@@ -912,6 +900,14 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 <Switch checked={isGenesysMode} onCheckedChange={setIsGenesysMode} className="data-[state=checked]:bg-primary" />
                 <Label className="text-[10px] font-black uppercase tracking-widest">Genesys</Label>
               </div>
+              <Separator orientation="vertical" className="h-8 bg-white/10" />
+              <div className="flex items-center gap-3">
+                <Switch checked={showHovers} onCheckedChange={setShowHovers} className="data-[state=checked]:bg-primary" />
+                <div className="flex flex-col">
+                  <Label className="text-[10px] font-black uppercase tracking-widest">Hovers</Label>
+                  <span className="text-[9px] text-stone-500 font-medium uppercase tracking-tighter">Preview de cards</span>
+                </div>
+              </div>
               {isGenesysMode && (
                 <>
                   <Separator orientation="vertical" className="h-8 bg-white/10" />
@@ -964,11 +960,11 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                     </DialogContent>
                   </Dialog>
                 </div>
-                <div className="min-h-[300px] p-6 bg-[#121212] rounded-[2rem] border border-white/5 shadow-inner relative overflow-hidden">
+                <div className="min-h-[200px] md:min-h-[300px] p-2 md:p-6 bg-[#121212] rounded-2xl md:rounded-[2rem] border border-white/5 shadow-inner relative overflow-hidden">
                   <div className="absolute inset-0 bg-[url('/bg-main.png')] opacity-[0.03] grayscale pointer-events-none" />
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 xl:grid-cols-10 gap-3 relative z-10">
+                  <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 xl:grid-cols-10 gap-1.5 md:gap-3 relative z-10">
                     {mainDeck.map((card, index) => (
-                      <DraggableDeckCard key={`m-${index}`} card={card} index={index} section="main" removeCard={removeCard} isGenesysMode={isGenesysMode} isDeckLocked={isDeckLocked} />
+                      <DraggableDeckCard key={`m-${index}`} card={card} index={index} section="main" removeCard={removeCard} isGenesysMode={isGenesysMode} isDeckLocked={isDeckLocked} showHovers={showHovers} />
                     ))}
                     {!isDeckLocked && mainDeck.length < 60 && (
                       <div className="aspect-[2/3] rounded-xl border-2 border-dashed border-white/5 flex flex-col items-center justify-center text-stone-700 hover:border-primary/20 hover:text-primary/30 transition-all duration-500 group/add">
@@ -985,10 +981,10 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               <DeckDropZone section="extra" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
                 <div className="space-y-4 text-white">
                   <h2 className="text-xl font-black italic uppercase tracking-tighter">Extra Deck ({extraDeck.length}/15)</h2>
-                  <div className="min-h-[150px] p-5 bg-[#121212] rounded-3xl border border-white/5 shadow-inner">
-                    <div className="grid grid-cols-5 gap-3">
+                  <div className="min-h-[100px] md:min-h-[150px] p-2 md:p-5 bg-[#121212] rounded-2xl md:rounded-3xl border border-white/5 shadow-inner">
+                    <div className="grid grid-cols-5 gap-1.5 md:gap-3">
                       {extraDeck.map((card, index) => (
-                        <DraggableDeckCard key={`e-${index}`} card={card} index={index} section="extra" removeCard={removeCard} isGenesysMode={isGenesysMode} isDeckLocked={isDeckLocked} />
+                        <DraggableDeckCard key={`e-${index}`} card={card} index={index} section="extra" removeCard={removeCard} isGenesysMode={isGenesysMode} isDeckLocked={isDeckLocked} showHovers={showHovers} />
                       ))}
                     </div>
                   </div>
@@ -997,10 +993,10 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               <DeckDropZone section="side" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
                 <div className="space-y-4 text-white">
                   <h2 className="text-xl font-black italic uppercase tracking-tighter">Side Deck ({sideDeck.length}/15)</h2>
-                  <div className="min-h-[150px] p-5 bg-[#121212] rounded-3xl border border-white/5 shadow-inner">
-                    <div className="grid grid-cols-5 gap-3">
+                  <div className="min-h-[100px] md:min-h-[150px] p-2 md:p-5 bg-[#121212] rounded-2xl md:rounded-3xl border border-white/5 shadow-inner">
+                    <div className="grid grid-cols-5 gap-1.5 md:gap-3">
                       {sideDeck.map((card, index) => (
-                        <DraggableDeckCard key={`s-${index}`} card={card} index={index} section="side" removeCard={removeCard} isGenesysMode={isGenesysMode} isDeckLocked={isDeckLocked} />
+                        <DraggableDeckCard key={`s-${index}`} card={card} index={index} section="side" removeCard={removeCard} isGenesysMode={isGenesysMode} isDeckLocked={isDeckLocked} showHovers={showHovers} />
                       ))}
                     </div>
                   </div>
@@ -1061,21 +1057,21 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-500 px-1">
                   {isSearchActive ? "Resultados" : "Populares"}
                 </h3>
-                <ScrollArea className="h-[calc(100vh-450px)] pr-4">
-                  {isSearchActive ? (
-                    <div className="space-y-2">
-                      {searchResults.map((card, index) => (
-                        <DraggableSearchResultCard key={`r-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} isDeckLocked={isDeckLocked} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-3 gap-3">
-                      {searchResults.map((card, index) => (
-                        <PopularCardGridItem key={`p-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} isDeckLocked={isDeckLocked} />
-                      ))}
-                    </div>
-                  )}
-                  {isSearching && (
+                                  <ScrollArea className="h-[calc(100vh-450px)] pr-4">
+                                    {isSearchActive ? (
+                                      <div className="space-y-2">
+                                        {searchResults.map((card, index) => (
+                                          <DraggableSearchResultCard key={`r-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} isDeckLocked={isDeckLocked} showHovers={showHovers} />
+                                        ))}
+                                      </div>
+                                                        ) : (
+                                                          <div className="grid grid-cols-4 gap-2 md:gap-3">
+                                                            {searchResults.map((card, index) => (
+                                                              <PopularCardGridItem key={`p-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} isDeckLocked={isDeckLocked} showHovers={showHovers} />
+                                                            ))}
+                                                          </div>
+                                                        )}
+                                                      {isSearching && (
                     <div className="flex flex-col items-center justify-center py-12 gap-4">
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
                       <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Acessando Banco...</span>

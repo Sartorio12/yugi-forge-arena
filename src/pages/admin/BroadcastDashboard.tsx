@@ -153,11 +153,29 @@ const BroadcastDashboard = () => {
     
     // Auto-extract from URL if it's a link
     if (finalValue.includes("youtube.com") || finalValue.includes("youtu.be")) {
-      const ytMatch = finalValue.match(/(?:v=|list=|embed\/|watch\?v=|&v=|youtu\.be\/|channel\/|c\/|u\/\w\/|user\/|@)([^#\&\?]*).*/);
-      if (ytMatch && ytMatch[1]) {
-        finalValue = ytMatch[1];
-        if (customPlatform !== 'youtube') setCustomPlatform('youtube');
+      // 1. Check for specific Video ID (watch?v= or embed/ or youtu.be/)
+      const videoMatch = finalValue.match(/(?:v=|embed\/|watch\?v=|&v=|youtu\.be\/)([^#\&\?]*).*/);
+      // 2. Check for Channel ID (channel/UC...)
+      const channelMatch = finalValue.match(/channel\/(UC[^#\&\?]*).*/);
+      
+      if (videoMatch && videoMatch[1] && videoMatch[1].length === 11) {
+        finalValue = videoMatch[1];
+      } else if (channelMatch && channelMatch[1]) {
+        finalValue = channelMatch[1];
+      } else if (finalValue.includes("/@")) {
+        // Handle detected, but we can't embed handles directly easily without API
+        const handleMatch = finalValue.match(/\/@([^#\&\?\/]*).*/);
+        if (handleMatch) {
+           toast({ 
+             title: "Atenção: Handle do YouTube", 
+             description: "URLs com '@' não funcionam direto no player. Use o ID do Canal (UC...) ou o ID do Vídeo.",
+             variant: "destructive"
+           });
+           finalValue = handleMatch[1];
+        }
       }
+      
+      if (customPlatform !== 'youtube') setCustomPlatform('youtube');
     } else if (finalValue.includes("twitch.tv")) {
       const twitchMatch = finalValue.match(/twitch\.tv\/([a-z0-9_]+)/i);
       if (twitchMatch && twitchMatch[1]) {
@@ -171,12 +189,16 @@ const BroadcastDashboard = () => {
 
   const handleNewPartnerChannelChange = (value: string) => {
     let finalValue = value.trim();
-     if (finalValue.includes("youtube.com") || finalValue.includes("youtu.be")) {
-      const ytMatch = finalValue.match(/(?:v=|list=|embed\/|watch\?v=|&v=|youtu\.be\/|channel\/|c\/|u\/\w\/|user\/|@)([^#\&\?]*).*/);
-      if (ytMatch && ytMatch[1]) {
-        finalValue = ytMatch[1];
-        if (newPartnerPlatform !== 'youtube') setNewPartnerPlatform('youtube');
+    if (finalValue.includes("youtube.com") || finalValue.includes("youtu.be")) {
+      const videoMatch = finalValue.match(/(?:v=|embed\/|watch\?v=|&v=|youtu\.be\/)([^#\&\?]*).*/);
+      const channelMatch = finalValue.match(/channel\/(UC[^#\&\?]*).*/);
+      
+      if (videoMatch && videoMatch[1] && videoMatch[1].length === 11) {
+        finalValue = videoMatch[1];
+      } else if (channelMatch && channelMatch[1]) {
+        finalValue = channelMatch[1];
       }
+      if (newPartnerPlatform !== 'youtube') setNewPartnerPlatform('youtube');
     } else if (finalValue.includes("twitch.tv")) {
       const twitchMatch = finalValue.match(/twitch\.tv\/([a-z0-9_]+)/i);
       if (twitchMatch && twitchMatch[1]) {
@@ -333,10 +355,16 @@ const BroadcastDashboard = () => {
                 placeholder={customPlatform === 'twitch' ? "Ex: ksnynui" : "Ex: video_id_here"} 
                 value={customChannel}
                 onChange={(e) => handleChannelInputChange(e.target.value)}
+                className={customPlatform === 'youtube' && customChannel.includes('@') ? "border-red-500 bg-red-500/10" : ""}
               />
               <p className="text-xs text-muted-foreground">
                 {customPlatform === 'twitch' ? "Nome de usuário do canal ou URL." : "ID do vídeo, ID do canal (UC...) ou URL."}
               </p>
+              {customPlatform === 'youtube' && customChannel.includes('@') && (
+                <p className="text-[10px] text-red-500 font-bold">
+                  ⚠️ YouTube Handles (@...) não funcionam em embeds. Use o UC... do canal.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
