@@ -137,21 +137,24 @@ const BroadcastDashboard = () => {
   const goLive = async (platform: 'twitch' | 'youtube', channel_id: string, title?: string) => {
     let finalId = channel_id;
 
-    // If it's YouTube and looks like a Channel ID (starts with UC)
     if (platform === 'youtube' && channel_id.startsWith('UC')) {
       toast({ title: "Buscando live...", description: "Localizando o vídeo ativo no canal..." });
       try {
-        // We use the local API proxy with the new consolidated route
-        const response = await fetch(`${window.location.origin.replace('5173', '3000')}/api/system?action=get-youtube-live&channelId=${channel_id}`);
+        const response = await fetch(`/api/system?action=get-youtube-live&channelId=${channel_id}`);
         const data = await response.json();
         
         if (data.videoId) {
           finalId = data.videoId;
-          toast({ title: "Live encontrada!", description: `Iniciando com o vídeo: ${finalId}` });
+          toast({ title: "Live encontrada!", description: `ID: ${finalId}` });
+        } else {
+          toast({ 
+            title: "Live não encontrada", 
+            description: "O canal pode estar offline ou oculto. Usando ID do canal como fallback.",
+            variant: "destructive"
+          });
         }
       } catch (err) {
         console.error("Failed to fetch live ID:", err);
-        // Fallback to original channel ID if API fails
       }
     }
 
