@@ -20,6 +20,7 @@ interface ManageDecklistProps {
   tournamentStatus: string;
   tournamentEventDate: string;
   tournamentType?: string;
+  allowDeckUpdates?: boolean;
 }
 
 export const ManageDecklist = ({ 
@@ -27,14 +28,16 @@ export const ManageDecklist = ({
   tournamentId, 
   tournamentStatus, 
   tournamentEventDate,
-  tournamentType
+  tournamentType,
+  allowDeckUpdates = false
 }: ManageDecklistProps) => {
   const queryClient = useQueryClient();
   const [selectedDeckId, setSelectedDeckId] = useState<string | undefined>();
 
   const tournamentDate = new Date(tournamentEventDate);
   const now = new Date();
-  const isTournamentLocked = tournamentStatus !== 'Aberto' || tournamentDate <= now;
+  // Lock if: (Status isn't open OR date passed) AND we aren't explicitly allowing updates (transition phase)
+  const isTournamentLocked = (tournamentStatus !== 'Aberto' || tournamentDate <= now) && !allowDeckUpdates;
 
   const { data: submittedDeck, isLoading: isLoadingSubmittedDeck } = useQuery({
     queryKey: ["submittedDeck", tournamentId, user.id],

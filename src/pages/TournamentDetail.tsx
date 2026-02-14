@@ -126,6 +126,9 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
 
   const userParticipation = participants?.find((p) => p.user_id === user?.id);
   const isRegistered = !!userParticipation;
+  const isQualifier = (tournament as any)?.allow_deck_updates && userParticipation && 
+                      participants?.filter(p => p.group_name).some(p => p.user_id === user?.id); 
+                      // Simple check for now, backend RPC will strictly verify.
 
   // Group participants by group_name
   const participantsByGroup = participants?.reduce((acc: Record<string, Participant[]>, p) => {
@@ -640,6 +643,17 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
 
                     {user && isRegistered && (
                         <div className="space-y-6">
+                            {/* Qualification Alert for Deck Updates */}
+                            {(tournament as any)?.allow_deck_updates && (
+                                <div className="p-4 bg-yellow-500/10 border-2 border-yellow-500/30 rounded-xl flex items-center gap-4 animate-pulse">
+                                    <Trophy className="h-10 w-10 text-yellow-500 shrink-0" />
+                                    <div>
+                                        <p className="font-black text-yellow-600 uppercase tracking-tighter">Você se classificou!</p>
+                                        <p className="text-sm text-yellow-700/80 font-medium">A 2ª fase começou. Você tem permissão para atualizar seu deck para o mata-mata.</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Decklist Management */}
                             {tournament.is_decklist_required && (
                                 <>
@@ -651,6 +665,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                                     tournamentEventDate={tournament.event_date}
                                     numDecksAllowed={tournament.num_decks_allowed}
                                     tournamentType={tournamentType}
+                                    allowDeckUpdates={(tournament as any)?.allow_deck_updates}
                                     />
                                 ) : (
                                     <ManageDecklist 
@@ -659,6 +674,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                                     tournamentStatus={tournament.status}
                                     tournamentEventDate={tournament.event_date}
                                     tournamentType={tournamentType}
+                                    allowDeckUpdates={(tournament as any)?.allow_deck_updates}
                                     />
                                 )}
                                 </>

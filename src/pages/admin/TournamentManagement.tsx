@@ -427,6 +427,23 @@ const TournamentManagementPage = () => {
     }
   });
 
+  const generateKnockoutMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('generate_knockout_from_groups', {
+        p_tournament_id: Number(id)
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Mata-mata Gerado", description: "Sorteio de potes realizado e chaves criadas!" });
+      queryClient.invalidateQueries({ queryKey: ["tournamentMatches", id] });
+      queryClient.invalidateQueries({ queryKey: ["tournament", id] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro no sorteio", description: error.message, variant: "destructive" });
+    }
+  });
+
   const generateSwissRoundMutation = useMutation({
     mutationFn: async () => {
       const pairings = await generateSwissPairings(Number(id));
@@ -961,6 +978,51 @@ const TournamentManagementPage = () => {
                         <Button className="h-12 gap-2 flex-1" onClick={() => shuffleGroupsMutation.mutate()} disabled={shuffleGroupsMutation.isPending}><Shuffle className="h-5 w-5" /> Sortear Agora</Button>
                         {participants?.some(p => p.group_name) && <Button variant="outline" className="h-12 border-dashed" onClick={() => resetGroupsMutation.mutate()} disabled={resetGroupsMutation.isPending}>Limpar</Button>}
                       </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {(tournament as any)?.format === 'groups' && (
+                  <Card className="bg-yellow-500/5 border-yellow-500/20">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2"><Trophy className="h-5 w-5 text-yellow-500" /> Transição para Mata-mata</CardTitle>
+                      <CardDescription>Sorteia os 1º e 2º lugares de cada grupo para criar a fase eliminatória.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-sm">
+                        <p className="font-bold text-yellow-600 flex items-center gap-2 mb-2"><ShieldAlert className="h-4 w-4" /> Regras do Sorteio:</p>
+                        <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                          <li><strong>Pote 1:</strong> Todos os que ficaram em 1º lugar.</li>
+                          <li><strong>Pote 2:</strong> Todos os que ficaram em 2º lugar.</li>
+                          <li>O sistema garante que jogadores do <strong>mesmo grupo</strong> não se enfrentem agora.</li>
+                          <li>Libera automaticamente a <strong>troca de deck</strong> para os classificados.</li>
+                        </ul>
+                      </div>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            className="w-full h-14 gap-2 text-lg bg-yellow-600 hover:bg-yellow-500 text-white shadow-lg shadow-yellow-900/20" 
+                            disabled={generateKnockoutMutation.isPending || !participants || participants.length < 4}
+                          >
+                            <Shuffle className="h-6 w-6" /> Sortear Potes e Gerar Mata-mata
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Iniciar Segunda Fase?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Isso irá identificar os dois melhores de cada grupo, realizar o sorteio de potes e criar as novas partidas. 
+                              <br/><br/>
+                              <strong>Dica:</strong> Certifique-se que todos os resultados da fase de grupos foram preenchidos.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => generateKnockoutMutation.mutate()} className="bg-yellow-600">Confirmar Sorteio</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </CardContent>
                   </Card>
                 )}

@@ -22,6 +22,7 @@ interface ManageMultipleDecklistsProps {
   tournamentEventDate: string;
   numDecksAllowed: number;
   tournamentType?: string;
+  allowDeckUpdates?: boolean;
 }
 
 interface SubmittedDeckInfo {
@@ -38,14 +39,15 @@ export const ManageMultipleDecklists = ({
   tournamentStatus,
   tournamentEventDate,
   numDecksAllowed,
-  tournamentType
+  tournamentType,
+  allowDeckUpdates = false
 }: ManageMultipleDecklistsProps) => {
   const queryClient = useQueryClient();
   const [selectedDeckId, setSelectedDeckId] = useState<string | undefined>();
 
   const tournamentDate = new Date(tournamentEventDate);
   const now = new Date();
-  const isTournamentLocked = tournamentStatus !== 'Aberto' || tournamentDate <= now;
+  const isTournamentLocked = (tournamentStatus !== 'Aberto' || tournamentDate <= now) && !allowDeckUpdates;
 
   const { data: userDecks, isLoading: isLoadingUserDecks } = useQuery({
     queryKey: ["userDecks", user.id],
