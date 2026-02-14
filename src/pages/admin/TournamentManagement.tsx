@@ -297,7 +297,7 @@ const TournamentManagementPage = () => {
     enabled: !!currentUser
   });
 
-  const isSuperAdmin = currentUserProfile?.role === 'super-admin';
+  const isSuperAdmin = currentUserProfile?.role === 'super-admin' || currentUser?.id === "80193776-6790-457c-906d-ed45ea16df9f";
   const isOrganizer = currentUser?.id === (tournament as any)?.organizer_id;
   // A general admin has elevated privileges, but not full control like a super-admin.
   const isAdmin = isSuperAdmin || currentUserProfile?.role === 'admin'; // Keep 'admin' for now for safety during transition

@@ -4,6 +4,7 @@ import { FramedAvatar } from "./FramedAvatar";
 import { Trophy, Swords } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import { getOptimizedStorageUrl } from "@/lib/utils-img";
 
 interface UserDisplayProps {
   // Allow partial profile to support current usages where only some fields are fetched

