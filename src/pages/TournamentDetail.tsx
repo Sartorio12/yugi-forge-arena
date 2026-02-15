@@ -124,11 +124,21 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
     enabled: !!id,
   });
 
+  const { data: qualifiers } = useQuery({
+    queryKey: ["tournamentQualifiersPublic", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_group_qualifiers', {
+        p_tournament_id: Number(id)
+      });
+      if (error) throw error;
+      return data as { user_id: string }[];
+    },
+    enabled: !!id,
+  });
+
   const userParticipation = participants?.find((p) => p.user_id === user?.id);
   const isRegistered = !!userParticipation;
-  const isQualifier = (tournament as any)?.allow_deck_updates && userParticipation && 
-                      participants?.filter(p => p.group_name).some(p => p.user_id === user?.id); 
-                      // Simple check for now, backend RPC will strictly verify.
+  const isQualifier = qualifiers?.some(q => q.user_id === user?.id) || false;
 
   // Group participants by group_name
   const participantsByGroup = participants?.reduce((acc: Record<string, Participant[]>, p) => {
