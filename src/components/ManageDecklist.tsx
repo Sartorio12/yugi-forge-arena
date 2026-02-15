@@ -110,7 +110,9 @@ export const ManageDecklist = ({
   };
   
   useEffect(() => {
-    setSelectedDeckId(submittedDeck?.deck_id?.toString());
+    if (submittedDeck?.deck_id) {
+      setSelectedDeckId(submittedDeck.deck_id.toString());
+    }
   }, [submittedDeck]);
 
   const isLoading = isLoadingSubmittedDeck || isLoadingUserDecks;
@@ -128,11 +130,14 @@ export const ManageDecklist = ({
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <Loader2 className="h-6 w-6 animate-spin" />
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <Select
+                key={submittedDeck?.deck_id} // Force re-render when the ID is loaded to ensure it matches
                 value={selectedDeckId}
                 onValueChange={setSelectedDeckId}
                 disabled={isTournamentLocked || isLoading}
