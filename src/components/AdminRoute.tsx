@@ -31,7 +31,14 @@ const AdminRoute = ({ user, onLogout }: AdminRouteProps) => {
     }
   }, [isLoading, user, profile]);
 
-  if (isLoading) {
+  const isHardcodedAdmin = user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
+  
+  const isAuthorized = profile?.role === "admin" || 
+                     profile?.role === "organizer" || 
+                     profile?.role === "super-admin" || 
+                     isHardcodedAdmin;
+
+  if (isLoading && !isHardcodedAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -40,7 +47,7 @@ const AdminRoute = ({ user, onLogout }: AdminRouteProps) => {
     );
   }
 
-  if (error) {
+  if (error && !isHardcodedAdmin) {
     console.error("AdminRoute: Error loading profile", error);
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -51,11 +58,6 @@ const AdminRoute = ({ user, onLogout }: AdminRouteProps) => {
       </div>
     );
   }
-
-  const isAuthorized = profile?.role === "admin" || 
-                     profile?.role === "organizer" || 
-                     profile?.role === "super-admin" || 
-                     user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
 
   if (!user || !isAuthorized) {
     if (user) {

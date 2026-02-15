@@ -14,10 +14,11 @@ interface SuperAdminRouteProps {
 const SuperAdminRoute = ({ user, onLogout }: SuperAdminRouteProps) => {
   const { profile, isLoading, error } = useProfile(user?.id);
 
+  const isHardcodedAdmin = user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
+
   useEffect(() => {
     if (!isLoading && user && profile) {
-      const isAuthorized = profile.role === "super-admin" || 
-                         user.id === "80193776-6790-457c-906d-ed45ea16df9f";
+      const isAuthorized = profile.role === "super-admin" || isHardcodedAdmin;
       
       if (!isAuthorized) {
         console.warn("SuperAdminRoute: User is not authorized", { 
@@ -27,9 +28,9 @@ const SuperAdminRoute = ({ user, onLogout }: SuperAdminRouteProps) => {
         });
       }
     }
-  }, [isLoading, user, profile]);
+  }, [isLoading, user, profile, isHardcodedAdmin]);
 
-  if (isLoading) {
+  if (isLoading && !isHardcodedAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -38,7 +39,7 @@ const SuperAdminRoute = ({ user, onLogout }: SuperAdminRouteProps) => {
     );
   }
 
-  if (error) {
+  if (error && !isHardcodedAdmin) {
     console.error("SuperAdminRoute: Error loading profile", error);
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -51,7 +52,7 @@ const SuperAdminRoute = ({ user, onLogout }: SuperAdminRouteProps) => {
   }
 
   // This route is only for super-admins
-  const isAuthorized = profile?.role === "super-admin" || user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
+  const isAuthorized = profile?.role === "super-admin" || isHardcodedAdmin;
 
   if (!user || !isAuthorized) {
     if (user) {
