@@ -700,7 +700,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                     {user && isRegistered && (
                         <div className="space-y-6">
                             {/* Qualification Alert for Deck Updates */}
-                            {(tournament as any)?.allow_deck_updates && (
+                            {(tournament as any)?.allow_deck_updates && isQualifier && (
                                 <div className="p-4 bg-yellow-500/10 border-2 border-yellow-500/30 rounded-xl flex items-center gap-4 animate-pulse">
                                     <Trophy className="h-10 w-10 text-yellow-500 shrink-0" />
                                     <div>
