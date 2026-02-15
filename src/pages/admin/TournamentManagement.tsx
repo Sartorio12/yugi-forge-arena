@@ -429,6 +429,34 @@ const TournamentManagementPage = () => {
     }
   });
 
+  const [isKnockoutPreviewOpen, setIsKnockoutPreviewOpen] = useState(false);
+
+  const { data: qualifiers, isLoading: isLoadingQualifiers } = useQuery({
+    queryKey: ["tournamentQualifiers", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_group_qualifiers', {
+        p_tournament_id: Number(id)
+      });
+      if (error) throw error;
+      
+      // Fetch profile info for these users
+      const userIds = data.map((q: any) => q.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, clan_members(clans(tag))')
+        .in('id', userIds);
+
+      return data.map((q: any) => ({
+        ...q,
+        profile: profiles?.find(p => p.id === q.user_id)
+      }));
+    },
+    enabled: isKnockoutPreviewOpen,
+  });
+
+  const pot1 = qualifiers?.filter((q: any) => q.pos === 1) || [];
+  const pot2 = qualifiers?.filter((q: any) => q.pos === 2) || [];
+
   const generateKnockoutMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.rpc('generate_knockout_from_groups', {
@@ -1011,30 +1039,96 @@ const TournamentManagementPage = () => {
                         </ul>
                       </div>
 
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            className="w-full h-14 gap-2 text-lg bg-yellow-600 hover:bg-yellow-500 text-white shadow-lg shadow-yellow-900/20" 
-                            disabled={generateKnockoutMutation.isPending || !participants || participants.length < 4}
-                          >
-                            <Shuffle className="h-6 w-6" /> Sortear Potes e Gerar Mata-mata
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Iniciar Segunda Fase?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Isso irá identificar os dois melhores de cada grupo, realizar o sorteio de potes e criar as novas partidas. 
-                              <br/><br/>
-                              <strong>Dica:</strong> Certifique-se que todos os resultados da fase de grupos foram preenchidos.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => generateKnockoutMutation.mutate()} className="bg-yellow-600">Confirmar Sorteio</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <Button 
+                        className="w-full h-14 gap-2 text-lg bg-yellow-600 hover:bg-yellow-500 text-white shadow-lg shadow-yellow-900/20" 
+                        disabled={generateKnockoutMutation.isPending || !participants || participants.length < 4}
+                        onClick={() => setIsKnockoutPreviewOpen(true)}
+                      >
+                        <Shuffle className="h-6 w-6" /> Revisar Potes e Gerar Mata-mata
+                      </Button>
+
+                      <Dialog open={isKnockoutPreviewOpen} onOpenChange={setIsKnockoutPreviewOpen}>
+                        <DialogContent className="max-w-2xl bg-slate-950 border-yellow-500/20">
+                          <DialogHeader>
+                            <DialogTitle className="text-2xl font-black uppercase italic text-yellow-500 flex items-center gap-2">
+                              <Trophy className="h-6 w-6" /> Revisão de Classificados
+                            </DialogTitle>
+                            <DialogDescription className="text-muted-foreground">
+                              Verifique se os classificados de cada grupo estão corretos antes de realizar o sorteio das chaves.
+                            </DialogDescription>
+                          </DialogHeader>
+
+                          {isLoadingQualifiers ? (
+                            <div className="flex flex-col items-center py-12 gap-4">
+                              <Loader2 className="h-8 w-8 animate-spin text-yellow-500" />
+                              <p className="text-sm font-bold animate-pulse">Calculando classificações...</p>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-6 py-6">
+                              {/* Pot 1 */}
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between border-b border-yellow-500/20 pb-2">
+                                  <h4 className="font-black uppercase text-xs tracking-widest text-yellow-500">Pote 1 (Líderes)</h4>
+                                  <Badge className="bg-yellow-500 text-black font-black text-[10px]">{pot1.length}</Badge>
+                                </div>
+                                <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                                  {pot1.map((q: any) => (
+                                    <div key={q.user_id} className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/5">
+                                      <FramedAvatar username={q.profile?.username} avatarUrl={q.profile?.avatar_url} sizeClassName="h-8 w-8" />
+                                      <div className="flex flex-col overflow-hidden">
+                                        <span className="text-sm font-bold truncate">
+                                          {q.profile?.clan_members?.[0]?.clans?.tag && <span className="text-primary mr-1">[{q.profile.clan_members[0].clans.tag}]</span>}
+                                          {q.profile?.username || "---"}
+                                        </span>
+                                        <span className="text-[10px] text-muted-foreground uppercase font-black">{q.group_name}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Pot 2 */}
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                  <h4 className="font-black uppercase text-xs tracking-widest text-slate-400">Pote 2 (Vices)</h4>
+                                  <Badge variant="outline" className="text-slate-400 border-white/10 font-black text-[10px]">{pot2.length}</Badge>
+                                </div>
+                                <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                                  {pot2.map((q: any) => (
+                                    <div key={q.user_id} className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/5">
+                                      <FramedAvatar username={q.profile?.username} avatarUrl={q.profile?.avatar_url} sizeClassName="h-8 w-8" />
+                                      <div className="flex flex-col overflow-hidden">
+                                        <span className="text-sm font-bold truncate">
+                                          {q.profile?.clan_members?.[0]?.clans?.tag && <span className="text-primary mr-1">[{q.profile.clan_members[0].clans.tag}]</span>}
+                                          {q.profile?.username || "---"}
+                                        </span>
+                                        <span className="text-[10px] text-muted-foreground uppercase font-black">{q.group_name}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <DialogFooter className="gap-2 sm:gap-0 border-t border-white/5 pt-6 mt-2">
+                            <Button variant="ghost" onClick={() => setIsKnockoutPreviewOpen(false)} disabled={generateKnockoutMutation.isPending}>
+                              Cancelar
+                            </Button>
+                            <Button 
+                              className="bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase tracking-tighter"
+                              onClick={() => {
+                                generateKnockoutMutation.mutate();
+                                setIsKnockoutPreviewOpen(false);
+                              }}
+                              disabled={generateKnockoutMutation.isPending || !qualifiers || qualifiers.length === 0}
+                            >
+                              {generateKnockoutMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shuffle className="h-4 w-4 mr-2" />}
+                              Confirmar e Sortear Chaves
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </CardContent>
                   </Card>
                 )}
