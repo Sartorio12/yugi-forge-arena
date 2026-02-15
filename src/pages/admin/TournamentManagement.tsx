@@ -285,11 +285,22 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("title, organizer_id, exclusive_organizer_only, tournament_model, is_private, type, format, show_on_home")
+        .select("title, organizer_id, exclusive_organizer_only, tournament_model, is_private, type, format, show_on_home, allow_deck_updates")
         .eq("id", Number(id))
         .single();
       if (error) throw error;
       return data;
+    },
+  });
+
+  const toggleDeckUpdatesMutation = useMutation({
+    mutationFn: async (allow: boolean) => {
+      const { error } = await supabase.from('tournaments').update({ allow_deck_updates: allow }).eq('id', Number(id));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Sucesso", description: "Configuração de troca de decks atualizada." });
+      queryClient.invalidateQueries({ queryKey: ["tournament", id] });
     },
   });
 
@@ -1266,6 +1277,14 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
               </TabsContent>
 
               <TabsContent value="settings" className="p-6 m-0 space-y-6">
+                <div className="p-4 bg-background border rounded-xl flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-base font-bold">Permitir Troca de Decks</Label>
+                    <p className="text-xs text-muted-foreground">Habilita que jogadores classificados atualizem seus decks para a fase eliminatória.</p>
+                  </div>
+                  <Switch checked={(tournament as any)?.allow_deck_updates} onCheckedChange={(val) => toggleDeckUpdatesMutation.mutate(val)} disabled={toggleDeckUpdatesMutation.isPending} />
+                </div>
+
                 <div className="p-4 bg-background border rounded-xl flex items-center justify-between">
                   <div className="space-y-1">
                     <Label className="text-base font-bold">Torneio Privado</Label>
