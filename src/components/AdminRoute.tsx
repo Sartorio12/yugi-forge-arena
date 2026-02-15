@@ -21,9 +21,13 @@ const AdminRoute = ({ user, onLogout }: AdminRouteProps) => {
     );
   }
 
-  const isAuthorized = profile?.role === "admin" || profile?.role === "organizer" || profile?.role === "super-admin" || user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
+  const isAuthorized = profile?.role === "admin" || 
+                     profile?.role === "organizer" || 
+                     profile?.role === "super-admin" || 
+                     user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
 
   if (!user || (!isLoading && !isAuthorized)) {
+    console.log("AdminRoute: Unauthorized access attempt", { userId: user?.id, role: profile?.role });
     return <Navigate to="/" replace />;
   }
 

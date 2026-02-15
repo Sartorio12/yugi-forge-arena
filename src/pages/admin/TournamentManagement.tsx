@@ -300,13 +300,15 @@ const TournamentManagementPage = () => {
   const isSuperAdmin = currentUserProfile?.role === 'super-admin' || currentUser?.id === "80193776-6790-457c-906d-ed45ea16df9f";
   const isOrganizer = currentUser?.id === (tournament as any)?.organizer_id;
   // A general admin has elevated privileges, but not full control like a super-admin.
-  const isAdmin = isSuperAdmin || currentUserProfile?.role === 'admin'; // Keep 'admin' for now for safety during transition
+  const isAdmin = isSuperAdmin || currentUserProfile?.role === 'admin'; 
 
   useEffect(() => {
     if (tournament && currentUser && currentUserProfile) {
       const t = tournament as any;
       const isOrganizerOfThis = currentUser.id === t.organizer_id;
-      const isPrivileged = currentUserProfile.role === 'super-admin' || currentUserProfile.role === 'admin';
+      const isPrivileged = currentUserProfile.role === 'super-admin' || 
+                          currentUserProfile.role === 'admin' || 
+                          currentUser.id === "80193776-6790-457c-906d-ed45ea16df9f";
 
       if (t.exclusive_organizer_only && !isOrganizerOfThis && !isPrivileged) {
         toast({
