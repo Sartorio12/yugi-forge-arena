@@ -88,7 +88,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
       if (!user) return [];
       const { data, error } = await supabase
         .from("decks")
-        .select("id, deck_name")
+        .select("id, deck_name, is_genesys")
         .eq("user_id", user.id);
       if (error) throw error;
       return data;
