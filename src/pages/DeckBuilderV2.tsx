@@ -1,14 +1,33 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react"; // Only for initial loader for now
-import { DndProvider } from 'react-dnd';
+import { Search, Loader2, Save, Trash2, FileUp, FileDown, AlertTriangle, ArrowDown, Image, ChevronDown, Info, RotateCcw, Filter, ArrowUpDown, PlusCircle, PenTool, Layout, Wand2, Shuffle, Eraser, Download, Share2, Plus, Eye, EyeOff, Settings, List, BarChart } from "lucide-react";
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils"; // For combining classnames
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 // Re-using interfaces and constants from the original DeckBuilder
 interface CardData {
@@ -36,94 +55,15 @@ interface DeckBuilderProps {
   onLogout: () => void;
 }
 
-// Placeholder SVG for FontAwesome search icon
-const SearchIconSVG = () => (
-    <svg className="no-select svelte-fa svelte-xj8byo" style={{height:'1em',verticalAlign:'-.125em',transformOrigin:'center',overflow:'visible'}} viewBox="0 0 512 512" aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg"><g transform="translate(256 256)" transformOrigin="128 0"><g transform="translate(0,0) scale(1,1)"><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z" fill="currentColor" transform="translate(-256 -256)"></path></g></g></svg>
-);
-
-// Placeholder SVG for FontAwesome info icon
-const InfoIconSVG = () => (
-    <svg className="no-select svelte-fa svelte-xj8byo" style={{height:'1em',verticalAlign:'-.125em',transformOrigin:'center',overflow:'visible'}} viewBox="0 0 512 512" aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg"><g transform="translate(256 256)" transformOrigin="128 0"><g transform="translate(0,0) scale(1,1)"><path d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z" fill="currentColor" transform="translate(-256 -256)"></path></g></g></svg>
-);
-
-// Placeholder SVG for FontAwesome caret-down icon (for selects)
-const CaretDownIconSVG = () => (
-    <svg width="100%" height="100%" viewBox="0 0 20 20" focusable="false" aria-hidden="true" className="svelte-14r22mt"><path d="M4.516 7.548c0.436-0.446 1.043-0.481 1.576 0l3.908 3.747
-    3.908-3.747c0.533-0.481 1.141-0.446 1.574 0 0.436 0.445 0.408 1.197 0
-    1.615-0.406 0.418-4.695 4.502-4.695 4.502-0.217 0.223-0.502
-    0.335-0.787 0.335s-0.57-0.112-0.789-0.335c0
-    0-4.287-4.084-4.695-4.502s-0.436-1.17 0-1.615z"></path></svg>
-);
-
-// Placeholder SVG for FontAwesome sort icon
-const SortIconSVG = () => (
-    <svg className="no-select svelte-fa svelte-xj8byo" style={{height:'1em',verticalAlign:'-.125em',transformOrigin:'center',overflow:'visible'}} viewBox="0 0 512 512" aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg"><g transform="translate(256 256)" transformOrigin="128 0"><g transform="translate(0,0) scale(1,1)"><path d="M304 416h-64a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h64a16 16 0 0 0 16-16v-32a16 16 0 0 0-16-16zm-128-64h-48V48a16 16 0 0 0-16-16H80a16 16 0 0 0-16 16v304H16c-14.19 0-21.37 17.24-11.29 27.31l80 96a16 16 0 0 0 22.62 0l80-96C197.35 369.26 190.22 352 176 352zm256-192H240a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h192a16 16 0 0 0 16-16v-32a16 16 0 0 0-16-16zm-64 128H240a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h128a16 16 0 0 0 16-16v-32a16 16 0 0 0-16-16zM496 32H240a16 16 0 0 0-16 16v32a16 16 0 0 0 16 16h256a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16z" fill="currentColor" transform="translate(-256 -256)"></path></g></g></svg>
-);
-
-
-// Placeholder SVG for FontAwesome question-circle icon (for status info)
-const QuestionCircleIconSVG = () => (
-    <svg className="no-select svelte-fa svelte-xj8byo" style={{height:'1em',verticalAlign:'-.125em',transformOrigin:'center',overflow:'visible'}} viewBox="0 0 512 512" aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg"><g transform="translate(256 256)" transformOrigin="128 0"><g transform="translate(0,0) scale(1,1)"><path d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z" fill="currentColor" transform="translate(-256 -256)"></path></g></g></svg>
-);
-
-
 // --- Main Component ---
 const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
+  
   // States from original DeckBuilder (to be wired up)
-  const [deckName, setDeckName] = useState("New deck");
-  const [editingDeckId, setEditingDeckId] = useState<number | null>(null);
+  const [deckName, setDeckName] = useState("New Deck");
   const [mainDeck, setMainDeck] = useState<CardData[]>([]);
   const [extraDeck, setExtraDeck] = useState<CardData[]>([]);
   const [sideDeck, setSideDeck] = useState<CardData[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeckLocked, setIsDeckLocked] = useState(false); // To be fully integrated
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // To be fully integrated
-  const [isLoadingDeck, setIsLoadingDeck] = useState(true); // From original, for initial load
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false); // From original, for super admin override
-  const [selectedTab, setSelectedTab] = useState("build"); // For the tabs
-
-  // Placeholder for the old loadDeckForEditing logic, will be migrated
-  const loadDeckForEditing = useCallback(async (deckId: number) => {
-    setIsLoadingDeck(true);
-    try {
-      // Placeholder logic for now, actual implementation will come from original DeckBuilder.tsx
-      console.log("Loading deck for editing:", deckId);
-      // Simulate loading
-      await new Promise(resolve => setTimeout(resolve, 500)); 
-      setDeckName("Loaded Deck Example");
-      setMainDeck([{id: "1", name: "Dark Magician", type: "Spellcaster/Effect", description: "...", race: "Spellcaster", image_url: "https://ygoprodeck.com/pics/33400877.jpg", image_url_small: "https://ygoprodeck.com/pics_small/33400877.jpg"}]);
-      setIsDeckLocked(false);
-    } catch (error) {
-      console.error("Failed to load deck:", error);
-      toast({ title: "Error loading deck", variant: "destructive" });
-    } finally {
-      setIsLoadingDeck(false);
-    }
-  }, [toast]);
-
-  // Placeholder for useEffect to load deck from URL params
-  useEffect(() => {
-    const deckId = new URLSearchParams(window.location.search).get('edit');
-    if (deckId && user) {
-      loadDeckForEditing(Number(deckId));
-    } else {
-      setIsLoadingDeck(false); // If no deck to edit, stop loading
-    }
-  }, [user, loadDeckForEditing]);
-
-
-  if (isLoadingDeck) {
-    return (
-      <div className="min-h-screen bg-[#0E1013] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
-
+  
   return (
     <DndProvider backend={HTML5Backend}>
       <div style={{
@@ -142,15 +82,7 @@ const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
         <div id="svelte"> {/* Outer Svelte div from HTML */}
             <div id="error-container" className="is-hidden p-2 line-height-1 svelte-yxaw39 sf-hidden" data-html2canvas-ignore=""></div> {/* Error container */}
 
-            <nav className="navbar is-transparent is-flex is-align-items-center svelte-5x5tvn" aria-label="main navigation">
-                <div className="navbar-inner svelte-5x5tvn">
-                    <div className="outer-navbar-section is-flex is-justify-content-flex-start pr-2 is-align-items-center">
-                        <a sveltekit:prefetch="" className="logo-wrapper mdm-logo-wrapper is-flex is-align-items-center is-hidden-mobile is-hidden-tablet-only svelte-5x5tvn" href="https://www.masterduelmeta.com/">
-                            <img className="navbar-logo svelte-5x5tvn" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBkYXRhLW5hbWU9IkxheWVyIDEiIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDI5NTguNCA2MDAuMjgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICA8ZGVmcz4KICAgICAgICA8c3R5bGU+LmNscy0xe2ZpbGw6IzA0MDQwNDt9LmNscy0ye2ZpbGw6IzA1MDUwNTt9LmNscy0ze2ZpbGw6IzBlMGUwZTt9LmNscy00e2ZpbGw6IzBmMGYwZjt9LmNscy01e2ZpbGw6I2RjZGNkYzt9LmNscy02e2ZpbGw6I2ZlZmVmZTt9LmNscy03e2ZpbGw6IzYyNjI2Mjt9LmNscy04e2ZpbGw6IzcwNzA3MDt9LmNscy05e2ZpbGw6IzZmNmY2Zjt9LmNscy0xMHtmaWxsOiMzMDMwMzA7fS5jbHMtMTF7ZmlsvcIzNzM3Mzc7fS5jbHMtMTJ7ZmlsvcM1OTU5NTk7fS5jbHMtMTN7ZmlsvcM0YzRjNGM7fS5jbHMtMTR7ZmlsvcM2OTY5Njk7fS5jbHMtMTV7ZmlsvcM2NjY2Njg7fS5jbHMtMTZ7ZmlsvcMyNDI0MjQ7fS5jbHMtMTd7ZmlsvcMzZDNkM2Q7fS5jbHMtMTh7ZmlsvcMxYzFjMWM7fS5jbHMtMTl7ZmlsvcM0YTRhNGE7fS5jbHMtMjB7ZmlsvcMxZTFkMWQ7fS5jbHMtMjF7ZmlsvcMxZjFmMWY7fS5jbHMtMjJ7ZmlsvcMxZDFkMWQ7fS5jbHMtMjN7ZmlsvcM1MTUxNTE7fS5jbHMtMjR7ZmlsvcM0MjQyNDI7fS5jbHMtMjV7ZmlsvcMzYjNiM2I7fS5jbHMtMjZ7ZmlsvcM0ZjRmNGY7fS5jbHMtMjd7ZmlsvcM1YTVhNWE7fS5jbHMtMjh7ZmlsvcMyMDMwMjA7fS5jbHMtMjl7ZmlsvcM3OTc5Nzk7fS5jbHMtMzA7ZmlsvcMzNjM2MzY7fS5jbHMtMzF7ZmlsvcM5Nzk3OTc7fS5jbHMtMzJ7ZmlsvcM0ZTRlNGU7fS5jbHMtMzN7ZmlsvcM1YjViNWI7fS5jbHMtMzR7ZmlsvcM1MzUzNTM7fS5jbHMtMzV7ZmlsvcMyMzIzMjM7fS5jbHMtMzZ7ZmlsvcMyMjI7fS5jbHMtMzd7ZmlsvcMzMzM7fS5jbHMtMzh7ZmlsvcM3ZTdlN2U7fS5jbHMtMzl7ZmlsvcM3MzczNzM7fS5jbHMtNDB7ZmlsvcM3MjcyNzI... [truncated]" alt="Master Duel Meta Logo"/>
-                        </a>
-                    </div>
-                </div>
-            </nav>
+            {/* Note: Original HTML has a <nav> here, which is our Navbar component. */}
 
             <div className="main-content-wrapper p-3 px-3 m-auto is-flex is-flex-direction-column svelte-1266drb" style={{maxWidth: '1440px'}}>
                 <div className="top-row columns is-variable is-1-mobile is-multiline is-mobile pt-0 pb-0 mb-3 svelte-1266drb">
@@ -313,7 +245,7 @@ const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
                                                                 </div>
                                                                 <input maxLength={2000} type="text" style={{}} pattern="" placeholder="Search cards..." autocomplete="off" className="svelte-1266drb has-icon has-info is-clearable" value=""/>
                                                                 <div className="info-container svelte-1266drb">
-                                                                    <span className=" svelte-1kg7ic5" aria-expanded="false">
+                                                                    <span className=" svelte-1kg7ic5">
                                                                         <span className="svelte-ribs5h is-flex">
                                                                             <InfoIconSVG />
                                                                         </span>
@@ -367,9 +299,142 @@ const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
                 </div>
             </div>
         </div>
+        <style>{`
+          /* CSS from HTML file */
+          html {
+            font-family: Roboto, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+          }
+          body {
+            margin: 0;
+            background-color: #0e1013;
+            color: #dedede;
+          }
+          #svelte {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+          }
+          .main-content-wrapper {
+            padding: 12px;
+            max-width: 1440px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+          }
+          .top-row.svelte-1266drb {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+            padding-top: 0;
+            padding-bottom: 0;
+          }
+          .columns {
+            display: flex;
+            flex-wrap: wrap;
+            margin-left: -0.75rem;
+            margin-right: -0.75rem;
+          }
+          .columns.is-variable.is-1-mobile > .column {
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
+          }
+          .column {
+            display: block;
+            flex-basis: 0;
+            flex-grow: 1;
+            flex-shrink: 1;
+            padding: 0.75rem;
+          }
+          @media screen and (min-width: 769px) {
+            .column.is-one-fifth-tablet { flex: 0 0 20%; }
+            .column.is-half { flex: 0 0 50%; }
+            .column.is-two-thirds-desktop { flex: 0 0 66.66667%; }
+            .column.is-one-third-desktop { flex: 0 0 33.33333%; }
+          }
+          @media screen and (max-width: 768px) {
+            .column.is-6-mobile { flex: 0 0 50%; }
+            .column.is-full-tablet { flex: 0 0 100%; }
+          }
+          .is-flex { display: flex; }
+          .is-justify-content-center { justify-content: center; }
+          .is-align-items-center { align-items: center; }
+          .is-unselectable { user-select: none; }
+          .is-flex-direction-row { flex-direction: row; }
+          .is-flex-direction-column { flex-direction: column; }
+          .is-align-items-flex-end { align-items: flex-end; }
+          .is-flex-grow-1 { flex-grow: 1; }
+          .pt-0 { padding-top: 0; }
+          .pb-0 { padding-bottom: 0; }
+          .pb-1 { padding-bottom: 0.25rem; }
+          .mb-3 { margin-bottom: 0.75rem; }
+          .mr-1 { margin-right: 0.25rem; }
+          .ml-1 { margin-left: 0.25rem; }
+          .pr-1 { padding-right: 0.25rem; }
+          .pl-2 { padding-left: 0.5rem; }
+          .p-2 { padding: 0.5rem; }
+          .line-height-1 { line-height: 1; }
+          .svelte-fa { display: inline-block; font-size: inherit; height: 1em; overflow: visible; vertical-align: -.125em; }
+          .no-select { user-select: none; }
+
+          /* svelte-specific styles (critical for exact replication) */
+          .svelte-yxaw39 { position: fixed; bottom: 0; left: 0; background: black; width: 100%; z-index: 800; white-space: pre-wrap; border: 1px red solid; border-radius: 3px; }
+          .svelte-retuhv { width: var(--width); height: var(--height); line-height: 1; color: #fff; border: 1px solid #fff2; border-radius: 3px; background-color: #1d588f; padding: var(--padding); box-shadow: 0 0 0 1px #0004; }
+          .svelte-retuhv.danger { background-color: #dc3545; }
+          .svelte-retuhv:not(:disabled):hover { cursor: pointer; filter: brightness(110%); }
+          .svelte-retuhv:disabled { cursor: not-allowed; filter: brightness(50%); color: #d3d3d3; background-color: inherit; border-color: #fff6; }
+
+          .svelte-1266drb span.svelte-1266drb { word-spacing: 0.25rem; font-size: 0.8rem; letter-spacing: 0.05em; font-weight: 700; color: #a3a3a3; }
+          .svelte-1266drb .input-container.svelte-1266drb input.svelte-1266drb { border: 1px solid #1D3E67; border-radius: 3px; width: 100%; height: 40px; color: #d8d8d8; background-color: #0d2e4c; box-shadow: inset 0 0 1px 1px #0a0a0a4d; padding-left: 0.75rem; padding-right: 0.5rem; }
+          .svelte-1266drb .input-container.svelte-1266drb input.svelte-1266drb:focus { border: 1px solid #0070ba; outline: none; }
+          .svelte-1266drb .input-container.svelte-1266drb input.svelte-1266drb:disabled { cursor: not-allowed; filter: brightness(50%); box-shadow: none; color: #d3d3d3; background-color: inherit; border-color: #fff6; }
+
+          .select-component-container { position: relative; }
+          .selectContainer.svelte-14r22mt { position: relative; display: flex; align-items: center; background-color: #0d2e4c; border: 1px solid #1D3E67; border-radius: 3px; height: 40px; padding: 0 0.5rem; box-shadow: inset 0 0 1px 1px #0a0a0a4d; }
+          .selectContainer.svelte-14r22mt input { background: transparent; border: none; outline: none; flex-grow: 1; color: #d8d8d8; font-size: 1rem; }
+          .selectContainer.svelte-14r22mt .indicator.svelte-14r22mt { position: static; transform: none; width: 20px; height: 20px; margin-left: 0.5rem; fill: #d8d8d8; }
+          .selectContainer.svelte-14r22mt .selection.svelte-1bl23jb { color: #d8d8d8; font-size: 1rem; line-height: 1; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+          .status-container.svelte-y03s2h { border: 1px solid #1D3E67; border-radius: 3px; }
+          .status-container.svelte-y03s2h span.svelte-y03s2h { color: #a3a3a3; }
+          .status-container.svelte-y03s2h .is-flex { display: flex; align-items: center; }
+          .status-container.svelte-y03s2h .mr-1 { margin-right: 0.25rem; }
+          .status-container.svelte-y03s2h .ml-1 { margin-left: 0.25rem; }
+          .status-container.svelte-y03s2h .svelte-ribs5h { cursor: pointer; color: #ffffff4d; transition: color .15s ease-out; }
+          .status-container.svelte-y03s2h .svelte-ribs5h:not(.disabled):hover { color: #dedede; }
+
+          .tabbed-container.svelte-umfxo { display: flex; flex-direction: column; min-height: 0; }
+          ul.svelte-umfxo { display: flex; flex-flow: row nowrap; list-style: none; padding-left: 0; margin-bottom: 0; overflow-x: auto; background-color: #123F50; }
+          li.svelte-umfxo { display: flex; border-bottom: 2px solid #123F50; transition: all .15s ease-out; transition-property: color,border-bottom-color; }
+          li.svelte-umfxo:not(.filler) { cursor: pointer; text-align: center; text-transform: uppercase; font-size: 1.3rem; white-space: nowrap; line-height: 1; padding: .5rem .6rem; color: #dedede; }
+          li:not(.filler).active.svelte-umfxo { color: #0a87bb; border-color: #0a87bb; }
+          li.filler.svelte-umfxo { flex-basis: 0; flex-grow: 1; }
+
+          /* Deck Containers */
+          .deck-main-container.svelte-16m5x5h { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; } /* Simplified */
+          .deck-container.svelte-16m5x5h { display: flex; flex-direction: column; }
+          .card-grid.svelte-16m5x5h { display: grid; grid-gap: 5px; background-color: #0e1013; border: 1px solid #1D3E67; border-radius: 3px; min-height: 150px; padding: 5px; }
+          .info-container.svelte-16m5x5h { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
+          .card-count.svelte-16m5x5h { font-size: 0.9rem; font-weight: bold; }
+
+          /* Search Wrapper */
+          .search-wrapper.svelte-x6v7c1 { max-height: 500px; }
+          .search-container.svelte-1d8aw4l { display: flex; flex-flow: column nowrap; width: 100%; min-height: 0; }
+          .input-container.svelte-1d8aw4l input.svelte-1266drb { padding-left: 36px; }
+          .icon-container.svelte-1266drb { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; }
+          .info-container.svelte-1266drb { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; }
+          .options-container.svelte-x6v7c1 { display: flex; justify-content: space-between; width: calc(100% - 6px); margin-top: 0.5rem; }
+
+          /* FontAwesome icons from the HTML */
+          .svelte-fa { display: inline-block; font-size: inherit; height: 1em; overflow: visible; vertical-align: -.125em; }
+          .svelte-fa path { fill: currentColor; } /* Ensure SVG paths use current color */
+        `}</style>
       </div>
     </DndProvider>
   );
 };
 
 export default DeckBuilderV2;
+
