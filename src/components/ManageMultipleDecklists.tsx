@@ -204,12 +204,22 @@ export const ManageMultipleDecklists = ({
                       {userDecks && userDecks.length > 0 ? (
                         userDecks
                          .filter(ud => !submittedDecks.some(sd => sd.deck_id === ud.id)) // Filtra decks já enviados
-                         .filter(ud => tournamentType !== 'genesys' || ud.is_genesys)
-                         .map((deck) => (
-                          <SelectItem key={deck.id} value={deck.id.toString()}>
-                            {deck.deck_name}
-                          </SelectItem>
-                        ))
+                         .filter(ud => tournamentType !== 'genesys' || ud.is_genesys).length > 0 ? (
+                            userDecks
+                            .filter(ud => !submittedDecks.some(sd => sd.deck_id === ud.id))
+                            .filter(ud => tournamentType !== 'genesys' || ud.is_genesys)
+                            .map((deck) => (
+                                <SelectItem key={deck.id} value={deck.id.toString()}>
+                                {deck.deck_name}
+                                </SelectItem>
+                            ))
+                         ) : (
+                            <div className="p-4 text-sm text-muted-foreground">
+                                {userDecks.filter(ud => !submittedDecks.some(sd => sd.deck_id === ud.id)).length > 0
+                                    ? "Nenhum deck Genesys disponível. Ative o 'Modo Genesys' no Deck Builder."
+                                    : "Todos os seus decks compatíveis já foram enviados."}
+                            </div>
+                         )
                       ) : (
                         <div className="p-4 text-sm text-muted-foreground">
                           Você não tem decks salvos.

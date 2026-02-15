@@ -142,13 +142,19 @@ export const ManageDecklist = ({
                 </SelectTrigger>
                 <SelectContent>
                   {userDecks && userDecks.length > 0 ? (
-                    userDecks
-                      .filter(deck => tournamentType !== 'genesys' || deck.is_genesys)
-                      .map((deck) => (
-                      <SelectItem key={deck.id} value={deck.id.toString()}>
-                        {deck.deck_name}
-                      </SelectItem>
-                    ))
+                    userDecks.filter(deck => tournamentType !== 'genesys' || deck.is_genesys).length > 0 ? (
+                      userDecks
+                        .filter(deck => tournamentType !== 'genesys' || deck.is_genesys)
+                        .map((deck) => (
+                        <SelectItem key={deck.id} value={deck.id.toString()}>
+                          {deck.deck_name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-4 text-sm text-muted-foreground">
+                        Nenhum deck Genesys encontrado. Ative o "Modo Genesys" no Deck Builder ao salvar seu deck.
+                      </div>
+                    )
                   ) : (
                     <div className="p-4 text-sm text-muted-foreground">
                       Você não tem decks salvos.

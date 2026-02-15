@@ -624,6 +624,52 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                                                 </div>
                                             )}
 
+                                            {/* Genesys Selection (Pre-registration) */}
+                                            {tournamentType === 'genesys' && tournament.is_decklist_required && (
+                                                <div className="p-6 border rounded-lg bg-muted/20 space-y-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <img src="/genesys_1.png" className="h-6 w-6 object-contain" alt="Genesys" />
+                                                        <h3 className="text-xl font-bold">Seleção de Deck Genesys</h3>
+                                                    </div>
+                                                    <p className="text-muted-foreground">
+                                                        Este é um torneio Genesys. Apenas decks salvos no <strong>Modo Genesys</strong> no Deck Builder aparecerão na lista abaixo.
+                                                    </p>
+                                                    <div className="pt-4 border-t border-border">
+                                                        <h3 className="text-lg font-bold mb-2">{t('tournament_detail.select_deck_title')}</h3>
+                                                        <Select
+                                                            value={selectedDeckId}
+                                                            onValueChange={setSelectedDeckId}
+                                                            disabled={registrationMutation.isPending}
+                                                        >
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder={t('tournament_detail.select_deck_placeholder')} />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {userDecks && userDecks.filter((d: any) => d.is_genesys).length > 0 ? (
+                                                                    userDecks
+                                                                        .filter((deck: any) => deck.is_genesys)
+                                                                        .map((deck: any) => (
+                                                                        <SelectItem key={deck.id} value={deck.id.toString()}>
+                                                                            {deck.deck_name}
+                                                                        </SelectItem>
+                                                                    ))
+                                                                ) : (
+                                                                    <div className="p-4 text-sm text-muted-foreground">
+                                                                        {userDecks && userDecks.length > 0 
+                                                                            ? "Nenhum deck Genesys encontrado. Ative o 'Modo Genesys' no Deck Builder ao salvar seu deck."
+                                                                            : t('tournament_detail.no_saved_decks')
+                                                                        }
+                                                                    </div>
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <p className="text-xs text-muted-foreground mt-2">
+                                                            {t('tournament_detail.deck_auto_submit_note')}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <Button onClick={handleRegister} disabled={registrationMutation.isPending} className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-lg py-6">
                                                 {registrationMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                                                 {t('tournament_detail.enroll_btn')}
