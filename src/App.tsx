@@ -28,7 +28,7 @@ const TournamentDetail = lazy(() => import("./pages/TournamentDetail"));
 const GroupStandingsPage = lazy(() => import("./pages/GroupStandingsPage"));
 const TournamentBracketPage = lazy(() => import("./pages/TournamentBracketPage"));
 const Profile = lazy(() => import("./pages/Profile"));
-const DeckBuilder = lazy(() => import("./pages/DeckBuilderV2"));
+const DeckBuilder = lazy(() => import("./pages/DeckBuilder"));
 const DeckPage = lazy(() => import("./pages/DeckPage"));
 const CommunityDecksPage = lazy(() => import("./pages/CommunityDecksPage"));
 const RankingPage = lazy(() => import("./pages/Ranking"));
