@@ -632,13 +632,22 @@ const TournamentManagementPage = () => {
 
   const removeParticipantMutation = useMutation({
     mutationFn: async (participantId: number) => {
-      const { error } = await supabase.from("tournament_participants").delete().eq("id", participantId);
+      const { error } = await supabase.rpc('admin_remove_participant', { 
+        p_participant_id: participantId 
+      });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Sucesso", description: "Participante removido." });
+      toast({ title: "Sucesso", description: "Participante removido e dados associados limpos." });
       queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
     },
+    onError: (error: any) => {
+      toast({ 
+        title: "Erro ao remover", 
+        description: error.message || "Não foi possível remover o participante. Verifique se ele possui partidas ativas.", 
+        variant: "destructive" 
+      });
+    }
   });
 
   const toggleDisqualifyMutation = useMutation({
