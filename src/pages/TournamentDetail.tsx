@@ -701,10 +701,18 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                         <div className="space-y-6">
                             {/* Qualification Alert for Deck Updates */}
                             {(tournament as any)?.allow_deck_updates && isQualifier && (
-                                <div className="p-4 bg-yellow-500/10 border-2 border-yellow-500/30 rounded-xl flex items-center gap-4 animate-pulse">
-                                    <Trophy className="h-10 w-10 text-yellow-500 shrink-0" />
-                                    <div>
-                                        <p className="font-black text-yellow-600 uppercase tracking-tighter">Você se classificou!</p>
+                                <div className="p-4 bg-yellow-500/10 border-2 border-yellow-500/30 rounded-xl flex items-center gap-4 relative overflow-hidden group">
+                                    {/* Shining Glow Background Effect */}
+                                    <div className="absolute -left-4 top-0 w-24 h-full bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent -skew-x-12 translate-x-[-150%] group-hover:translate-x-[400%] transition-transform duration-1000 ease-in-out" />
+                                    
+                                    <div className="relative">
+                                        {/* Trophy Aura */}
+                                        <div className="absolute inset-0 bg-yellow-400/40 blur-xl rounded-full animate-pulse" />
+                                        <Trophy className="h-10 w-10 text-yellow-500 shrink-0 relative z-10 drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]" />
+                                    </div>
+                                    
+                                    <div className="relative z-10">
+                                        <p className="font-black text-yellow-600 uppercase tracking-tighter text-lg leading-tight">Você se classificou!</p>
                                         <p className="text-sm text-yellow-700/80 font-medium">A 2ª fase começou. Você tem permissão para atualizar seu deck para o mata-mata.</p>
                                     </div>
                                 </div>
