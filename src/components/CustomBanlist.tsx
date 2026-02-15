@@ -8,6 +8,47 @@ interface CustomBanlistProps {
   tournamentId: number;
 }
 
+const getCardTypeRank = (type: string, race: string): number => {
+  if (type.includes('Fusion') || type.includes('Synchro') || type.includes('XYZ') || type.includes('Link')) return 100;
+  if (type.includes("Normal Monster")) return 0;
+  if (type.includes("Effect Monster") || type.includes("Flip Effect Monster") || type.includes("Tuner Monster")) return 1;
+  if (type.includes("Ritual Monster")) return 2;
+  if (type.includes("Pendulum")) return 3;
+  if (type.includes("Monster")) return 4;
+  if (type === "Spell Card") {
+    if (race === "Normal") return 5;
+    if (race === "Quick-Play") return 6;
+    if (race === "Continuous") return 7;
+    return 8;
+  }
+  if (type === "Trap Card") {
+    if (race === "Normal") return 9;
+    if (race === "Counter") return 10;
+    if (race === "Continuous") return 11;
+    return 12;
+  }
+  return 99;
+};
+
+const sortBanlistCards = (cards: any[]): any[] => {
+  return [...cards].sort((a, b) => {
+    const rankA = getCardTypeRank(a.type, a.race);
+    const rankB = getCardTypeRank(b.type, b.race);
+    
+    if (rankA !== rankB) return rankA - rankB;
+    
+    // Within the same group, sort by level for monsters
+    if (a.type.includes('Monster') && b.type.includes('Monster')) {
+      const levelA = a.level ?? 0;
+      const levelB = b.level ?? 0;
+      if (levelA !== levelB) return levelA - levelB;
+    }
+    
+    // Finally sort alphabetically by name
+    return a.name.localeCompare(b.name);
+  });
+};
+
 export const CustomBanlist = ({ tournamentId }: CustomBanlistProps) => {
   const { data: bannedCards, isLoading } = useQuery({
     queryKey: ["custom-banlist", tournamentId],
@@ -16,7 +57,7 @@ export const CustomBanlist = ({ tournamentId }: CustomBanlistProps) => {
         .rpc("get_tournament_banlist", { p_tournament_id: tournamentId });
       
       if (error) throw error;
-      return data;
+      return sortBanlistCards(data || []);
     },
   });
 
@@ -52,8 +93,16 @@ export const CustomBanlist = ({ tournamentId }: CustomBanlistProps) => {
                 alt={card.name} 
                 className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity rounded-none"
               />
+              {card.count > 1 && (
+                <Badge 
+                    variant="destructive" 
+                    className="absolute top-1 right-1 h-5 min-w-[20px] flex items-center justify-center p-0 text-[10px] font-bold"
+                >
+                    {card.count}x
+                </Badge>
+              )}
             </Card>
-            <p className="text-xs text-center mt-1 truncate font-medium" title={card.name}>
+            <p className="text-[10px] text-center mt-1 truncate font-medium text-stone-400" title={card.name}>
                 {card.name}
             </p>
           </div>
