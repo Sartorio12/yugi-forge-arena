@@ -640,6 +640,7 @@ const TournamentManagementPage = () => {
     onSuccess: () => {
       toast({ title: "Sucesso", description: "Participante removido e dados associados limpos." });
       queryClient.invalidateQueries({ queryKey: ["tournamentParticipantsManagement", id] });
+      queryClient.invalidateQueries({ queryKey: ["tournamentDecksForAdmin", id] });
     },
     onError: (error: any) => {
       toast({ 
