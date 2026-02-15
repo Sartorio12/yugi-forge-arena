@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Calendar, DollarSign, CheckCircle2, XCircle, Search, Trophy, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Plus, Calendar, DollarSign, CheckCircle2, XCircle, Search, Trophy, Pencil, Trash2, ChevronDown, ChevronUp, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,8 +16,95 @@ import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // --- Components ---
+
+const BetDetails = ({ betId }: { betId: number }) => {
+  const { data: details, isLoading } = useQuery({
+    queryKey: ["betPicks", betId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_sweepstake_bet_details', {
+        p_bet_id: betId
+      });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  if (isLoading) return <div className="flex justify-center p-4"><Loader2 className="h-4 w-4 animate-spin" /></div>;
+
+  return (
+    <div className="bg-muted/30 p-4 rounded-md mt-2 mb-4 border border-dashed border-primary/20">
+      <h4 className="text-xs font-black uppercase tracking-widest text-primary mb-3">Escolhas do Apostador</h4>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {details?.map((pick: any) => (
+          <div key={pick.division_id} className="flex flex-col gap-2 p-2 bg-background rounded border border-border/50">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">D{pick.division_id}</span>
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={pick.predicted_avatar_url} />
+                <AvatarFallback className="text-[8px]"><UserIcon className="h-3 w-3" /></AvatarFallback>
+              </Avatar>
+              <span className="text-xs font-bold truncate">{pick.predicted_username || 'BYE'}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const BetRow = ({ bet, onConfirmPayment, isConfirming }: { bet: any, onConfirmPayment: (id: number) => void, isConfirming: boolean }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+        <>
+            <TableRow key={bet.bet_id} className="cursor-pointer hover:bg-muted/20" onClick={() => setIsExpanded(!isExpanded)}>
+                <TableCell>
+                    <div className="flex items-center gap-2">
+                        {isExpanded ? <ChevronUp className="h-4 w-4 text-primary" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                        <div className="font-medium">{bet.username || "Desconhecido"}</div>
+                    </div>
+                </TableCell>
+                <TableCell>
+                    <Badge variant={bet.payment_status === 'paid' ? 'default' : 'secondary'} className={bet.payment_status === 'paid' ? 'bg-green-600' : 'bg-yellow-600'}>
+                        {bet.payment_status === 'paid' ? 'Pago' : 'Pendente'}
+                    </Badge>
+                </TableCell>
+                <TableCell className="capitalize text-xs text-muted-foreground">{bet.payment_method || '-'}</TableCell>
+                <TableCell className="text-right">
+                    <div onClick={(e) => e.stopPropagation()}>
+                        {bet.payment_status !== 'paid' ? (
+                            <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => onConfirmPayment(bet.bet_id)}
+                                disabled={isConfirming}
+                                className="h-8"
+                            >
+                                <CheckCircle2 className="h-3 w-3 mr-1 text-green-600" />
+                                Confirmar
+                            </Button>
+                        ) : (
+                            <div className="flex items-center justify-end text-green-600 text-xs font-medium">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Concluído
+                            </div>
+                        )}
+                    </div>
+                </TableCell>
+            </TableRow>
+            {isExpanded && (
+                <TableRow>
+                    <TableCell colSpan={4} className="p-0 border-t-0">
+                        <BetDetails betId={bet.bet_id} />
+                    </TableCell>
+                </TableRow>
+            )}
+        </>
+    );
+};
 
 const EditSweepstakeDialog = ({ sweepstake, open, onOpenChange, onSuccess }: any) => {
   const { toast } = useToast();
@@ -281,35 +368,12 @@ const BetManager = ({ sweepstakeId }: { sweepstakeId: number }) => {
                             <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Nenhuma aposta ainda.</TableCell></TableRow>
                         )}
                         {bets?.map((bet: any) => (
-                            <TableRow key={bet.bet_id}>
-                                <TableCell>
-                                    <div className="font-medium">{bet.username || "Desconhecido"}</div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant={bet.payment_status === 'paid' ? 'default' : 'secondary'} className={bet.payment_status === 'paid' ? 'bg-green-600' : 'bg-yellow-600'}>
-                                        {bet.payment_status === 'paid' ? 'Pago' : 'Pendente'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="capitalize">{bet.payment_method || '-'}</TableCell>
-                                <TableCell className="text-right">
-                                    {bet.payment_status !== 'paid' ? (
-                                        <Button 
-                                            size="sm" 
-                                            variant="outline"
-                                            onClick={() => confirmPaymentMutation.mutate(bet.bet_id)}
-                                            disabled={confirmPaymentMutation.isPending}
-                                        >
-                                            <CheckCircle2 className="h-4 w-4 mr-1 text-green-600" />
-                                            Confirmar
-                                        </Button>
-                                    ) : (
-                                        <div className="flex items-center justify-end text-green-600 text-sm font-medium">
-                                            <CheckCircle2 className="h-4 w-4 mr-1" />
-                                            Concluído
-                                        </div>
-                                    )}
-                                </TableCell>
-                            </TableRow>
+                            <BetRow 
+                                key={bet.bet_id} 
+                                bet={bet} 
+                                onConfirmPayment={(id) => confirmPaymentMutation.mutate(id)}
+                                isConfirming={confirmPaymentMutation.isPending}
+                            />
                         ))}
                     </TableBody>
                 </Table>
