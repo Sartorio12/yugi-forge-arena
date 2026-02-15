@@ -66,15 +66,6 @@ const QuestionCircleIconSVG = () => (
     <svg className="no-select svelte-fa svelte-xj8byo" style={{height:'1em',verticalAlign:'-.125em',transformOrigin:'center',overflow:'visible'}} viewBox="0 0 512 512" aria-hidden="true" role="img" xmlns="http://www.w3.org/2000/svg"><g transform="translate(256 256)" transformOrigin="128 0"><g transform="translate(0,0) scale(1,1)"><path d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z" fill="currentColor" transform="translate(-256 -256)"></path></g></g></svg>
 );
 
-// Placeholder Card Component
-const CardPlaceholder = ({ count }: { count: number }) => (
-    <>
-        {Array.from({ length: count }).map((_, index) => (
-            <div key={index} className="aspect-[2/3] bg-gray-700 rounded-sm" />
-        ))}
-    </>
-);
-
 
 // --- Main Component ---
 const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
@@ -151,7 +142,15 @@ const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
         <div id="svelte"> {/* Outer Svelte div from HTML */}
             <div id="error-container" className="is-hidden p-2 line-height-1 svelte-yxaw39 sf-hidden" data-html2canvas-ignore=""></div> {/* Error container */}
 
-
+            <nav className="navbar is-transparent is-flex is-align-items-center svelte-5x5tvn" aria-label="main navigation">
+                <div className="navbar-inner svelte-5x5tvn">
+                    <div className="outer-navbar-section is-flex is-justify-content-flex-start pr-2 is-align-items-center">
+                        <a sveltekit:prefetch="" className="logo-wrapper mdm-logo-wrapper is-flex is-align-items-center is-hidden-mobile is-hidden-tablet-only svelte-5x5tvn" href="https://www.masterduelmeta.com/">
+                            <img className="navbar-logo svelte-5x5tvn" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBkYXRhLW5hbWU9IkxheWVyIDEiIHZlcnNpb249IjEuMSIgdmlld0JveD0iMCAwIDI5NTguNCA2MDAuMjgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICA8ZGVmcz4KICAgICAgICA8c3R5bGU+LmNscy0xe2ZpbGw6IzA0MDQwNDt9LmNscy0ye2ZpbGw6IzA1MDUwNTt9LmNscy0ze2ZpbGw6IzBlMGUwZTt9LmNscy00e2ZpbGw6IzBmMGYwZjt9LmNscy01e2ZpbGw6I2RjZGNkYzt9LmNscy02e2ZpbGw6I2ZlZmVmZTt9LmNscy03e2ZpbGw6IzYyNjI2Mjt9LmNscy04e2ZpbGw6IzcwNzA3MDt9LmNscy05e2ZpbGw6IzZmNmY2Zjt9LmNscy0xMHtmaWxsOiMzMDMwMzA7fS5jbHMtMTF7ZmlsvcIzNzM3Mzc7fS5jbHMtMTJ7ZmlsvcM1OTU5NTk7fS5jbHMtMTN7ZmlsvcM0YzRjNGM7fS5jbHMtMTR7ZmlsvcM2OTY5Njk7fS5jbHMtMTV7ZmlsvcM2NjY2Njg7fS5jbHMtMTZ7ZmlsvcMyNDI0MjQ7fS5jbHMtMTd7ZmlsvcMzZDNkM2Q7fS5jbHMtMTh7ZmlsvcMxYzFjMWM7fS5jbHMtMTl7ZmlsvcM0YTRhNGE7fS5jbHMtMjB7ZmlsvcMxZTFkMWQ7fS5jbHMtMjF7ZmlsvcMxZjFmMWY7fS5jbHMtMjJ7ZmlsvcMxZDFkMWQ7fS5jbHMtMjN7ZmlsvcM1MTUxNTE7fS5jbHMtMjR7ZmlsvcM0MjQyNDI7fS5jbHMtMjV7ZmlsvcMzYjNiM2I7fS5jbHMtMjZ7ZmlsvcM0ZjRmNGY7fS5jbHMtMjd7ZmlsvcM1YTVhNWE7fS5jbHMtMjh7ZmlsvcMyMDMwMjA7fS5jbHMtMjl7ZmlsvcM3OTc5Nzk7fS5jbHMtMzA7ZmlsvcMzNjM2MzY7fS5jbHMtMzF7ZmlsvcM5Nzk3OTc7fS5jbHMtMzJ7ZmlsvcM0ZTRlNGU7fS5jbHMtMzN7ZmlsvcM1YjViNWI7fS5jbHMtMzR7ZmlsvcM1MzUzNTM7fS5jbHMtMzV7ZmlsvcMyMzIzMjM7fS5jbHMtMzZ7ZmlsvcMyMjI7fS5jbHMtMzd7ZmlsvcMzMzM7fS5jbHMtMzh7ZmlsvcM3ZTdlN2U7fS5jbHMtMzl7ZmlsvcM3MzczNzM7fS5jbHMtNDB7ZmlsvcM3MjcyNzI... [truncated]" alt="Master Duel Meta Logo"/>
+                        </a>
+                    </div>
+                </div>
+            </nav>
 
             <div className="main-content-wrapper p-3 px-3 m-auto is-flex is-flex-direction-column svelte-1266drb" style={{maxWidth: '1440px'}}>
                 <div className="top-row columns is-variable is-1-mobile is-multiline is-mobile pt-0 pb-0 mb-3 svelte-1266drb">
@@ -160,10 +159,11 @@ const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
                             <div className="top-container">
                                 <div className="selectContainer svelte-14r22mt" style={{fontSize:'1rem'}}>
                                     <span aria-live="polite" aria-atomic="false" aria-relevant="additions text" className="a11yText svelte-14r22mt"></span>
-                                    <input placeholder="Decks..." autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" tabIndex={0} type="text" aria-autocomplete="list" maxLength={2000} className="svelte-14r22mt"/>
+                                    <input placeholder="Decks..." autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" tabIndex={0} type="text" aria-autocomplete="list" maxLength={2000} className="svelte-14r22mt" value=""/>
                                     <div className="indicator svelte-14r22mt" aria-hidden="true">
                                         <CaretDownIconSVG />
                                     </div>
+                                    <input type="hidden" className="svelte-14r22mt" value="New deck"/>
                                 </div>
                             </div>
                         </div>
@@ -202,27 +202,31 @@ const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
                             <div className="top-container">
                                 <div className="selectContainer svelte-14r22mt" style={{fontSize:'1rem'}}>
                                     <span aria-live="polite" aria-atomic="false" aria-relevant="additions text" className="a11yText svelte-14r22mt"></span>
-                                    <input placeholder="Share..." autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" tabIndex={0} type="text" aria-autocomplete="list" maxLength={2000} className="svelte-14r22mt"/>
+                                    <input placeholder="Share..." autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" tabIndex={0} type="text" aria-autocomplete="list" maxLength={2000} className="svelte-14r22mt" value=""/>
                                     <div className="indicator svelte-14r22mt" aria-hidden="true">
                                         <CaretDownIconSVG />
                                     </div>
+                                    <input type="hidden" className="svelte-14r22mt" value=""/>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
                     <div className="column is-one-fifth-tablet is-6-mobile pb-1">
-                        <div className="select-component-container">
-                            <div className="top-container">
-                                <div className="selectContainer svelte-14r22mt" style={{fontSize:'1rem'}}>
-                                    <span aria-live="polite" aria-atomic="false" aria-relevant="additions text" className="a11yText svelte-14r22mt"></span>
-                                    <input placeholder="Import..." autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" tabIndex={0} type="text" aria-autocomplete="list" maxLength={2000} className="svelte-14r22mt"/>
-                                    <div className="indicator svelte-14r22mt" aria-hidden="true">
-                                        <CaretDownIconSVG />
+                        <span className=" svelte-1kg7ic5">
+                            <div className="select-component-container">
+                                <div className="top-container">
+                                    <div className="selectContainer svelte-14r22mt" style={{fontSize:'1rem'}}>
+                                        <span aria-live="polite" aria-atomic="false" aria-relevant="additions text" className="a11yText svelte-14r22mt"></span>
+                                        <input placeholder="Import..." autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" tabIndex={0} type="text" aria-autocomplete="list" maxLength={2000} className="svelte-14r22mt" value=""/>
+                                        <div className="indicator svelte-14r22mt" aria-hidden="true">
+                                            <CaretDownIconSVG />
+                                        </div>
+                                        <input type="hidden" className="svelte-14r22mt" value=""/>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </span>
                     </div>
 
                     <div className="column is-one-fifth-tablet is-6-mobile pb-1">
@@ -236,7 +240,11 @@ const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
                             <span className="ml-2 svelte-y03s2h">
                                 <div className="is-flex">
                                     <span className="mr-1">0 / 10 Decks</span>
-                                    <QuestionCircleIconSVG />
+                                    <span className=" svelte-1kg7ic5" aria-expanded="false">
+                                        <span className="svelte-ribs5h is-flex">
+                                            <QuestionCircleIconSVG />
+                                        </span>
+                                    </span>
                                 </div>
                             </span>
                         </div>
@@ -258,33 +266,35 @@ const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
                             <div className="columns is-variable is-1-mobile">
                                 {/* Deck Display */}
                                 <div className="column is-two-thirds-desktop is-full-tablet pt-0">
-                                    <div className="deck-main-container grid grid-cols-2 gap-4 svelte-16m5x5h" style={{minHeight:'200px'}}>
+                                    <div className="deck-main-container svelte-16m5x5h" style={{minHeight:'200px'}}>
                                         {/* Main Deck */}
                                         <div className="deck-container svelte-16m5x5h">
-                                            <div className="card-grid grid grid-cols-auto-fit-card gap-1 svelte-16m5x5h" style={{'--num-cards':'60', '--min-cards':'40', '--max-cards':'60', '--min-row':'6', '--max-row':'8'}}>
-                                                <CardPlaceholder count={mainDeck.length || 40} />
+                                            <div className="card-grid svelte-16m5x5h" style={{'--num-cards':'60', '--min-cards':'40', '--max-cards':'60', '--min-row':'6', '--max-row':'8'}}>
+                                                {/* Main Deck Cards */}
                                             </div>
                                             <div className="info-container svelte-16m5x5h">
-                                                <div className="card-count svelte-16m5x5h">{mainDeck.length}/60</div>
+                                                <div className="card-count svelte-16m5x5h">0/60</div>
                                             </div>
                                         </div>
                                         {/* Extra Deck */}
                                         <div className="deck-container svelte-16m5x5h">
-                                            <div className="card-grid grid grid-cols-auto-fit-card gap-1 svelte-16m5x5h" style={{'--num-cards':'15', '--min-cards':'0', '--max-cards':'15', '--min-row':'3', '--max-row':'5'}}>
-                                                <CardPlaceholder count={extraDeck.length || 0} />
+                                            <div className="card-grid svelte-16m5x5h" style={{'--num-cards':'15', '--min-cards':'0', '--max-cards':'15', '--min-row':'3', '--max-row':'5'}}>
+                                                {/* Extra Deck Cards */}
                                             </div>
                                             <div className="info-container svelte-16m5x5h">
-                                                <div className="card-count svelte-16m5x5h">{extraDeck.length}/15</div>
+                                                <div className="card-count svelte-16m5x5h">0/15</div>
                                             </div>
-                                        </div>                                        {/* Side Deck */}
+                                        </div>
+                                        {/* Side Deck */}
                                         <div className="deck-container svelte-16m5x5h">
-                                            <div className="card-grid grid grid-cols-auto-fit-card gap-1 svelte-16m5x5h" style={{'--num-cards':'15', '--min-cards':'0', '--max-cards':'15', '--min-row':'3', '--max-row':'5'}}>
-                                                <CardPlaceholder count={sideDeck.length || 0} />
+                                            <div className="card-grid svelte-16m5x5h" style={{'--num-cards':'15', '--min-cards':'0', '--max-cards':'15', '--min-row':'3', '--max-row':'5'}}>
+                                                {/* Side Deck Cards */}
                                             </div>
                                             <div className="info-container svelte-16m5x5h">
-                                                <div className="card-count svelte-16m5x5h">{sideDeck.length}/15</div>
+                                                <div className="card-count svelte-16m5x5h">0/15</div>
                                             </div>
-                                        </div>                                    </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Search & Filter Section */}
@@ -303,7 +313,11 @@ const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
                                                                 </div>
                                                                 <input maxLength={2000} type="text" style={{}} pattern="" placeholder="Search cards..." autocomplete="off" className="svelte-1266drb has-icon has-info is-clearable" value=""/>
                                                                 <div className="info-container svelte-1266drb">
-                                                                    <InfoIconSVG />
+                                                                    <span className=" svelte-1kg7ic5" aria-expanded="false">
+                                                                        <span className="svelte-ribs5h is-flex">
+                                                                            <InfoIconSVG />
+                                                                        </span>
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -319,10 +333,14 @@ const DeckBuilderV2 = ({ user, onLogout }: DeckBuilderProps) => {
                                                                     <span className="is-flex is-justify-content-center is-align-items-center svelte-y8wo9w">
                                                                         <SortIconSVG />
                                                                     </span>
-                                                                    <input placeholder="Popularity" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" tabIndex={0} type="text" aria-autocomplete="list" maxLength={2000} className="svelte-14r22mt" value="Popularity"/>
+                                                                    <input placeholder="" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" tabIndex={0} type="text" aria-autocomplete="list" maxLength={2000} className="svelte-14r22mt" value=""/>
+                                                                    <div className="selectedItem svelte-14r22mt">
+                                                                        <div className="selection svelte-1bl23jb">Popularity</div>
+                                                                    </div>
                                                                     <div className="indicator svelte-14r22mt">
                                                                         <CaretDownIconSVG />
                                                                     </div>
+                                                                    <input type="hidden" className="svelte-14r22mt" value="Popularity"/>
                                                                 </div>
                                                             </div>
                                                         </div>
