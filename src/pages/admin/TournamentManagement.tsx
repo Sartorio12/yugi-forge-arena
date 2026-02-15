@@ -266,21 +266,19 @@ const MatchCard = ({ match, onUpdate, isPending }: { match: Match, onUpdate: (wi
     );
 };
 
-const TournamentManagementPage = () => {
+interface TournamentManagementPageProps {
+  user: User | null;
+  onLogout: () => void;
+}
+
+const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentManagementPageProps) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [numGroups, setNumGroups] = useState(2);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUser(user);
-    });
-  }, []);
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
@@ -326,10 +324,8 @@ const TournamentManagementPage = () => {
         });
         navigate("/dashboard/tournaments");
       }
-    } else if (tournament && !currentUser && !isLoadingTournament) {
-      navigate("/auth");
     }
-  }, [tournament, currentUser, currentUserProfile, navigate, isLoadingTournament]);
+  }, [tournament, currentUser, currentUserProfile, navigate]);
 
   const { data: participants, isLoading: isLoadingParticipants } = useQuery({
     queryKey: ["tournamentParticipantsManagement", id],

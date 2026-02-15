@@ -40,9 +40,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface TournamentDashboardProps {
+  user: User | null;
+  onLogout: () => void;
 }
 
-const TournamentDashboard = ({ }: TournamentDashboardProps) => {
+const TournamentDashboard = ({ user: currentUserIdFromProps, onLogout }: TournamentDashboardProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -51,13 +53,8 @@ const TournamentDashboard = ({ }: TournamentDashboardProps) => {
   const [editingTournament, setEditingTournament] = useState<Tables<"tournaments"> | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [tournamentToDeleteId, setTournamentToDeleteId] = useState<number | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setCurrentUserId(user.id);
-    });
-  }, []);
+  
+  const currentUserId = currentUserIdFromProps?.id || null;
 
   const { profile, isLoading: isLoadingProfile } = useProfile(currentUserId || undefined);
 

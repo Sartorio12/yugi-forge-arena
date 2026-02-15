@@ -214,11 +214,11 @@ const App = () => {
                   <Route element={<AdminRoute user={user} onLogout={handleLogout} />}>
                     <Route
                       path="/dashboard/tournaments"
-                      element={<TournamentDashboard />}
+                      element={<TournamentDashboard user={user} onLogout={handleLogout} />}
                     />
                     <Route
                       path="/dashboard/tournaments/:id/manage"
-                      element={<TournamentManagementPage />}
+                      element={<TournamentManagementPage user={user} onLogout={handleLogout} />}
                     />
                     <Route
                       path="/dashboard/news"
