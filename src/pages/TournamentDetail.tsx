@@ -721,7 +721,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                                     tournamentEventDate={tournament.event_date}
                                     numDecksAllowed={tournament.num_decks_allowed}
                                     tournamentType={tournamentType}
-                                    allowDeckUpdates={(tournament as any)?.allow_deck_updates}
+                                    allowDeckUpdates={(tournament as any)?.allow_deck_updates && isQualifier}
                                     />
                                 ) : (
                                     <ManageDecklist 
@@ -730,7 +730,7 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                                     tournamentStatus={tournament.status}
                                     tournamentEventDate={tournament.event_date}
                                     tournamentType={tournamentType}
-                                    allowDeckUpdates={(tournament as any)?.allow_deck_updates}
+                                    allowDeckUpdates={(tournament as any)?.allow_deck_updates && isQualifier}
                                     />
                                 )}
                                 </>
