@@ -605,9 +605,32 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     if (deckId && user) {
       loadDeckForEditing(Number(deckId));
     } else {
+      // Check for imported deck data (from Copy Deck feature)
+      const importData = localStorage.getItem('importDeckData');
+      if (importData) {
+        try {
+          const parsedData = JSON.parse(importData);
+          setDeckName(parsedData.deckName || "");
+          setMainDeck(parsedData.mainDeck || []);
+          setExtraDeck(parsedData.extraDeck || []);
+          setSideDeck(parsedData.sideDeck || []);
+          setIsPrivate(parsedData.isPrivate ?? true);
+          setIsGenesysMode(parsedData.isGenesysMode || false);
+          
+          localStorage.removeItem('importDeckData');
+          setIsJustLoaded(true);
+          setHasUnsavedChanges(true);
+          toast({
+            title: "Deck Importado",
+            description: "O deck foi carregado com sucesso!",
+          });
+        } catch (error) {
+          console.error("Failed to parse importDeckData", error);
+        }
+      }
       setIsLoadingDeck(false);
     }
-  }, [searchParams, user, loadDeckForEditing]);
+  }, [searchParams, user, loadDeckForEditing, toast]);
 
   const searchCards = async (shouldCloseModal: boolean = true) => {
     setIsSearchActive(true);
