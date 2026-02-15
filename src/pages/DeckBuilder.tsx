@@ -566,14 +566,25 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     setIsLoadingDeck(true);
     try {
       const isSuperAdmin = user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
-      const { data: tournamentDecks, error: tournamentError } = await supabase.from('tournament_decks').select('tournaments(event_date)').eq('deck_id', deckId);
+      const { data: tournamentDecks, error: tournamentError } = await supabase
+        .from('tournament_decks')
+        .select('tournaments(event_date, allow_deck_updates)')
+        .eq('deck_id', deckId);
+      
       if (tournamentError) throw new Error(tournamentError.message);
 
       const now = new Date();
       for (const entry of tournamentDecks) {
-        if (entry.tournaments && new Date(entry.tournaments.event_date) <= now && !isSuperAdmin) {
-          setIsDeckLocked(true);
-          break;
+        if (entry.tournaments) {
+          const t = entry.tournaments as any;
+          const eventDate = new Date(t.event_date);
+          const allowUpdates = t.allow_deck_updates || false;
+
+          // Lock ONLY if the date has passed AND the tournament doesn't explicitly allow updates
+          if (eventDate <= now && !allowUpdates && !isSuperAdmin) {
+            setIsDeckLocked(true);
+            break;
+          }
         }
       }
 

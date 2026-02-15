@@ -88,24 +88,24 @@ npm run lint # or yarn lint / bun lint
 *   **UI Components:** shadcn/ui.
 *   **Rich Text Editor:** TipTap for rich text editing capabilities.
 
-## Operations Cheat Sheet (Environment-Specific)
+## Operações e Protocolos de Execução (Obrigatório)
 
-### Database Queries (via SSH)
-Para rodar queries SQL no banco de dados que está dentro do Docker no servidor, use o **Piping Method**. Isso evita conflitos de aspas entre o PowerShell (Windows) e o Bash (Linux):
-
+### 1. Consultas ao Banco de Dados (Via SSH)
+Use **sempre** o Piping Method para evitar erros de escape de aspas:
 ```bash
-"SELECT * FROM public.profiles LIMIT 1;" | ssh sart@deathstar-server "docker exec -i supabase-db psql -U postgres -d postgres"
+"SELECT ... ;" | ssh sart@deathstar-server "docker exec -i supabase-db psql -U postgres -d postgres"
 ```
 
-### Git Workflow (PowerShell)
-O terminal PowerShell não aceita o operador `&&`. Execute os comandos sequencialmente ou use `;`:
-
+### 2. Fluxo de Git (PowerShell)
+Não use `&&`. Use `;` ou comandos separados:
 ```powershell
-# Método Seguro:
-git add .
-git commit -m "mensagem"
-git push origin main
+git add . ; git commit -m "mensagem" ; git push origin main
 ```
+
+### 3. Migrações e Permissões
+- Migrações em `supabase/migrations/`.
+- Aplicar no servidor via `cat migration.sql | ssh ...`.
+- Garantir que o cargo `super-admin` e o ID `80193776-6790-457c-906d-ed45ea16df9f` sejam sempre validados como autoridade máxima.
 
 ## Supabase Workflow
 
