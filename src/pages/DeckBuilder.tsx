@@ -103,6 +103,14 @@ const DeckBuilderStyles = () => (
             flex-wrap: wrap;
             gap: 10px !important;
         }
+        .db-panel-controls {
+            flex-wrap: wrap !important;
+            height: auto !important;
+            gap: 8px !important;
+        }
+        .db-search-input {
+            min-width: 150px;
+        }
         .db-card-grid-container {
             padding: 4px !important;
         }
