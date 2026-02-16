@@ -71,48 +71,84 @@ const DeckBuilderStyles = () => (
     @media (max-width: 768px) {
         .db-container {
             padding: 5px;
+            gap: 8px !important;
+        }
+        .db-header h1 {
+            font-size: 18px !important;
+            margin-bottom: 0 !important;
+        }
+        .db-header h2 {
+            font-size: 10px !important;
+            margin-bottom: 8px !important;
+            letter-spacing: 1px !important;
         }
         .db-controls-top {
             grid-template-columns: 1fr !important;
-            gap: 10px !important;
+            gap: 6px !important;
+            margin-bottom: 5px !important;
+        }
+        .db-input-group label {
+            font-size: 10px !important;
+            margin-bottom: 2px !important;
+        }
+        .db-custom-select {
+            padding: 6px 10px !important;
+            font-size: 12px !important;
+        }
+        .db-input-arrow {
+            top: 26px !important;
         }
         .db-buttons-row {
             grid-template-columns: 1fr 1fr !important;
-            gap: 8px !important;
+            gap: 6px !important;
+            margin-bottom: 8px !important;
+        }
+        .db-btn {
+            padding: 5px 8px !important;
+            font-size: 11px !important;
         }
         .db-main-content {
             grid-template-columns: 1fr !important;
-            gap: 20px !important;
+            gap: 15px !important;
             width: 100% !important;
             box-sizing: border-box;
         }
         .db-titles {
-            gap: 15px !important;
+            gap: 12px !important;
         }
         .db-title-tab {
-            font-size: 20px !important;
+            font-size: 18px !important;
         }
         .db-section-header {
             flex-direction: column;
             align-items: flex-start !important;
-            gap: 15px !important;
+            gap: 8px !important;
+            margin-bottom: 8px !important;
+            padding-bottom: 5px !important;
         }
         .db-toggles-area {
             width: 100%;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 10px !important;
+            gap: 8px !important;
         }
         .db-panel-controls {
             flex-wrap: wrap !important;
             height: auto !important;
-            gap: 8px !important;
+            gap: 6px !important;
+            margin-bottom: 6px !important;
         }
         .db-search-input {
-            min-width: 150px;
+            min-width: 120px;
+            padding: 0 8px !important;
+            height: 30px !important;
+        }
+        .db-icon-btn, .db-tab-btn {
+            height: 30px !important;
         }
         .db-card-grid-container {
             padding: 4px !important;
+            min-height: 300px !important;
         }
         .db-grid-slots {
             grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
