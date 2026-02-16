@@ -170,21 +170,60 @@ const DeckBuilderStyles = () => (
 
     .db-titles {
         display: flex;
-        gap: 15px;
+        gap: 25px;
         align-items: baseline;
     }
 
-    .db-title-main {
+    .db-title-tab {
         font-size: 28px;
         font-weight: 900;
         text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #555;
+        border-bottom: 3px solid transparent;
     }
 
-    .db-title-sub {
-        font-size: 28px;
-        font-weight: 900;
-        text-transform: uppercase;
+    .db-title-tab.active {
+        color: white;
+        border-bottom: 3px solid #856f4b;
+    }
+
+    .db-title-tab:hover {
+        color: #ccc;
+    }
+
+    .db-sim-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .db-sim-stats {
+        display: flex;
+        gap: 20px;
+    }
+
+    .db-sim-stat-box {
+        text-align: center;
+        background: #1a1a1a;
+        padding: 5px 15px;
+        border-radius: 4px;
+        border: 1px solid #333;
+    }
+
+    .db-sim-stat-label {
+        font-size: 10px;
         color: #888;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+
+    .db-sim-stat-value {
+        font-size: 18px;
+        font-weight: 900;
+        color: #856f4b;
     }
 
     .db-toggles-area {
@@ -720,6 +759,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [isDrawSimulatorOpen, setIsDrawSimulatorOpen] = useState(false);
   const [simulatedHand, setSimulatedHand] = useState<CardData[]>([]);
   const [remainingSimDeck, setRemainingSimDeck] = useState<CardData[]>([]);
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<'deck' | 'simulador'>('deck');
 
   const fetchUserDecks = useCallback(async () => {
     if (!user) return;
@@ -1255,8 +1295,25 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
           {/* Sub Header */}
           <div className="db-section-header">
               <div className="db-titles">
-                  <span className="db-title-main">DECK</span>
-                  <span className="db-title-sub">SIMULADOR</span>
+                  <span 
+                    className={cn("db-title-tab", activeWorkspaceTab === 'deck' && "active")}
+                    onClick={() => setActiveWorkspaceTab('deck')}
+                  >
+                    DECK
+                  </span>
+                  <span 
+                    className={cn("db-title-tab", activeWorkspaceTab === 'simulador' && "active")}
+                    onClick={() => {
+                        if (mainDeck.length < 5) {
+                            toast({ title: "Mínimo 5 cartas no Main Deck", variant: "destructive" });
+                            return;
+                        }
+                        setActiveWorkspaceTab('simulador');
+                        if (simulatedHand.length === 0) startSimulation();
+                    }}
+                  >
+                    SIMULADOR
+                  </span>
               </div>
               <div className="db-toggles-area">
                   <div className="db-toggle-group">
@@ -1292,144 +1349,197 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                       </label>
                       <span>Genesys</span>
                   </div>
-                  <button 
-                    onClick={startSimulation}
-                    className="db-btn bg-primary/20 border-primary/40 text-primary px-4 py-1 ml-4"
-                  >
-                    Simular Mão
-                  </button>
               </div>
           </div>
 
           {/* Main Workspace */}
-          <div className="db-main-content">
-              {/* Left Panel (Filter + Grid) - SEARCH/DATABASE */}
-              <div className="db-left-panel">
-                  <div className="db-panel-controls">
-                      <input 
-                        type="text" 
-                        className="db-search-input" 
-                        placeholder="Busca..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && searchCards(false)}
-                      />
-                      <button className="db-icon-btn" onClick={() => setIsFilterModalOpen(true)}>
-                          <svg className="db-icon" viewBox="0 0 24 24">
-                              <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
-                          </svg>
-                      </button>
-                      <button 
-                        className={cn("db-tab-btn", !isSearchActive && "active")}
-                        onClick={clearSearchAndShowPopular}
-                      >
-                        Populares
-                      </button>
-                      <button 
-                        className={cn("db-tab-btn", isSearchActive && "active")}
-                        onClick={() => searchCards(false)}
-                      >
-                        Resultados
-                      </button>
-                  </div>
-                  
-                  <div className="db-card-grid-container db-results-area">
-                      {isSearching ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
-                          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Buscando...</span>
-                        </div>
-                      ) : (
-                        <div className="db-grid-slots">
-                            {searchResults.map((card, index) => (
-                              <div key={`${isSearchActive ? 'r' : 'p'}-${index}`} className="db-slot">
-                                <PopularCardGridItem 
-                                  card={card} 
-                                  isGenesysMode={isGenesysMode} 
-                                  addCardToDeck={addCardToDeck} 
-                                  isExtraDeckCard={isExtraDeckCard} 
-                                  isDeckLocked={isDeckLocked} 
-                                  showHovers={showHovers} 
-                                  currentSection={currentDeckSection}
-                                />
-                              </div>
-                            ))}
-                            {/* Fill empty slots to keep grid structure if needed, but not strictly necessary in React */}
-                        </div>
-                      )}
-                  </div>
-              </div>
+          {activeWorkspaceTab === 'deck' ? (
+            <div className="db-main-content">
+                {/* Left Panel (Filter + Grid) - SEARCH/DATABASE */}
+                <div className="db-left-panel">
+                    <div className="db-panel-controls">
+                        <input 
+                          type="text" 
+                          className="db-search-input" 
+                          placeholder="Busca..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && searchCards(false)}
+                        />
+                        <button className="db-icon-btn" onClick={() => setIsFilterModalOpen(true)}>
+                            <svg className="db-icon" viewBox="0 0 24 24">
+                                <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+                            </svg>
+                        </button>
+                        <button 
+                          className={cn("db-tab-btn", !isSearchActive && "active")}
+                          onClick={clearSearchAndShowPopular}
+                        >
+                          Populares
+                        </button>
+                        <button 
+                          className={cn("db-tab-btn", isSearchActive && "active")}
+                          onClick={() => searchCards(false)}
+                        >
+                          Resultados
+                        </button>
+                    </div>
+                    
+                    <div className="db-card-grid-container db-results-area">
+                        {isSearching ? (
+                          <div className="flex flex-col items-center justify-center py-20 gap-4">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Buscando...</span>
+                          </div>
+                        ) : (
+                          <div className="db-grid-slots">
+                              {searchResults.map((card, index) => (
+                                <div key={`${isSearchActive ? 'r' : 'p'}-${index}`} className="db-slot">
+                                  <PopularCardGridItem 
+                                    card={card} 
+                                    isGenesysMode={isGenesysMode} 
+                                    addCardToDeck={addCardToDeck} 
+                                    isExtraDeckCard={isExtraDeckCard} 
+                                    isDeckLocked={isDeckLocked} 
+                                    showHovers={showHovers} 
+                                    currentSection={currentDeckSection}
+                                  />
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                    </div>
+                </div>
 
-              {/* Right Panel (Grid Only) - CURRENT DECK */}
-              <div className="db-right-panel">
-                  <div className="db-panel-controls">
-                      <button 
-                        className={cn("db-tab-btn", currentDeckSection === 'main' && "active")}
-                        onClick={() => navigate(`?${searchParams.toString().split('&').filter(p => !p.startsWith('section')).join('&')}&section=main`, { replace: true })}
-                      >
-                        Main ({mainDeck.length})
-                      </button>
-                      <button 
-                        className={cn("db-tab-btn", currentDeckSection === 'extra' && "active")}
-                        onClick={() => navigate(`?${searchParams.toString().split('&').filter(p => !p.startsWith('section')).join('&')}&section=extra`, { replace: true })}
-                      >
-                        Extra ({extraDeck.length})
-                      </button>
-                      <button 
-                        className={cn("db-tab-btn", currentDeckSection === 'side' && "active")}
-                        onClick={() => navigate(`?${searchParams.toString().split('&').filter(p => !p.startsWith('section')).join('&')}&section=side`, { replace: true })}
-                      >
-                        Side ({sideDeck.length})
-                      </button>
-                      
-                      <div className="ml-auto flex gap-2">
-                        <button onClick={handleSortDeck} className="db-icon-btn" title="Ordenar">
-                          <ArrowUpDown className="w-4 h-4" />
+                {/* Right Panel (Grid Only) - CURRENT DECK */}
+                <div className="db-right-panel">
+                    <div className="db-panel-controls">
+                        <button 
+                          className={cn("db-tab-btn", currentDeckSection === 'main' && "active")}
+                          onClick={() => navigate(`?${searchParams.toString().split('&').filter(p => !p.startsWith('section')).join('&')}&section=main`, { replace: true })}
+                        >
+                          Main ({mainDeck.length})
                         </button>
-                        <button onClick={clearDeck} className="db-icon-btn" title="Limpar">
-                          <Eraser className="w-4 h-4" />
+                        <button 
+                          className={cn("db-tab-btn", currentDeckSection === 'extra' && "active")}
+                          onClick={() => navigate(`?${searchParams.toString().split('&').filter(p => !p.startsWith('section')).join('&')}&section=extra`, { replace: true })}
+                        >
+                          Extra ({extraDeck.length})
                         </button>
+                        <button 
+                          className={cn("db-tab-btn", currentDeckSection === 'side' && "active")}
+                          onClick={() => navigate(`?${searchParams.toString().split('&').filter(p => !p.startsWith('section')).join('&')}&section=side`, { replace: true })}
+                        >
+                          Side ({sideDeck.length})
+                        </button>
+                        
+                        <div className="ml-auto flex gap-2">
+                          <button onClick={handleSortDeck} className="db-icon-btn" title="Ordenar">
+                            <ArrowUpDown className="w-4 h-4" />
+                          </button>
+                          <button onClick={clearDeck} className="db-icon-btn" title="Limpar">
+                            <Eraser className="w-4 h-4" />
+                          </button>
+                        </div>
+                    </div>
+
+                    <DeckDropZone 
+                      section={currentDeckSection as any} 
+                      addCardToDeck={addCardToDeck} 
+                      isExtraDeckCard={isExtraDeckCard} 
+                      removeCard={removeCard} 
+                      isDeckLocked={isDeckLocked}
+                    >
+                      <div className="db-card-grid-container">
+                          <div className="db-grid-slots">
+                              {(currentDeckSection === 'main' ? mainDeck : currentDeckSection === 'extra' ? extraDeck : sideDeck).map((card, index) => (
+                                <div key={`${currentDeckSection}-${index}`} className="db-slot">
+                                  <DraggableDeckCard 
+                                    card={card} 
+                                    index={index} 
+                                    section={currentDeckSection as any} 
+                                    removeCard={removeCard} 
+                                    isGenesysMode={isGenesysMode} 
+                                    isDeckLocked={isDeckLocked} 
+                                    showHovers={showHovers} 
+                                  />
+                                </div>
+                              ))}
+                              {Array.from({ length: Math.max(0, 15 - (currentDeckSection === 'main' ? mainDeck : currentDeckSection === 'extra' ? extraDeck : sideDeck).length) }).map((_, i) => (
+                                <div key={`empty-${i}`} className="db-slot"></div>
+                              ))}
+                          </div>
                       </div>
-                  </div>
-
-                  <DeckDropZone 
-                    section={currentDeckSection as any} 
-                    addCardToDeck={addCardToDeck} 
-                    isExtraDeckCard={isExtraDeckCard} 
-                    removeCard={removeCard} 
-                    isDeckLocked={isDeckLocked}
-                  >
+                    </DeckDropZone>
+                    
+                    {isGenesysMode && (
+                      <div className="mt-4 text-right">
+                        <span className="text-primary font-black uppercase tracking-widest text-xs mr-2">Total Genesys:</span>
+                        <span className="text-2xl font-black italic">{totalGenesysPoints}</span>
+                      </div>
+                    )}
+                </div>
+            </div>
+          ) : (
+            <div className="db-main-content">
+                {/* Simulator UI following deckbuilder design */}
+                <div className="db-left-panel">
+                    <div className="db-sim-header">
+                        <h3 className="text-xl font-black italic uppercase tracking-tighter">Mão Inicial</h3>
+                        <div className="db-sim-stats">
+                            <div className="db-sim-stat-box">
+                                <p className="db-sim-stat-label">No Deck</p>
+                                <p className="db-sim-stat-value">{remainingSimDeck.length}</p>
+                            </div>
+                            <div className="db-sim-stat-box">
+                                <p className="db-sim-stat-label">Na Mão</p>
+                                <p className="db-sim-stat-value">{simulatedHand.length}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div className="db-card-grid-container">
                         <div className="db-grid-slots">
-                            {(currentDeckSection === 'main' ? mainDeck : currentDeckSection === 'extra' ? extraDeck : sideDeck).map((card, index) => (
-                              <div key={`${currentDeckSection}-${index}`} className="db-slot">
-                                <DraggableDeckCard 
-                                  card={card} 
-                                  index={index} 
-                                  section={currentDeckSection as any} 
-                                  removeCard={removeCard} 
-                                  isGenesysMode={isGenesysMode} 
-                                  isDeckLocked={isDeckLocked} 
-                                  showHovers={showHovers} 
-                                />
+                            {simulatedHand.map((card, i) => (
+                              <div key={`sim-${i}`} className="db-slot">
+                                <div className="relative w-full h-full rounded overflow-hidden">
+                                    <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover" />
+                                </div>
                               </div>
                             ))}
-                            {/* Empty slots for visual consistency */}
-                            {Array.from({ length: Math.max(0, 15 - (currentDeckSection === 'main' ? mainDeck : currentDeckSection === 'extra' ? extraDeck : sideDeck).length) }).map((_, i) => (
-                              <div key={`empty-${i}`} className="db-slot"></div>
+                            {Array.from({ length: Math.max(0, 15 - simulatedHand.length) }).map((_, i) => (
+                              <div key={`sim-empty-${i}`} className="db-slot"></div>
                             ))}
                         </div>
                     </div>
-                  </DeckDropZone>
-                  
-                  {isGenesysMode && (
-                    <div className="mt-4 text-right">
-                      <span className="text-primary font-black uppercase tracking-widest text-xs mr-2">Total Genesys:</span>
-                      <span className="text-2xl font-black italic">{totalGenesysPoints}</span>
+                </div>
+
+                <div className="db-right-panel">
+                    <div className="flex flex-col gap-4 justify-center h-full">
+                        <button 
+                          onClick={resetSimulation} 
+                          className="db-btn py-4 text-lg font-black uppercase italic tracking-tighter"
+                        >
+                          <Shuffle className="w-5 h-5 mr-2" /> Reiniciar Simulação
+                        </button>
+                        <button 
+                          onClick={drawOne} 
+                          disabled={remainingSimDeck.length === 0} 
+                          className="db-btn py-4 text-lg font-black uppercase italic tracking-tighter bg-primary/20 border-primary/40 text-primary"
+                        >
+                          <Wand2 className="w-5 h-5 mr-2" /> Comprar 1 Carta
+                        </button>
+                        <div className="mt-8 p-6 bg-white/5 border border-white/10 rounded-xl">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-stone-500 mb-2">Dica</h4>
+                            <p className="text-xs text-stone-400 leading-relaxed italic">
+                                O simulador utiliza apenas o Main Deck atual para gerar mãos aleatórias de 5 cartas. 
+                                Use para testar a consistência de seus combos iniciais.
+                            </p>
+                        </div>
                     </div>
-                  )}
-              </div>
-          </div>
+                </div>
+            </div>
+          )}
 
           {/* Notes Area */}
           <div className="mt-8">
@@ -1442,47 +1552,6 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             />
           </div>
       </div>
-
-      <Dialog open={isDrawSimulatorOpen} onOpenChange={setIsDrawSimulatorOpen}>
-        <DialogContent className="max-w-5xl bg-[#0a0a0a] border-primary/30 p-0 overflow-hidden shadow-2xl rounded-[2rem] text-white">
-          <div className="p-12 space-y-12">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white">Simulador de Mão</h2>
-                <p className="text-sm text-stone-500 font-medium uppercase tracking-widest mt-1">Probabilidade Inicial (Draw 5)</p>
-              </div>
-              <div className="flex gap-3">
-                <Button onClick={resetSimulation} variant="outline" className="border-white/10 bg-white/5 gap-2 font-black uppercase text-[10px] tracking-widest rounded-xl h-12 px-6">
-                  <Shuffle className="w-4 h-4" /> Reiniciar
-                </Button>
-                <Button onClick={drawOne} disabled={remainingSimDeck.length === 0} className="bg-primary text-black font-black uppercase italic tracking-tighter gap-2 rounded-xl h-12 px-8">
-                  <Wand2 className="w-4 h-4" /> Comprar 1
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-6 min-h-[300px]">
-              {simulatedHand.map((card, i) => (
-                <div key={i} className="w-40 group relative">
-                  <img src={card.image_url} alt={card.name} className="w-full rounded-lg shadow-2xl border border-white/5 group-hover:scale-110 transition-all duration-500" />
-                  <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 rounded-lg blur-xl transition-opacity -z-10" />
-                </div>
-              ))}
-            </div>
-            
-            <div className="flex justify-center gap-8 border-t border-white/5 pt-8">
-               <div className="text-center">
-                  <p className="text-[10px] font-black text-stone-500 uppercase">Restantes no Deck</p>
-                  <p className="text-2xl font-black italic text-primary">{remainingSimDeck.length}</p>
-               </div>
-               <div className="text-center">
-                  <p className="text-[10px] font-black text-stone-500 uppercase">Cartas na Mão</p>
-                  <p className="text-2xl font-black italic text-white">{simulatedHand.length}</p>
-               </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
         <DialogContent className="bg-[#0a0a0a] border-white/10 text-white max-w-3xl rounded-[2rem] p-8">
