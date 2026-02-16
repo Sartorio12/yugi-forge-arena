@@ -55,43 +55,78 @@ const DeckBuilderStyles = () => (
   <style>{`
     .db-container {
         width: 100%;
-        max-width: 1200px;
+        max-width: 1600px;
         display: flex;
         flex-direction: column;
         gap: 15px;
         margin: 0 auto;
-        padding: 20px;
+        padding: 10px 20px;
         background-color: #212123;
         color: white;
         min-height: 100vh;
     }
 
+    @media (max-width: 768px) {
+        .db-container {
+            padding: 10px;
+        }
+        .db-controls-top {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+        }
+        .db-buttons-row {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+        }
+        .db-main-content {
+            grid-template-columns: 1fr !important;
+            gap: 20px !important;
+        }
+        .db-titles {
+            gap: 15px !important;
+        }
+        .db-title-tab {
+            font-size: 20px !important;
+        }
+        .db-section-header {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 15px !important;
+        }
+        .db-toggles-area {
+            width: 100%;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px !important;
+        }
+    }
+
     .db-header h1 {
         text-align: center;
-        font-size: 32px;
+        font-size: 24px;
         font-weight: 900;
         letter-spacing: 1px;
         text-transform: uppercase;
         line-height: 1;
-        margin-bottom: 5px;
+        margin-bottom: 2px;
         color: white;
     }
 
     .db-header h2 {
         text-align: center;
-        font-size: 18px;
+        font-size: 14px;
         font-weight: 300;
         color: #ccc;
         text-transform: uppercase;
         letter-spacing: 2px;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
     }
 
     .db-controls-top {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 20px;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
     }
 
     .db-input-group {
@@ -100,8 +135,8 @@ const DeckBuilderStyles = () => (
 
     .db-input-group label {
         display: block;
-        font-size: 14px;
-        margin-bottom: 5px;
+        font-size: 12px;
+        margin-bottom: 3px;
         color: #ddd;
     }
 
@@ -109,9 +144,9 @@ const DeckBuilderStyles = () => (
         width: 100%;
         background-color: #1a1a1a;
         border: 1px solid #333;
-        padding: 10px 15px;
+        padding: 8px 12px;
         color: #eee;
-        font-size: 14px;
+        font-size: 13px;
         appearance: none;
         border-radius: 2px;
         cursor: pointer;
@@ -119,26 +154,26 @@ const DeckBuilderStyles = () => (
 
     .db-input-arrow {
         position: absolute;
-        right: 15px;
-        top: 38px;
+        right: 12px;
+        top: 32px;
         pointer-events: none;
         color: white;
-        font-size: 12px;
+        font-size: 10px;
     }
 
     .db-buttons-row {
         display: grid;
-        grid-template-columns: 1.5fr 1fr 1fr 1.5fr;
-        gap: 15px;
-        margin-bottom: 20px;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
     }
 
     .db-btn {
         background-color: #3b3b3b;
         border: 1px solid #856f4b;
         color: #ddd;
-        padding: 10px;
-        font-size: 14px;
+        padding: 6px 12px;
+        font-size: 12px;
         cursor: pointer;
         text-align: center;
         position: relative;
@@ -147,16 +182,24 @@ const DeckBuilderStyles = () => (
         justify-content: center;
         border-radius: 2px;
         transition: all 0.2s;
+        text-transform: uppercase;
+        font-weight: bold;
     }
 
-    .db-btn:hover {
+    .db-btn:hover:not(:disabled) {
         background-color: #4a4a4a;
         border-color: #a68c5e;
+        color: white;
+    }
+
+    .db-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     .db-btn-arrow {
         margin-left: auto;
-        padding-left: 10px;
+        padding-left: 8px;
     }
 
     .db-section-header {
@@ -175,7 +218,7 @@ const DeckBuilderStyles = () => (
     }
 
     .db-title-tab {
-        font-size: 28px;
+        font-size: 24px;
         font-weight: 900;
         text-transform: uppercase;
         cursor: pointer;
@@ -228,23 +271,25 @@ const DeckBuilderStyles = () => (
 
     .db-toggles-area {
         display: flex;
-        gap: 20px;
+        gap: 15px;
         align-items: center;
     }
 
     .db-toggle-group {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 14px;
+        gap: 8px;
+        font-size: 12px;
         color: #ddd;
+        text-transform: uppercase;
+        font-weight: bold;
     }
 
     .db-switch {
         position: relative;
         display: inline-block;
-        width: 40px;
-        height: 20px;
+        width: 34px;
+        height: 18px;
     }
 
     .db-switch input {
@@ -260,7 +305,7 @@ const DeckBuilderStyles = () => (
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: #ccc;
+        background-color: #444;
         transition: .4s;
         border-radius: 20px;
     }
@@ -268,8 +313,8 @@ const DeckBuilderStyles = () => (
     .db-slider:before {
         position: absolute;
         content: "";
-        height: 16px;
-        width: 16px;
+        height: 14px;
+        width: 14px;
         left: 2px;
         bottom: 2px;
         background-color: white;
@@ -282,29 +327,29 @@ const DeckBuilderStyles = () => (
     }
 
     .db-switch input:checked + .db-slider:before {
-        transform: translateX(20px);
+        transform: translateX(16px);
     }
 
     .db-main-content {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 20px;
+        gap: 30px;
     }
 
     .db-panel-controls {
         display: flex;
         gap: 5px;
         margin-bottom: 10px;
-        height: 36px;
+        height: 32px;
     }
 
     .db-search-input {
         background-color: #1a1a1a;
         border: 1px solid #333;
         color: #ddd;
-        padding: 0 15px;
+        padding: 0 12px;
         flex-grow: 1;
-        font-size: 14px;
+        font-size: 13px;
         border-radius: 2px;
     }
 
@@ -312,7 +357,7 @@ const DeckBuilderStyles = () => (
         background-color: #1a1a1a;
         border: 1px solid #333;
         color: white;
-        width: 36px;
+        width: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -324,11 +369,13 @@ const DeckBuilderStyles = () => (
         background-color: #333;
         border: none;
         color: #aaa;
-        padding: 0 20px;
-        font-size: 14px;
+        padding: 0 15px;
+        font-size: 12px;
         cursor: pointer;
         transition: background 0.2s;
         border-radius: 2px;
+        text-transform: uppercase;
+        font-weight: bold;
     }
 
     .db-tab-btn.active {
@@ -339,7 +386,7 @@ const DeckBuilderStyles = () => (
     .db-card-grid-container {
         position: relative;
         background: linear-gradient(135deg, rgba(120, 100, 20, 0.4) 0%, rgba(106, 27, 154, 0.4) 100%);
-        padding: 10px;
+        padding: 8px;
         min-height: 500px;
         border: 1px solid #444;
         border-radius: 4px;
@@ -347,15 +394,38 @@ const DeckBuilderStyles = () => (
 
     .db-grid-slots {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 8px;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+    }
+
+    @media (min-width: 1400px) {
+        .db-grid-slots {
+            grid-template-columns: repeat(8, 1fr);
+        }
+    }
+
+    @media (max-width: 1024px) {
+        .db-grid-slots {
+            grid-template-columns: repeat(5, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .db-grid-slots {
+            grid-template-columns: repeat(4, 1fr);
+        }
     }
 
     .db-slot {
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         aspect-ratio: 2/3;
         transition: border-color 0.2s;
         position: relative;
+    }
+
+    .db-slot:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+        background-color: rgba(255,255,255,0.05);
     }
 
     .db-slot:hover {
