@@ -180,6 +180,16 @@ const DeckBuilderStyles = () => (
         font-size: 10px;
     }
 
+    .db-input-arrow-small {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: white;
+        font-size: 10px;
+    }
+
     .db-buttons-row {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -1351,39 +1361,37 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 {isDeckLocked ? "Bloqueado" : (editingDeckId ? "Atualizar" : "Salvar")}
               </button>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="db-btn">
-                      Exportar
-                      <span className="db-btn-arrow">↓</span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-[#121212] border-white/10 text-white">
-                  <DropdownMenuItem onClick={exportDeck} className="gap-2 focus:bg-primary/20 cursor-pointer">
-                    <FileDown className="w-4 h-4" /> .YDK
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={exportYdke} className="gap-2 focus:bg-primary/20 cursor-pointer">
-                    <Share2 className="w-4 h-4" /> YDKE
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="db-input-group">
+                  <select 
+                    className="db-custom-select" 
+                    onChange={(e) => {
+                      if (e.target.value === "ydk") exportDeck();
+                      if (e.target.value === "ydke") exportYdke();
+                      e.target.value = ""; // Reset
+                    }}
+                  >
+                      <option value="" disabled selected>Exportar</option>
+                      <option value="ydk">Arquivo .YDK</option>
+                      <option value="ydke">Código YDKE</option>
+                  </select>
+                  <div className="db-input-arrow-small">↓</div>
+              </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="db-btn">
-                      Importar
-                      <span className="db-btn-arrow">↓</span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-[#121212] border-white/10 text-white">
-                  <DropdownMenuItem onClick={handleImportYdkClick} className="gap-2 focus:bg-primary/20 cursor-pointer">
-                    <FileUp className="w-4 h-4" /> Arquivo .YDK
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleYdkeImport} className="gap-2 focus:bg-primary/20 cursor-pointer">
-                    <Share2 className="w-4 h-4" /> Código YDKE
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="db-input-group">
+                  <select 
+                    className="db-custom-select" 
+                    onChange={(e) => {
+                      if (e.target.value === "file") handleImportYdkClick();
+                      if (e.target.value === "ydke") handleYdkeImport();
+                      e.target.value = ""; // Reset
+                    }}
+                  >
+                      <option value="" disabled selected>Importar</option>
+                      <option value="file">Arquivo .YDK</option>
+                      <option value="ydke">Código YDKE</option>
+                  </select>
+                  <div className="db-input-arrow-small">↓</div>
+              </div>
 
               <button className="db-btn" onClick={deleteDeck} disabled={isDeckLocked}>
                 <Trash2 className="h-4 w-4 mr-2" />
