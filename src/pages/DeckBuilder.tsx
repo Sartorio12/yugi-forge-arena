@@ -104,8 +104,8 @@ const DeckBuilderStyles = () => (
             gap: 10px !important;
         }
         .db-grid-slots {
-            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)) !important;
-            gap: 5px !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 4px !important;
         }
     }
 
