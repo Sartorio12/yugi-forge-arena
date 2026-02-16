@@ -948,7 +948,13 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     setTotalGenesysPoints(total);
   }, [mainDeck, extraDeck, sideDeck]);
 
-  const isExtraDeckCard = (type: string) => type.includes("Fusion") || type.includes("Synchro") || type.includes("XYZ") || type.includes("Link");
+  const isExtraDeckCard = (type: string) => 
+    type.includes("Fusion") || 
+    type.includes("Synchro") || 
+    type.includes("XYZ") || 
+    type.includes("Xyz") || 
+    type.includes("Link") || 
+    type.includes("Pendulum");
 
   const discardChanges = useCallback(() => {
     localStorage.removeItem('deck_builder_draft');
@@ -1080,7 +1086,11 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     const currentCopies = [...mainDeck, ...extraDeck, ...sideDeck].filter(c => c.id === card.id).length;
     if (currentCopies >= limit) { toast({ title: "Limite atingido", description: `Máximo de ${limit} cópias.`, variant: "destructive" }); return; }
     
-    const targetSection = isExtraDeckCard(card.type) && section !== 'side' ? 'extra' : section;
+    let targetSection = section;
+    if (section !== 'side') {
+      targetSection = isExtraDeckCard(card.type) ? 'extra' : 'main';
+    }
+
     const setters = { main: setMainDeck, extra: setExtraDeck, side: setSideDeck };
     const decks = { main: mainDeck, extra: extraDeck, side: sideDeck };
     const limits = { main: 60, extra: 15, side: 15 };
