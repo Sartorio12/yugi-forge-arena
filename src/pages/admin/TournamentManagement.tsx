@@ -285,22 +285,11 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tournaments")
-        .select("title, organizer_id, exclusive_organizer_only, tournament_model, is_private, type, format, show_on_home, allow_deck_updates")
+        .select("status, title, organizer_id, exclusive_organizer_only, tournament_model, is_private, type, format, show_on_home, allow_deck_updates")
         .eq("id", Number(id))
         .single();
       if (error) throw error;
       return data;
-    },
-  });
-
-  const toggleDeckUpdatesMutation = useMutation({
-    mutationFn: async (allow: boolean) => {
-      const { error } = await supabase.from('tournaments').update({ allow_deck_updates: allow }).eq('id', Number(id));
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({ title: "Sucesso", description: "Configuração de troca de decks atualizada." });
-      queryClient.invalidateQueries({ queryKey: ["tournament", id] });
     },
   });
 
@@ -316,8 +305,33 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const isSuperAdmin = currentUserProfile?.role === 'super-admin' || currentUser?.id === "80193776-6790-457c-906d-ed45ea16df9f";
   const isOrganizer = currentUser?.id === (tournament as any)?.organizer_id;
-  // A general admin has elevated privileges, but not full control like a super-admin.
-  const isAdmin = isSuperAdmin || currentUserProfile?.role === 'admin'; 
+  const isAdmin = currentUserProfile?.role === 'admin'; 
+
+  const isTournamentLocked = tournament?.status === 'Finalizado' || tournament?.status === 'Fechado' || tournament?.status === 'Em Andamento';
+
+  const checkAdminRestriction = () => {
+    if (isAdmin && !isSuperAdmin && isTournamentLocked) {
+      toast({
+        title: "Ação Bloqueada",
+        description: "Administradores não podem alterar dados de torneios iniciados, fechados ou finalizados.",
+        variant: "destructive",
+      });
+      return true;
+    }
+    return false;
+  };
+
+  const toggleDeckUpdatesMutation = useMutation({
+    mutationFn: async (allow: boolean) => {
+      if (checkAdminRestriction()) return;
+      const { error } = await supabase.from('tournaments').update({ allow_deck_updates: allow }).eq('id', Number(id));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Sucesso", description: "Configuração de troca de decks atualizada." });
+      queryClient.invalidateQueries({ queryKey: ["tournament", id] });
+    },
+  });
 
   useEffect(() => {
     if (tournament && currentUser && currentUserProfile) {
@@ -396,6 +410,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const shuffleGroupsMutation = useMutation({
     mutationFn: async () => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase.rpc('shuffle_tournament_groups', {
         p_tournament_id: Number(id),
         p_num_groups: numGroups
@@ -413,6 +428,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const resetGroupsMutation = useMutation({
     mutationFn: async () => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase.rpc('reset_tournament_groups', {
         p_tournament_id: Number(id)
       });
@@ -430,6 +446,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
   const generateBracketMutation = useMutation({
     queryKey: ["tournamentMatches", id],
     mutationFn: async () => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase.rpc('generate_single_elimination_bracket', {
         p_tournament_id: Number(id)
       });
@@ -474,6 +491,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const generateKnockoutMutation = useMutation({
     mutationFn: async () => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase.rpc('generate_knockout_from_groups', {
         p_tournament_id: Number(id)
       });
@@ -491,6 +509,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const generateSwissRoundMutation = useMutation({
     mutationFn: async () => {
+      if (checkAdminRestriction()) return;
       const pairings = await generateSwissPairings(Number(id));
       
       const { data: existingMatches } = await supabase
@@ -528,6 +547,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const resetBracketMutation = useMutation({
     mutationFn: async () => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase.rpc('reset_tournament_bracket', {
         p_tournament_id: Number(id)
       });
@@ -545,6 +565,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const updateMatchWinnerMutation = useMutation({
     mutationFn: async ({ matchId, winnerId, isWO = false, score1 = 0, score2 = 0 }: { matchId: number, winnerId: string | null, isWO?: boolean, score1?: number, score2?: number }) => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase
         .from("tournament_matches")
         .update({ 
@@ -580,6 +601,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const addParticipantMutation = useMutation({
     mutationFn: async (userId: string) => {
+      if (checkAdminRestriction()) return;
       console.log("Tentando adicionar participante:", { tournamentId: Number(id), userId }); // DEBUG
 
       if (!userId) throw new Error("ID do usuário inválido.");
@@ -602,6 +624,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const updateParticipantGroupMutation = useMutation({
     mutationFn: async ({ participantId, groupName }: { participantId: number, groupName: string | null }) => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase
         .from("tournament_participants")
         .update({ group_name: groupName })
@@ -619,6 +642,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const togglePrivateMutation = useMutation({
     mutationFn: async (isPrivate: boolean) => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase.from('tournaments').update({ is_private: isPrivate }).eq('id', Number(id));
       if (error) throw error;
     },
@@ -630,6 +654,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const toggleShowOnHomeMutation = useMutation({
     mutationFn: async (showOnHome: boolean) => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase.from('tournaments').update({ show_on_home: showOnHome }).eq('id', Number(id));
       if (error) throw error;
     },
@@ -659,6 +684,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const updateWinsMutation = useMutation({
     mutationFn: async ({ participantId, change, userId }: { participantId: number; change: number; userId: string }) => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase.rpc('update_player_wins', { p_participant_id: participantId, p_win_change: change });
       if (error) throw error;
       return { userId };
@@ -675,6 +701,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const removeParticipantMutation = useMutation({
     mutationFn: async (participantId: number) => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase.rpc('admin_remove_participant', { 
         p_participant_id: participantId 
       });
@@ -696,6 +723,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const toggleDisqualifyMutation = useMutation({
     mutationFn: async ({ participantId, disqualified }: { participantId: number, disqualified: boolean }) => {
+      if (checkAdminRestriction()) return;
       const { error } = await supabase
         .from("tournament_participants")
         .update({ is_disqualified: disqualified })
@@ -710,6 +738,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
 
   const removeUncheckedMutation = useMutation({
     mutationFn: async () => {
+        if (checkAdminRestriction()) return;
         const { data, error } = await supabase.rpc('remove_unchecked_participants', { p_tournament_id: Number(id) });
         if (error) throw error;
         return data;

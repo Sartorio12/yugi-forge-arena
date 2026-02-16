@@ -173,6 +173,19 @@ const TournamentDashboard = ({ user: currentUserIdFromProps, onLogout }: Tournam
   };
 
   const handleEditClick = (tournament: Tables<"tournaments">) => {
+    const isSuperAdmin = !isLoadingProfile && (profile?.role === 'super-admin' || profile?.id === "80193776-6790-457c-906d-ed45ea16df9f");
+    const isAdmin = !isLoadingProfile && profile?.role === 'admin';
+    const isTournamentLocked = tournament.status === 'Finalizado' || tournament.status === 'Fechado' || tournament.status === 'Em Andamento';
+
+    if (isAdmin && !isSuperAdmin && isTournamentLocked) {
+      toast({
+        title: "Edição Bloqueada",
+        description: "Administradores não podem editar torneios que já iniciaram ou foram finalizados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setEditingTournament(tournament);
     setIsFormOpen(true);
   };
@@ -237,8 +250,10 @@ const TournamentDashboard = ({ user: currentUserIdFromProps, onLogout }: Tournam
               const isOrganizerRole = !isLoadingProfile && profile?.role === 'organizer';
               const isAdminRole = !isLoadingProfile && profile?.role === 'admin';
 
+              const isTournamentLocked = tournament.status === 'Finalizado' || tournament.status === 'Fechado' || tournament.status === 'Em Andamento';
+
               const canManage = !((tournament as any).exclusive_organizer_only && !isUserOrganizer && !isSuperAdmin);
-              const canEdit = isSuperAdmin || isOrganizerRole || isAdminRole;
+              const canEdit = isSuperAdmin || ((isOrganizerRole || isAdminRole) && !isTournamentLocked);
               const canDelete = isSuperAdmin || isAdminRole;
 
               return (
