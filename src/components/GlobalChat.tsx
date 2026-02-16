@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, Send, Trash2, Loader2, Users, ChevronRight, ChevronLeft } from "lucide-react";
+import { MessageSquare, Send, Trash2, Loader2, Users, ChevronRight, ChevronLeft, Smile } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import EmojiPicker, { Theme, EmojiClickData } from "emoji-picker-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Message {
   id: number;
@@ -234,6 +236,10 @@ export const GlobalChat = ({ user }: { user: any }) => {
     }
   };
 
+  const onEmojiClick = (emojiData: EmojiClickData) => {
+    setNewMessage(prev => prev + emojiData.emoji);
+  };
+
   return (
     <Card className="bg-black/40 border-white/5 shadow-2xl flex flex-col h-[500px] overflow-hidden">
       <CardHeader className="py-3 px-4 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
@@ -318,7 +324,29 @@ export const GlobalChat = ({ user }: { user: any }) => {
             </div>
           </ScrollArea>
 
-          <form onSubmit={handleSendMessage} className="p-4 border-t border-white/5 bg-black/20 flex gap-2">
+          <form onSubmit={handleSendMessage} className="p-4 border-t border-white/5 bg-black/20 flex gap-2 items-center">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="shrink-0 text-muted-foreground hover:text-primary h-10 w-10"
+                  disabled={!user || isSending}
+                >
+                  <Smile className="w-5 h-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 border-none bg-transparent" side="top" align="start">
+                <EmojiPicker 
+                  onEmojiClick={onEmojiClick}
+                  theme={Theme.DARK}
+                  lazyLoadEmojis={true}
+                  searchPlaceholder="Procurar emoji..."
+                />
+              </PopoverContent>
+            </Popover>
+
             <Input 
               placeholder={user ? "Escreva uma mensagem..." : "Faça login para falar no chat"}
               className="bg-white/5 border-white/10 h-10 text-sm focus-visible:ring-primary/30"
