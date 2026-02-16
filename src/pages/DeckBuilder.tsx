@@ -64,6 +64,8 @@ const DeckBuilderStyles = () => (
         background-color: #212123;
         color: white;
         min-height: 100vh;
+        box-sizing: border-box;
+        overflow-x: hidden;
     }
 
     @media (max-width: 768px) {
@@ -81,6 +83,8 @@ const DeckBuilderStyles = () => (
         .db-main-content {
             grid-template-columns: 1fr !important;
             gap: 20px !important;
+            width: 100% !important;
+            box-sizing: border-box;
         }
         .db-titles {
             gap: 15px !important;
@@ -98,6 +102,10 @@ const DeckBuilderStyles = () => (
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 10px !important;
+        }
+        .db-grid-slots {
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)) !important;
+            gap: 5px !important;
         }
     }
 
