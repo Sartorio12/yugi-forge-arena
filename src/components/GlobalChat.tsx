@@ -287,12 +287,12 @@ export const GlobalChat = ({ user }: { user: any }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className={cn(
-                            "text-[11px] font-black uppercase tracking-tighter",
-                            msg.user_id === user?.id ? "text-primary" : 
-                            (msg.profiles?.role === 'super-admin' || msg.user_id === '80193776-6790-457c-906d-ed45ea16df9f') ? "text-yellow-500" : 
-                            msg.profiles?.role === 'admin' ? "text-red-400" : "text-white"
-                          )}>
+                                                  <span className={cn(
+                                                    "text-[11px] font-black uppercase tracking-tighter",
+                                                    (msg.profiles?.role === 'super-admin' || msg.profiles?.role === 'organizer' || msg.user_id === '80193776-6790-457c-906d-ed45ea16df9f') ? "text-yellow-500" : 
+                                                    msg.profiles?.role === 'admin' ? "text-red-400" : "text-[#a855f7]"
+                                                  )}>
+                          
                             {msg.profiles?.username || "Usuário"}
                           </span>
                           <span className="text-[9px] text-muted-foreground font-medium">
@@ -360,8 +360,8 @@ export const GlobalChat = ({ user }: { user: any }) => {
                   </div>
                   <span className={cn(
                     "text-[10px] font-bold uppercase truncate",
-                    (u.role === 'super-admin' || u.user_id === '80193776-6790-457c-906d-ed45ea16df9f') ? "text-yellow-500" : 
-                    u.role === 'admin' ? "text-red-400" : "text-white"
+                    (u.role === 'super-admin' || u.role === 'organizer' || u.user_id === '80193776-6790-457c-906d-ed45ea16df9f') ? "text-yellow-500" : 
+                    u.role === 'admin' ? "text-red-400" : "text-[#a855f7]"
                   )}>
                     {u.username}
                   </span>
