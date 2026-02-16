@@ -174,13 +174,13 @@ const TournamentDashboard = ({ user: currentUserIdFromProps, onLogout }: Tournam
 
   const handleEditClick = (tournament: Tables<"tournaments">) => {
     const isSuperAdmin = !isLoadingProfile && (profile?.role === 'super-admin' || profile?.id === "80193776-6790-457c-906d-ed45ea16df9f");
-    const isAdmin = !isLoadingProfile && profile?.role === 'admin';
-    const isTournamentLocked = tournament.status === 'Finalizado' || tournament.status === 'Fechado' || tournament.status === 'Em Andamento';
+    const isOrganizer = !isLoadingProfile && profile?.role === 'organizer';
+    const isTournamentLocked = tournament.status === 'Finalizado' || tournament.status === 'Fechado';
 
-    if (isAdmin && !isSuperAdmin && isTournamentLocked) {
+    if (isOrganizer && !isSuperAdmin && isTournamentLocked) {
       toast({
         title: "Edição Bloqueada",
-        description: "Administradores não podem editar torneios que já iniciaram ou foram finalizados.",
+        description: "Organizadores não podem editar torneios que já foram finalizados ou fechados.",
         variant: "destructive",
       });
       return;
@@ -192,12 +192,12 @@ const TournamentDashboard = ({ user: currentUserIdFromProps, onLogout }: Tournam
 
   const handleDeleteClick = (id: number) => {
     const isSuperAdmin = !isLoadingProfile && (profile?.role === 'super-admin' || profile?.id === "80193776-6790-457c-906d-ed45ea16df9f");
-    const isAdmin = !isLoadingProfile && profile?.role === 'admin';
+    const isOrganizer = !isLoadingProfile && profile?.role === 'organizer';
 
-    if (isAdmin && !isSuperAdmin) {
+    if (isOrganizer && !isSuperAdmin) {
       toast({
         title: "Acesso Negado",
-        description: "Administradores não podem excluir torneios. Por favor, peça ao host que realize esta ação.",
+        description: "Organizadores não podem excluir torneios. Por favor, peça ao host que realize esta ação.",
         variant: "destructive",
       });
       return;
@@ -250,11 +250,11 @@ const TournamentDashboard = ({ user: currentUserIdFromProps, onLogout }: Tournam
               const isOrganizerRole = !isLoadingProfile && profile?.role === 'organizer';
               const isAdminRole = !isLoadingProfile && profile?.role === 'admin';
 
-              const isTournamentLocked = tournament.status === 'Finalizado' || tournament.status === 'Fechado' || tournament.status === 'Em Andamento';
+              const isTournamentLocked = tournament.status === 'Finalizado' || tournament.status === 'Fechado';
 
-              const canManage = !((tournament as any).exclusive_organizer_only && !isUserOrganizer && !isSuperAdmin);
-              const canEdit = isSuperAdmin || ((isOrganizerRole || isAdminRole) && !isTournamentLocked);
-              const canDelete = isSuperAdmin || isAdminRole;
+              const canManage = !((tournament as any).exclusive_organizer_only && !isUserOrganizer && !isSuperAdmin && !isAdminRole);
+              const canEdit = isSuperAdmin || isAdminRole || (isOrganizerRole && !isTournamentLocked);
+              const canDelete = isSuperAdmin || isAdminRole || isOrganizerRole;
 
               return (
                 <Card key={tournament.id} className="overflow-hidden group border-border bg-gray-800/50 hover:shadow-glow transition-all duration-300">
