@@ -19,6 +19,7 @@ const ActivityTimeline = lazy(() => import("@/components/ActivityTimeline").then
 const TierListWidget = lazy(() => import("@/components/TierListWidget").then(m => ({ default: m.TierListWidget })));
 const WinStreakWidget = lazy(() => import("@/components/analytics/WinStreakWidget").then(m => ({ default: m.WinStreakWidget })));
 const TopRivalriesWidget = lazy(() => import("@/components/analytics/TopRivalriesWidget").then(m => ({ default: m.TopRivalriesWidget })));
+const GlobalChat = lazy(() => import("@/components/GlobalChat").then(m => ({ default: m.GlobalChat })));
 
 interface IndexProps {
   user: User | null;
@@ -47,6 +48,10 @@ const Index = ({ user, onLogout }: IndexProps) => {
           <div className="lg:col-span-7 space-y-8">
             <Suspense fallback={<WidgetLoader />}>
               <TournamentHero />
+            </Suspense>
+
+            <Suspense fallback={<WidgetLoader />}>
+              <GlobalChat user={user} />
             </Suspense>
 
             <Suspense fallback={<WidgetLoader />}>
