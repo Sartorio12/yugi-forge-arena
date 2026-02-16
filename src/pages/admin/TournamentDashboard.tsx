@@ -178,6 +178,18 @@ const TournamentDashboard = ({ user: currentUserIdFromProps, onLogout }: Tournam
   };
 
   const handleDeleteClick = (id: number) => {
+    const isSuperAdmin = !isLoadingProfile && (profile?.role === 'super-admin' || profile?.id === "80193776-6790-457c-906d-ed45ea16df9f");
+    const isAdmin = !isLoadingProfile && profile?.role === 'admin';
+
+    if (isAdmin && !isSuperAdmin) {
+      toast({
+        title: "Acesso Negado",
+        description: "Administradores não podem excluir torneios. Por favor, peça ao host que realize esta ação.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setTournamentToDeleteId(id);
     setIsDeleteDialogOpen(true);
   };
@@ -223,10 +235,11 @@ const TournamentDashboard = ({ user: currentUserIdFromProps, onLogout }: Tournam
               const isUserOrganizer = (tournament as any).organizer_id === currentUserId;
               const isSuperAdmin = !isLoadingProfile && (profile?.role === 'super-admin' || profile?.id === "80193776-6790-457c-906d-ed45ea16df9f");
               const isOrganizerRole = !isLoadingProfile && profile?.role === 'organizer';
+              const isAdminRole = !isLoadingProfile && profile?.role === 'admin';
 
               const canManage = !((tournament as any).exclusive_organizer_only && !isUserOrganizer && !isSuperAdmin);
-              const canEdit = isSuperAdmin || isOrganizerRole;
-              const canDelete = isSuperAdmin;
+              const canEdit = isSuperAdmin || isOrganizerRole || isAdminRole;
+              const canDelete = isSuperAdmin || isAdminRole;
 
               return (
                 <Card key={tournament.id} className="overflow-hidden group border-border bg-gray-800/50 hover:shadow-glow transition-all duration-300">
