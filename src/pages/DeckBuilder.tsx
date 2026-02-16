@@ -546,7 +546,23 @@ const CardPreviewContent = ({ card }: { card: CardData }) => (
   </div>
 );
 
-const PopularCardGridItem = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCard, isDeckLocked, showHovers }: { card: CardData, isGenesysMode: boolean, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, isDeckLocked: boolean, showHovers: boolean }) => {
+const PopularCardGridItem = ({ 
+  card, 
+  isGenesysMode, 
+  addCardToDeck, 
+  isExtraDeckCard, 
+  isDeckLocked, 
+  showHovers,
+  currentSection
+}: { 
+  card: CardData, 
+  isGenesysMode: boolean, 
+  addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, 
+  isExtraDeckCard: (type: string) => boolean, 
+  isDeckLocked: boolean, 
+  showHovers: boolean,
+  currentSection: string
+}) => {
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: ItemTypes.CARD,
     item: { card },
@@ -569,7 +585,7 @@ const PopularCardGridItem = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCa
         isDragging && "opacity-50"
       )}
       onContextMenu={handleRightClick}
-      onClick={() => addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}
+      onClick={() => addCardToDeck(card, currentSection as any)}
     >
       <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover transition-transform duration-500" ref={preview} />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -1334,6 +1350,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                                   isExtraDeckCard={isExtraDeckCard} 
                                   isDeckLocked={isDeckLocked} 
                                   showHovers={showHovers} 
+                                  currentSection={currentDeckSection}
                                 />
                               </div>
                             ))}
