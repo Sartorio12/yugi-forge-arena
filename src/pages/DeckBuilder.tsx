@@ -569,26 +569,14 @@ const PopularCardGridItem = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCa
         isDragging && "opacity-50"
       )}
       onContextMenu={handleRightClick}
+      onClick={() => addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}
     >
-      <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" ref={preview} />
+      <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover transition-transform duration-500" ref={preview} />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       
       {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
       {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
       <RarityIcon rarity={card.md_rarity} />
-      
-      {!isDeckLocked && (
-        <div className="absolute inset-0 flex flex-col items-center justify-end p-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-          <div className="flex gap-1 w-full">
-            <Button size="sm" className="flex-1 h-7 bg-primary text-black font-black text-[10px]" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}}>
-              ADD
-            </Button>
-            <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, 'side')}}>
-              <PlusCircle className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 
