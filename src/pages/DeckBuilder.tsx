@@ -70,7 +70,7 @@ const DeckBuilderStyles = () => (
 
     @media (max-width: 768px) {
         .db-container {
-            padding: 10px;
+            padding: 5px;
         }
         .db-controls-top {
             grid-template-columns: 1fr !important;
@@ -103,9 +103,12 @@ const DeckBuilderStyles = () => (
             flex-wrap: wrap;
             gap: 10px !important;
         }
+        .db-card-grid-container {
+            padding: 4px !important;
+        }
         .db-grid-slots {
-            grid-template-columns: repeat(4, 1fr) !important;
-            gap: 4px !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: 3px !important;
         }
     }
 
