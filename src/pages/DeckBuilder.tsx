@@ -51,6 +51,302 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
+const DeckBuilderStyles = () => (
+  <style>{`
+    .db-container {
+        width: 100%;
+        max-width: 1200px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #212123;
+        color: white;
+        min-height: 100vh;
+    }
+
+    .db-header h1 {
+        text-align: center;
+        font-size: 32px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        line-height: 1;
+        margin-bottom: 5px;
+        color: white;
+    }
+
+    .db-header h2 {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 300;
+        color: #ccc;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 20px;
+    }
+
+    .db-controls-top {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 10px;
+    }
+
+    .db-input-group {
+        position: relative;
+    }
+
+    .db-input-group label {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 5px;
+        color: #ddd;
+    }
+
+    .db-custom-select {
+        width: 100%;
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        padding: 10px 15px;
+        color: #eee;
+        font-size: 14px;
+        appearance: none;
+        border-radius: 2px;
+        cursor: pointer;
+    }
+
+    .db-input-arrow {
+        position: absolute;
+        right: 15px;
+        top: 38px;
+        pointer-events: none;
+        color: white;
+        font-size: 12px;
+    }
+
+    .db-buttons-row {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr 1fr 1.5fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .db-btn {
+        background-color: #3b3b3b;
+        border: 1px solid #856f4b;
+        color: #ddd;
+        padding: 10px;
+        font-size: 14px;
+        cursor: pointer;
+        text-align: center;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 2px;
+        transition: all 0.2s;
+    }
+
+    .db-btn:hover {
+        background-color: #4a4a4a;
+        border-color: #a68c5e;
+    }
+
+    .db-btn-arrow {
+        margin-left: auto;
+        padding-left: 10px;
+    }
+
+    .db-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #444;
+        padding-bottom: 10px;
+    }
+
+    .db-titles {
+        display: flex;
+        gap: 15px;
+        align-items: baseline;
+    }
+
+    .db-title-main {
+        font-size: 28px;
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+
+    .db-title-sub {
+        font-size: 28px;
+        font-weight: 900;
+        text-transform: uppercase;
+        color: #888;
+    }
+
+    .db-toggles-area {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .db-toggle-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #ddd;
+    }
+
+    .db-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+    }
+
+    .db-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .db-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 20px;
+    }
+
+    .db-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    .db-switch input:checked + .db-slider {
+        background-color: #856f4b;
+    }
+
+    .db-switch input:checked + .db-slider:before {
+        transform: translateX(20px);
+    }
+
+    .db-main-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .db-panel-controls {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 10px;
+        height: 36px;
+    }
+
+    .db-search-input {
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        color: #ddd;
+        padding: 0 15px;
+        flex-grow: 1;
+        font-size: 14px;
+        border-radius: 2px;
+    }
+
+    .db-icon-btn {
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        color: white;
+        width: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 2px;
+    }
+
+    .db-tab-btn {
+        background-color: #333;
+        border: none;
+        color: #aaa;
+        padding: 0 20px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.2s;
+        border-radius: 2px;
+    }
+
+    .db-tab-btn.active {
+        background-color: #444;
+        color: white;
+    }
+
+    .db-card-grid-container {
+        position: relative;
+        background: linear-gradient(135deg, rgba(120, 100, 20, 0.4) 0%, rgba(106, 27, 154, 0.4) 100%);
+        padding: 10px;
+        min-height: 500px;
+        border: 1px solid #444;
+        border-radius: 4px;
+    }
+
+    .db-grid-slots {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+    }
+
+    .db-slot {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        aspect-ratio: 2/3;
+        transition: border-color 0.2s;
+        position: relative;
+    }
+
+    .db-slot:hover {
+        border-color: rgba(255, 255, 255, 0.5);
+        background-color: rgba(255,255,255,0.05);
+    }
+
+    .db-icon {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+    }
+
+    .db-results-area {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .db-results-area::-webkit-scrollbar {
+        width: 6px;
+    }
+    .db-results-area::-webkit-scrollbar-track {
+        background: #1a1a1a;
+    }
+    .db-results-area::-webkit-scrollbar-thumb {
+        background: #333;
+    }
+  `}</style>
+);
+
 const CARD_TYPE_GROUPS = {
   "Monstros de Efeito": ["Effect Monster", "Flip Effect Monster", "Tuner Monster", "Pendulum Effect Monster"],
   "Monstros Normais": ["Normal Monster", "Normal Tuner Monster", "Pendulum Normal Monster"],
@@ -250,51 +546,6 @@ const CardPreviewContent = ({ card }: { card: CardData }) => (
   </div>
 );
 
-const DraggableSearchResultCard = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCard, isDeckLocked, showHovers }: { card: CardData, isGenesysMode: boolean, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, isDeckLocked: boolean, showHovers: boolean }) => {
-  const [{ isDragging }, drag, preview] = useDrag(() => ({ type: ItemTypes.CARD, item: { card }, canDrag: !isDeckLocked, collect: (monitor) => ({ isDragging: !!monitor.isDragging() }) }), [card, isDeckLocked]);
-  const handleRightClick = useCallback((event: React.MouseEvent) => { event.preventDefault(); addCardToDeck(card, 'main'); }, [card, addCardToDeck]);
-
-  const content = (
-    <div 
-      ref={drag} 
-      className={cn(
-        "group relative flex items-center gap-3 p-2 rounded-lg transition-all border border-transparent hover:border-primary/30 hover:bg-white/5 cursor-grab active:cursor-grabbing",
-        isDragging && "opacity-50"
-      )}
-      onContextMenu={handleRightClick}
-    >
-      <div className="relative shrink-0" ref={preview}>
-        <img src={card.image_url_small} alt={card.name} className="w-12 rounded shadow-lg group-hover:scale-105 transition-transform" />
-        {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
-        {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
-        <RarityIcon rarity={card.md_rarity} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-black text-xs uppercase truncate tracking-tighter group-hover:text-primary transition-colors">{card.name}</p>
-        <p className="text-[10px] text-muted-foreground truncate italic">{card.race} / {card.type}</p>
-      </div>
-      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button size="icon" variant="secondary" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); addCardToDeck(card, isExtraDeckCard(card.type) ? 'extra' : 'main')}}>
-          <Plus className="h-3 w-3" />
-        </Button>
-      </div>
-    </div>
-  );
-
-  if (!showHovers) return content;
-
-  return (
-    <HoverCard openDelay={100}>
-      <HoverCardTrigger asChild>
-        {content}
-      </HoverCardTrigger>
-      <HoverCardContent side="left" className="w-[500px] p-0 bg-[#121212] border-primary/30 shadow-2xl z-[100]">
-        <CardPreviewContent card={card} />
-      </HoverCardContent>
-    </HoverCard>
-  );
-};
-
 const PopularCardGridItem = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCard, isDeckLocked, showHovers }: { card: CardData, isGenesysMode: boolean, addCardToDeck: (card: CardData, section: 'main' | 'extra' | 'side') => void, isExtraDeckCard: (type: string) => boolean, isDeckLocked: boolean, showHovers: boolean }) => {
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: ItemTypes.CARD,
@@ -314,7 +565,7 @@ const PopularCardGridItem = ({ card, isGenesysMode, addCardToDeck, isExtraDeckCa
     <div 
       ref={drag} 
       className={cn(
-        "relative aspect-[2/3] rounded-md overflow-hidden cursor-grab active:cursor-grabbing group border border-white/5 hover:border-primary/50 transition-all",
+        "relative w-full h-full rounded-md overflow-hidden cursor-grab active:cursor-grabbing group border border-white/5 hover:border-primary/50 transition-all",
         isDragging && "opacity-50"
       )}
       onContextMenu={handleRightClick}
@@ -363,7 +614,7 @@ const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode, is
     <div 
       ref={drag} 
       className={cn(
-        "relative aspect-[2/3] rounded shadow-md cursor-grab active:cursor-grabbing group hover:ring-2 hover:ring-primary/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all",
+        "relative w-full h-full rounded shadow-md cursor-grab active:cursor-grabbing group hover:ring-2 hover:ring-primary/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all",
         isDragging && "opacity-0"
       )}
     >
@@ -377,7 +628,7 @@ const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode, is
           size="icon" 
           variant="destructive" 
           className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 z-30 shadow-lg scale-75 group-hover:scale-100 transition-all" 
-          onClick={() => removeCard(index, section)}
+          onClick={(e) => { e.stopPropagation(); removeCard(index, section); }}
         >
           <Trash2 className="h-3 w-3" />
         </Button>
@@ -459,12 +710,27 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [selectedTrapRaces, setSelectedTrapRaces] = useState<string[]>([]);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [userDecks, setUserDecks] = useState<{id: number, deck_name: string}[]>([]);
 
   const [deckNotes, setDeckNotes] = useState("");
   const [isDrawSimulatorOpen, setIsDrawSimulatorOpen] = useState(false);
   const [simulatedHand, setSimulatedHand] = useState<CardData[]>([]);
   const [remainingSimDeck, setRemainingSimDeck] = useState<CardData[]>([]);
-  
+
+  const fetchUserDecks = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('decks')
+      .select('id, deck_name')
+      .eq('user_id', user.id)
+      .order('deck_name');
+    if (data) setUserDecks(data);
+  }, [user]);
+
+  useEffect(() => {
+    fetchUserDecks();
+  }, [fetchUserDecks]);
+
   const [showHovers, setShowHovers] = useState(() => {
     const saved = localStorage.getItem("deck_builder_show_hovers");
     return saved !== null ? JSON.parse(saved) : true;
@@ -852,6 +1118,35 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     setRemainingSimDeck(shuffled.slice(5));
   };
 
+  const deleteDeck = async () => {
+    if (!editingDeckId) {
+      clearDeck();
+      return;
+    }
+    if (!confirm("Tem certeza que deseja deletar este deck?")) return;
+    try {
+      const { error } = await supabase.from('decks').delete().eq('id', editingDeckId);
+      if (error) throw error;
+      toast({ title: "Deck deletado com sucesso!" });
+      navigate(`/profile/${user?.id}`);
+    } catch (err: any) {
+      toast({ title: "Erro ao deletar", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeckSelect = (id: string) => {
+    if (id === "new") {
+      navigate("/deck-builder");
+      setEditingDeckId(null);
+      setMainDeck([]);
+      setExtraDeck([]);
+      setSideDeck([]);
+      setDeckName("");
+    } else {
+      navigate(`/deck-builder?edit=${id}`);
+    }
+  };
+
   if (isLoadingDeck) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -860,263 +1155,288 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     );
   }
 
+  const currentDeckSection = searchParams.get('section') || 'main';
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-stone-200 selection:bg-primary/30 selection:text-white">
+    <div className="min-h-screen bg-[#212123]">
       <Navbar user={user} onLogout={onLogout} />
+      <DeckBuilderStyles />
 
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".ydk" style={{ display: 'none' }} />
-      
-      <main className="container-fluid px-2 md:px-6 py-4 md:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-4 md:gap-8 mb-8">
-          <div className="space-y-4 md:space-y-6">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
-              <div className="flex-1 space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Identificação do Deck</Label>
-                <div className="relative group">
-                  <PenTool className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500" />
-                  <Input 
-                    placeholder="Nome do Deck..." 
-                    className="h-14 pl-12 bg-white/5 border-white/10 text-xl font-black italic uppercase tracking-tighter rounded-xl"
+
+      <div className="db-container">
+          {/* Header */}
+          <header className="db-header">
+              <h1>DECKBUILDER</h1>
+              <h2>STAFF</h2>
+          </header>
+
+          {/* Top Controls */}
+          <div className="db-controls-top">
+              <div className="db-input-group">
+                  <label>Decks Salvos</label>
+                  <select 
+                    className="db-custom-select" 
+                    value={editingDeckId || "new"} 
+                    onChange={(e) => handleDeckSelect(e.target.value)}
+                  >
+                      <option value="new">Novo Deck</option>
+                      {userDecks.map(deck => (
+                        <option key={deck.id} value={deck.id}>{deck.deck_name}</option>
+                      ))}
+                  </select>
+                  <div className="db-input-arrow">↓</div>
+              </div>
+              <div className="db-input-group">
+                  <label>Nome</label>
+                  <input 
+                    type="text" 
+                    className="db-custom-select" 
+                    placeholder="Nome do Deck"
                     value={deckName}
                     onChange={(e) => setDeckName(e.target.value)}
                     disabled={isDeckLocked}
                   />
-                </div>
+                  <div className="db-input-arrow">↓</div>
               </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
-                  <Button variant="ghost" size="sm" onClick={clearDeck} disabled={isDeckLocked} className="h-10 px-4 rounded-lg hover:bg-red-500/10 hover:text-red-500 gap-2">
-                    <Eraser className="w-4 h-4" />
-                    <span className="hidden sm:inline font-bold uppercase text-[10px] tracking-widest">Limpar</span>
-                  </Button>
-                  <Separator orientation="vertical" className="h-6 bg-white/10" />
-                  <Button variant="ghost" size="sm" onClick={handleSortDeck} disabled={isDeckLocked} className="h-10 px-4 rounded-lg hover:bg-primary/10 hover:text-primary gap-2">
-                    <ArrowUpDown className="w-4 h-4" />
-                    <span className="hidden sm:inline font-bold uppercase text-[10px] tracking-widest">Ordenar</span>
-                  </Button>
-                </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="h-12 px-6 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 gap-2 font-black uppercase text-[10px] tracking-widest">
-                      <Download className="w-4 h-4" /> Exportar
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-[#121212] border-white/10 text-white">
-                    <DropdownMenuItem onClick={exportDeck} className="gap-2 focus:bg-primary/20 cursor-pointer">
-                      <FileDown className="w-4 h-4" /> .YDK
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={exportYdke} className="gap-2 focus:bg-primary/20 cursor-pointer">
-                      <Share2 className="w-4 h-4" /> YDKE
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <Button 
-                  onClick={saveDeck} 
-                  disabled={isSaving || isDeckLocked} 
-                  className="h-12 px-8 rounded-xl bg-primary text-black font-black uppercase italic tracking-tighter hover:bg-primary/90 shadow-lg shadow-primary/20"
-                >
-                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
-                  {isDeckLocked ? "Bloqueado" : (editingDeckId ? "Atualizar" : "Salvar")}
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-8 py-4 px-6 bg-white/5 rounded-2xl border border-white/5">
-              <div className="flex items-center gap-3">
-                <Switch checked={isPrivate} onCheckedChange={setIsPrivate} className="data-[state=checked]:bg-primary" />
-                <Label className="text-[10px] font-black uppercase tracking-widest">Privado</Label>
-              </div>
-              <Separator orientation="vertical" className="h-8 bg-white/10" />
-              <div className="flex items-center gap-3">
-                <Switch checked={isGenesysMode} onCheckedChange={setIsGenesysMode} className="data-[state=checked]:bg-primary" />
-                <Label className="text-[10px] font-black uppercase tracking-widest">Genesys</Label>
-              </div>
-              <Separator orientation="vertical" className="h-8 bg-white/10" />
-              <div className="flex items-center gap-3">
-                <Switch checked={showHovers} onCheckedChange={setShowHovers} className="data-[state=checked]:bg-primary" />
-                <div className="flex flex-col">
-                  <Label className="text-[10px] font-black uppercase tracking-widest">Hovers</Label>
-                  <span className="text-[9px] text-stone-500 font-medium uppercase tracking-tighter">Preview de cards</span>
-                </div>
-              </div>
-              {isGenesysMode && (
-                <>
-                  <Separator orientation="vertical" className="h-8 bg-white/10" />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Pontos</span>
-                    <span className="text-xl font-black italic text-white">{totalGenesysPoints}</span>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
 
-          <Card className="bg-primary/5 border-primary/20 p-6 flex flex-col justify-center items-center text-center gap-4">
-             <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary border border-primary/20">
-                <Wand2 className="w-6 h-6" />
-             </div>
-             <div>
-                <h4 className="font-black uppercase italic tracking-tighter text-white">Simulador</h4>
-                <p className="text-[10px] text-stone-500 font-medium uppercase tracking-widest mt-1">Teste sua consistência</p>
-             </div>
-             <Button onClick={startSimulation} variant="outline" className="w-full border-primary/30 text-primary h-10 font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-primary hover:text-black transition-all">
-                Abrir Simulador
-             </Button>
-          </Card>
-        </div>
+          {/* Action Buttons */}
+          <div className="db-buttons-row">
+              <button className="db-btn" onClick={saveDeck} disabled={isSaving || isDeckLocked}>
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                {isDeckLocked ? "Bloqueado" : (editingDeckId ? "Atualizar" : "Salvar")}
+              </button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="db-btn">
+                      Exportar
+                      <span className="db-btn-arrow">↓</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-[#121212] border-white/10 text-white">
+                  <DropdownMenuItem onClick={exportDeck} className="gap-2 focus:bg-primary/20 cursor-pointer">
+                    <FileDown className="w-4 h-4" /> .YDK
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportYdke} className="gap-2 focus:bg-primary/20 cursor-pointer">
+                    <Share2 className="w-4 h-4" /> YDKE
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-        {isDeckLocked && (<div className="flex items-center gap-2 text-sm text-red-500 bg-red-900/30 p-3 rounded-md mb-6"><AlertTriangle className="h-4 w-4" />Deck travado por participação em torneio ativo.</div>)}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="db-btn">
+                      Importar
+                      <span className="db-btn-arrow">↓</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-[#121212] border-white/10 text-white">
+                  <DropdownMenuItem onClick={handleImportYdkClick} className="gap-2 focus:bg-primary/20 cursor-pointer">
+                    <FileUp className="w-4 h-4" /> Arquivo .YDK
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleYdkeImport} className="gap-2 focus:bg-primary/20 cursor-pointer">
+                    <Share2 className="w-4 h-4" /> Código YDKE
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-        <div className="flex flex-col lg:grid lg:grid-cols-[1fr_400px] gap-8">
-          <div className="space-y-8 order-2 lg:order-1">
-            <DeckDropZone section="main" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
-                    <h2 className="text-2xl font-black italic uppercase tracking-tighter text-white">Main Deck</h2>
-                    <Badge variant="secondary" className={cn("h-6 px-3 bg-white/5 border-white/10 text-stone-400 font-black tracking-widest", mainDeck.length >= 40 && mainDeck.length <= 60 ? "text-primary border-primary/30 bg-primary/10" : "text-red-400")}>
-                      {mainDeck.length} / 60
-                    </Badge>
+              <button className="db-btn" onClick={deleteDeck} disabled={isDeckLocked}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Deletar
+              </button>
+          </div>
+
+          {/* Sub Header */}
+          <div className="db-section-header">
+              <div className="db-titles">
+                  <span className="db-title-main">DECK</span>
+                  <span className="db-title-sub">SIMULADOR</span>
+              </div>
+              <div className="db-toggles-area">
+                  <div className="db-toggle-group">
+                      <label className="db-switch">
+                          <input 
+                            type="checkbox" 
+                            checked={isPrivate} 
+                            onChange={(e) => setIsPrivate(e.target.checked)} 
+                          />
+                          <span className="db-slider"></span>
+                      </label>
+                      <span>Privado</span>
                   </div>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <button className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-500 hover:text-primary flex items-center transition-colors">
-                        <Info className="w-3 h-3 mr-2" /> Como Enviar?
+                  <div className="db-toggle-group">
+                      <label className="db-switch">
+                          <input 
+                            type="checkbox" 
+                            checked={showHovers} 
+                            onChange={(e) => setShowHovers(e.target.checked)} 
+                          />
+                          <span className="db-slider"></span>
+                      </label>
+                      <span>Hovers</span>
+                  </div>
+                  <div className="db-toggle-group">
+                      <label className="db-switch">
+                          <input 
+                            type="checkbox" 
+                            checked={isGenesysMode} 
+                            onChange={(e) => setIsGenesysMode(e.target.checked)} 
+                          />
+                          <span className="db-slider"></span>
+                      </label>
+                      <span>Genesys</span>
+                  </div>
+                  <button 
+                    onClick={startSimulation}
+                    className="db-btn bg-primary/20 border-primary/40 text-primary px-4 py-1 ml-4"
+                  >
+                    Simular Mão
+                  </button>
+              </div>
+          </div>
+
+          {/* Main Workspace */}
+          <div className="db-main-content">
+              {/* Left Panel (Filter + Grid) - SEARCH/DATABASE */}
+              <div className="db-left-panel">
+                  <div className="db-panel-controls">
+                      <input 
+                        type="text" 
+                        className="db-search-input" 
+                        placeholder="Busca..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && searchCards(false)}
+                      />
+                      <button className="db-icon-btn" onClick={() => setIsFilterModalOpen(true)}>
+                          <svg className="db-icon" viewBox="0 0 24 24">
+                              <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+                          </svg>
                       </button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-[#0a0a0a] border-white/10 text-white">
-                      <DialogHeader><DialogTitle className="text-2xl font-black italic uppercase tracking-tighter">Como Exportar seu Deck</DialogTitle></DialogHeader>
-                      <div className="prose prose-invert max-w-none prose-a:text-primary pt-4"><ReactMarkdown rehypePlugins={[rehypeRaw]}>{instructions}</ReactMarkdown></div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                <div className="min-h-[200px] md:min-h-[300px] p-2 md:p-6 bg-[#121212] rounded-2xl md:rounded-[2rem] border border-white/5 shadow-inner relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[url('/bg-main.png')] opacity-[0.03] grayscale pointer-events-none" />
-                  <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 xl:grid-cols-10 gap-1.5 md:gap-3 relative z-10">
-                    {mainDeck.map((card, index) => (
-                      <DraggableDeckCard key={`m-${index}`} card={card} index={index} section="main" removeCard={removeCard} isGenesysMode={isGenesysMode} isDeckLocked={isDeckLocked} showHovers={showHovers} />
-                    ))}
-                    {!isDeckLocked && mainDeck.length < 60 && (
-                      <div className="aspect-[2/3] rounded-xl border-2 border-dashed border-white/5 flex flex-col items-center justify-center text-stone-700 hover:border-primary/20 hover:text-primary/30 transition-all duration-500 group/add">
-                        <Plus className="w-8 h-8 mb-1 group-hover:scale-110 transition-transform" />
-                        <span className="text-[8px] font-black uppercase tracking-widest">Add</span>
+                      <button 
+                        className={cn("db-tab-btn", !isSearchActive && "active")}
+                        onClick={clearSearchAndShowPopular}
+                      >
+                        Populares
+                      </button>
+                      <button 
+                        className={cn("db-tab-btn", isSearchActive && "active")}
+                        onClick={() => searchCards(false)}
+                      >
+                        Resultados
+                      </button>
+                  </div>
+                  
+                  <div className="db-card-grid-container db-results-area">
+                      {isSearching ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Buscando...</span>
+                        </div>
+                      ) : (
+                        <div className="db-grid-slots">
+                            {searchResults.map((card, index) => (
+                              <div key={`${isSearchActive ? 'r' : 'p'}-${index}`} className="db-slot">
+                                <PopularCardGridItem 
+                                  card={card} 
+                                  isGenesysMode={isGenesysMode} 
+                                  addCardToDeck={addCardToDeck} 
+                                  isExtraDeckCard={isExtraDeckCard} 
+                                  isDeckLocked={isDeckLocked} 
+                                  showHovers={showHovers} 
+                                />
+                              </div>
+                            ))}
+                            {/* Fill empty slots to keep grid structure if needed, but not strictly necessary in React */}
+                        </div>
+                      )}
+                  </div>
+              </div>
+
+              {/* Right Panel (Grid Only) - CURRENT DECK */}
+              <div className="db-right-panel">
+                  <div className="db-panel-controls">
+                      <button 
+                        className={cn("db-tab-btn", currentDeckSection === 'main' && "active")}
+                        onClick={() => navigate(`?${searchParams.toString().split('&').filter(p => !p.startsWith('section')).join('&')}&section=main`, { replace: true })}
+                      >
+                        Main ({mainDeck.length})
+                      </button>
+                      <button 
+                        className={cn("db-tab-btn", currentDeckSection === 'extra' && "active")}
+                        onClick={() => navigate(`?${searchParams.toString().split('&').filter(p => !p.startsWith('section')).join('&')}&section=extra`, { replace: true })}
+                      >
+                        Extra ({extraDeck.length})
+                      </button>
+                      <button 
+                        className={cn("db-tab-btn", currentDeckSection === 'side' && "active")}
+                        onClick={() => navigate(`?${searchParams.toString().split('&').filter(p => !p.startsWith('section')).join('&')}&section=side`, { replace: true })}
+                      >
+                        Side ({sideDeck.length})
+                      </button>
+                      
+                      <div className="ml-auto flex gap-2">
+                        <button onClick={handleSortDeck} className="db-icon-btn" title="Ordenar">
+                          <ArrowUpDown className="w-4 h-4" />
+                        </button>
+                        <button onClick={clearDeck} className="db-icon-btn" title="Limpar">
+                          <Eraser className="w-4 h-4" />
+                        </button>
                       </div>
-                    )}
                   </div>
-                </div>
-              </div>
-            </DeckDropZone>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <DeckDropZone section="extra" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
-                <div className="space-y-4 text-white">
-                  <h2 className="text-xl font-black italic uppercase tracking-tighter">Extra Deck ({extraDeck.length}/15)</h2>
-                  <div className="min-h-[100px] md:min-h-[150px] p-2 md:p-5 bg-[#121212] rounded-2xl md:rounded-3xl border border-white/5 shadow-inner">
-                    <div className="grid grid-cols-5 gap-1.5 md:gap-3">
-                      {extraDeck.map((card, index) => (
-                        <DraggableDeckCard key={`e-${index}`} card={card} index={index} section="extra" removeCard={removeCard} isGenesysMode={isGenesysMode} isDeckLocked={isDeckLocked} showHovers={showHovers} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </DeckDropZone>
-              <DeckDropZone section="side" addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} removeCard={removeCard} isDeckLocked={isDeckLocked}>
-                <div className="space-y-4 text-white">
-                  <h2 className="text-xl font-black italic uppercase tracking-tighter">Side Deck ({sideDeck.length}/15)</h2>
-                  <div className="min-h-[100px] md:min-h-[150px] p-2 md:p-5 bg-[#121212] rounded-2xl md:rounded-3xl border border-white/5 shadow-inner">
-                    <div className="grid grid-cols-5 gap-1.5 md:gap-3">
-                      {sideDeck.map((card, index) => (
-                        <DraggableDeckCard key={`s-${index}`} card={card} index={index} section="side" removeCard={removeCard} isGenesysMode={isGenesysMode} isDeckLocked={isDeckLocked} showHovers={showHovers} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </DeckDropZone>
-            </div>
-
-            <Card className="bg-[#121212] border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
-               <div className="flex items-center gap-3 px-8 pt-6">
-                  <PenTool className="w-5 h-5 text-primary" />
-                  <h3 className="font-black uppercase italic tracking-tighter text-lg text-white">Notas & Combos</h3>
-               </div>
-               <CardContent className="p-8">
-                  <textarea 
-                    placeholder="Escreva sua estratégia aqui (Markdown suportado)..."
-                    className="w-full min-h-[200px] bg-white/5 border border-white/10 rounded-2xl p-6 text-stone-300 leading-relaxed focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all outline-none resize-none"
-                    value={deckNotes}
-                    onChange={(e) => setDeckNotes(e.target.value)}
-                  />
-               </CardContent>
-            </Card>
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <Card className="bg-[#121212] border-white/5 rounded-[2rem] p-6 shadow-2xl sticky top-24">
-              <div className="space-y-4 mb-8">
-                <div className="relative group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-500 group-focus-within:text-primary transition-colors" />
-                  <Input 
-                    placeholder="Buscar cartas..." 
-                    className="h-14 pl-12 bg-white/5 border-white/10 rounded-2xl focus:ring-primary/20 text-base font-medium transition-all"
-                    value={searchQuery} 
-                    onChange={(e) => setSearchQuery(e.target.value)} 
-                    onKeyDown={(e) => e.key === "Enter" && searchCards(false)} 
-                  />
-                  <Button 
-                    onClick={() => searchCards(false)} 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 bg-primary hover:bg-primary/90 text-black rounded-xl p-0"
+                  <DeckDropZone 
+                    section={currentDeckSection as any} 
+                    addCardToDeck={addCardToDeck} 
+                    isExtraDeckCard={isExtraDeckCard} 
+                    removeCard={removeCard} 
+                    isDeckLocked={isDeckLocked}
                   >
-                    <Search className="w-5 h-5" />
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsFilterModalOpen(true)}
-                    className="flex-1 h-12 rounded-xl border-white/10 bg-white/5 text-stone-400 font-bold uppercase text-[10px] tracking-widest gap-2"
-                  >
-                    <Filter className="w-4 h-4" /> Filtros
-                  </Button>
-                  <Button variant="outline" onClick={handleImportYdkClick} className="h-12 w-12 rounded-xl border-white/10 bg-white/5 p-0">
-                    <FileUp className="w-5 h-5 text-stone-400" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-500 px-1">
-                  {isSearchActive ? "Resultados" : "Populares"}
-                </h3>
-                                  <ScrollArea className="h-[calc(100vh-450px)] pr-4">
-                                    {isSearchActive ? (
-                                      <div className="space-y-2">
-                                        {searchResults.map((card, index) => (
-                                          <DraggableSearchResultCard key={`r-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} isDeckLocked={isDeckLocked} showHovers={showHovers} />
-                                        ))}
-                                      </div>
-                                                        ) : (
-                                                          <div className="grid grid-cols-4 gap-2 md:gap-3">
-                                                            {searchResults.map((card, index) => (
-                                                              <PopularCardGridItem key={`p-${index}`} card={card} isGenesysMode={isGenesysMode} addCardToDeck={addCardToDeck} isExtraDeckCard={isExtraDeckCard} isDeckLocked={isDeckLocked} showHovers={showHovers} />
-                                                            ))}
-                                                          </div>
-                                                        )}
-                                                      {isSearching && (
-                    <div className="flex flex-col items-center justify-center py-12 gap-4">
-                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-stone-600">Acessando Banco...</span>
+                    <div className="db-card-grid-container">
+                        <div className="db-grid-slots">
+                            {(currentDeckSection === 'main' ? mainDeck : currentDeckSection === 'extra' ? extraDeck : sideDeck).map((card, index) => (
+                              <div key={`${currentDeckSection}-${index}`} className="db-slot">
+                                <DraggableDeckCard 
+                                  card={card} 
+                                  index={index} 
+                                  section={currentDeckSection as any} 
+                                  removeCard={removeCard} 
+                                  isGenesysMode={isGenesysMode} 
+                                  isDeckLocked={isDeckLocked} 
+                                  showHovers={showHovers} 
+                                />
+                              </div>
+                            ))}
+                            {/* Empty slots for visual consistency */}
+                            {Array.from({ length: Math.max(0, 15 - (currentDeckSection === 'main' ? mainDeck : currentDeckSection === 'extra' ? extraDeck : sideDeck).length) }).map((_, i) => (
+                              <div key={`empty-${i}`} className="db-slot"></div>
+                            ))}
+                        </div>
+                    </div>
+                  </DeckDropZone>
+                  
+                  {isGenesysMode && (
+                    <div className="mt-4 text-right">
+                      <span className="text-primary font-black uppercase tracking-widest text-xs mr-2">Total Genesys:</span>
+                      <span className="text-2xl font-black italic">{totalGenesysPoints}</span>
                     </div>
                   )}
-                </ScrollArea>
               </div>
-            </Card>
           </div>
-        </div>
-      </main>
+
+          {/* Notes Area */}
+          <div className="mt-8">
+            <h3 className="text-xs font-black uppercase italic tracking-widest text-primary mb-2">Notas & Combos</h3>
+            <textarea 
+                placeholder="Escreva sua estratégia aqui..."
+                className="w-full min-h-[100px] bg-[#1a1a1a] border border-[#333] rounded p-4 text-stone-300 leading-relaxed focus:border-primary/50 outline-none resize-none"
+                value={deckNotes}
+                onChange={(e) => setDeckNotes(e.target.value)}
+            />
+          </div>
+      </div>
 
       <Dialog open={isDrawSimulatorOpen} onOpenChange={setIsDrawSimulatorOpen}>
         <DialogContent className="max-w-5xl bg-[#0a0a0a] border-primary/30 p-0 overflow-hidden shadow-2xl rounded-[2rem] text-white">
