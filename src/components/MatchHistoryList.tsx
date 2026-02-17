@@ -37,51 +37,72 @@ export const MatchHistoryList = ({ userId }: MatchHistoryListProps) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {history.map((match: any) => (
         <Card key={match.match_id} className={`overflow-hidden border-l-4 ${match.result === 'WIN' ? 'border-l-green-500 bg-green-500/5' : 'border-l-red-500 bg-red-500/5'}`}>
-          <CardContent className="p-4 flex items-center justify-between gap-4">
+          <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
             
             {/* Tournament Info */}
-            <div className="flex flex-col gap-1 min-w-[120px] md:min-w-[200px]">
-              <Link to={`/tournaments/${match.tournament_id}`} className="font-bold hover:underline truncate">
+            <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+              <Link to={`/tournaments/${match.tournament_id}`} className="font-bold text-sm md:text-base hover:underline truncate text-foreground/90">
                 {match.tournament_title}
               </Link>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground uppercase font-medium tracking-tight">
                 <Calendar className="h-3 w-3" />
-                <span>{format(new Date(match.tournament_date), "dd/MM/yyyy", { locale: ptBR })}</span>
-                <span className="hidden md:inline">•</span>
-                <span className="truncate max-w-[100px]">{match.round_name}</span>
+                <span>{format(new Date(match.tournament_date), "dd/MM/yy", { locale: ptBR })}</span>
+                <span>•</span>
+                <span className="truncate">{match.round_name}</span>
               </div>
             </div>
 
-            {/* Result (Center) */}
-            <div className={`flex flex-col items-center justify-center font-black uppercase text-sm md:text-lg ${match.result === 'WIN' ? 'text-green-600' : 'text-red-600'}`}>
-                <div className="flex items-center gap-2">
-                  {match.result === 'WIN' ? 'Vitória' : 'Derrota'}
-                  {match.is_wo && (
-                    <Badge 
-                      variant="outline" 
-                      className={`text-[10px] ${match.result === 'WIN' ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}`}
-                      title={match.result === 'WIN' ? "Venceu por ausência do adversário" : "Perdeu por ausência/desistência"}
-                    >
-                      W.O.
-                    </Badge>
-                  )}
+            {/* Result & Score (Center on desktop, middle on mobile) */}
+            <div className="flex items-center justify-between sm:justify-center bg-black/20 sm:bg-transparent p-2 sm:p-0 rounded-lg">
+                <div className={cn(
+                    "flex flex-col items-center justify-center font-black uppercase",
+                    match.result === 'WIN' ? 'text-green-500' : 'text-red-500'
+                )}>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs md:text-lg tracking-tighter">{match.result === 'WIN' ? 'Vitória' : 'Derrota'}</span>
+                      {match.is_wo && (
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                              "text-[8px] h-4 px-1 font-black",
+                              match.result === 'WIN' ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20'
+                          )}
+                        >
+                          W.O.
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] md:text-xs font-bold text-muted-foreground mt-0.5">
+                        <span className={cn(match.result === 'WIN' ? "text-green-500/80" : "")}>{match.score_p1 ?? 0}</span>
+                        <span>-</span>
+                        <span className={cn(match.result === 'LOSS' ? "text-red-500/80" : "")}>{match.score_p2 ?? 0}</span>
+                    </div>
                 </div>
-                {match.result === 'WIN' ? <Trophy className="h-4 w-4 md:h-6 md:w-6 mt-1" /> : <XCircle className="h-4 w-4 md:h-6 md:w-6 mt-1" />}
+                <div className="sm:hidden">
+                    {match.result === 'WIN' ? <Trophy className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />}
+                </div>
             </div>
 
             {/* Opponent */}
-            <div className="flex items-center gap-3 justify-end text-right min-w-[120px] md:min-w-[200px]">
-              <div className="flex flex-col">
-                <span className="text-xs text-muted-foreground uppercase">Adversário</span>
-                <Link to={`/profile/${match.opponent_id}`} className="font-medium hover:underline truncate max-w-[100px] md:max-w-[150px]">
-                    {match.opponent_clan_tag && <span className="text-primary mr-1">[{match.opponent_clan_tag}]</span>}
+            <div className="flex items-center gap-3 justify-end text-right flex-1 min-w-0">
+              <div className="flex flex-col min-w-0">
+                <span className="text-[9px] md:text-xs text-muted-foreground uppercase font-black tracking-widest opacity-50">Adversário</span>
+                <Link to={`/profile/${match.opponent_id}`} className="font-bold text-xs md:text-base hover:underline truncate max-w-[120px] md:max-w-[150px] text-primary/90">
+                    {match.opponent_clan_tag && <span className="mr-1">[{match.opponent_clan_tag}]</span>}
                     {match.opponent_name}
                 </Link>
               </div>
-              <FramedAvatar userId={match.opponent_id} avatarUrl={match.opponent_avatar} frameUrl={match.opponent_frame} sizeClassName="h-8 w-8 md:h-10 md:w-10" />
+              <div className="shrink-0">
+                <FramedAvatar 
+                    userId={match.opponent_id} 
+                    avatarUrl={match.opponent_avatar} 
+                    frameUrl={match.opponent_frame} 
+                    sizeClassName="h-9 w-9 md:h-10 md:w-10" 
+                />
+              </div>
             </div>
 
           </CardContent>
@@ -89,4 +110,5 @@ export const MatchHistoryList = ({ userId }: MatchHistoryListProps) => {
       ))}
     </div>
   );
+};
 };
