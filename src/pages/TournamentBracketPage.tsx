@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,6 +31,7 @@ interface BracketPageProps {
 
 const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
 
   const { data: tournament } = useQuery({
     queryKey: ["tournament_basic_bracket", id],
@@ -38,6 +40,32 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
       return data;
     }
   });
+
+  // Realtime update logic
+  useEffect(() => {
+    if (!id) return;
+
+    const channel = supabase
+      .channel(`tournament_matches_${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_matches',
+          filter: `tournament_id=eq.${id}`
+        },
+        () => {
+          console.log("Realtime update received for matches!");
+          queryClient.invalidateQueries({ queryKey: ["tournament_bracket_matches", id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, queryClient]);
 
   const { data: participants } = useQuery({
     queryKey: ["tournament_participants_teams", id],
