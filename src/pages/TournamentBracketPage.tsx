@@ -64,6 +64,10 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
     enabled: !!id,
   });
 
+  console.log("Bracket Matches:", matches); // DEBUG
+  console.log("Rounds:", rounds); // DEBUG
+
+
   const rounds = matches?.reduce((acc: Record<number, Match[]>, match) => {
     if (!acc[match.round_number]) acc[match.round_number] = [];
     acc[match.round_number].push(match);
