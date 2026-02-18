@@ -1529,7 +1529,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                         </button>
                         <button 
                           className={cn("db-tab-btn", !isSearchActive && "active")}
-                          onClick={clearSearchAndShowPopular}
+                          onClick={resetSearch}
                         >
                           Populares
                         </button>
