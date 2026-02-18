@@ -508,6 +508,23 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
     }
   });
 
+  const clearBracketsMutation = useMutation({
+    mutationFn: async () => {
+      if (checkOrganizerRestriction()) return;
+      const { error } = await supabase.rpc('clear_tournament_brackets', {
+        p_tournament_id: Number(id)
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Chaves Limpas", description: "Todas as partidas de mata-mata foram removidas." });
+      queryClient.invalidateQueries({ queryKey: ["tournamentMatches", id] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro ao limpar", description: error.message, variant: "destructive" });
+    }
+  });
+
   const generateSwissRoundMutation = useMutation({
     mutationFn: async () => {
       if (checkOrganizerRestriction()) return;
@@ -1084,13 +1101,37 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
                         </ul>
                       </div>
 
-                      <Button 
-                        className="w-full h-14 gap-2 text-lg bg-yellow-600 hover:bg-yellow-500 text-white shadow-lg shadow-yellow-900/20" 
-                        disabled={generateKnockoutMutation.isPending || !participants || participants.length < 4}
-                        onClick={() => setIsKnockoutPreviewOpen(true)}
-                      >
-                        <Shuffle className="h-6 w-6" /> Revisar Potes e Gerar Mata-mata
-                      </Button>
+                      <div className="flex flex-col md:flex-row gap-4">
+                        <Button 
+                          className="h-14 gap-2 text-lg bg-yellow-600 hover:bg-yellow-500 text-white shadow-lg shadow-yellow-900/20 flex-1" 
+                          disabled={generateKnockoutMutation.isPending || !participants || participants.length < 4}
+                          onClick={() => setIsKnockoutPreviewOpen(true)}
+                        >
+                          <Shuffle className="h-6 w-6" /> Revisar Potes e Gerar Mata-mata
+                        </Button>
+
+                        {matches?.some(m => m.round_number > 0) && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" className="h-14 gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-white" disabled={clearBracketsMutation.isPending}>
+                                <RotateCcw className="h-6 w-6" /> Limpar Chaves
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Limpar Apenas o Mata-mata?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Isso removerá todas as partidas do chaveamento eliminatório, mas manterá os resultados da fase de grupos intactos.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => clearBracketsMutation.mutate()} className="bg-destructive text-white">Sim, Limpar</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
 
                       <Dialog open={isKnockoutPreviewOpen} onOpenChange={setIsKnockoutPreviewOpen}>
                         <DialogContent className="max-w-2xl bg-slate-950 border-yellow-500/20">
