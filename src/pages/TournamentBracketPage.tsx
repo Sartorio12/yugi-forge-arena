@@ -37,9 +37,10 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
     }
   });
 
-  const { data: matches, isLoading } = useQuery({
+  const { data: matches, isLoading, error: queryError } = useQuery({
     queryKey: ["tournament_bracket_matches", id],
     queryFn: async () => {
+      console.log("Fetching matches for tournament:", id); // DEBUG
       const { data, error } = await supabase
         .from("tournament_matches")
         .select(`
@@ -58,14 +59,19 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
         .order("round_number", { ascending: true })
         .order("id", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase fetch error:", error); // DEBUG
+        throw error;
+      }
+      console.log("Supabase raw data:", data); // DEBUG
       return data as any as Match[];
     },
     enabled: !!id,
   });
 
-  console.log("Bracket Matches:", matches); // DEBUG
-  console.log("Rounds:", rounds); // DEBUG
+  console.log("Bracket Matches (after useQuery):", matches); // DEBUG
+  console.log("Rounds (after useQuery):", rounds); // DEBUG
+  console.log("useQuery error state:", queryError); // DEBUG
 
 
   const rounds = matches?.reduce((acc: Record<number, Match[]>, match) => {
