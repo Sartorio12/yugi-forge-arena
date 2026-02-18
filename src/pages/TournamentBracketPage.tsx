@@ -56,7 +56,7 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
           winner_id,
           is_wo,
           player1:player1_id(id, username, avatar_url, equipped_frame_url, clan_members(clans(tag))),
-          player2:player2_id(username, avatar_url, equipped_frame_url, clan_members(clans(tag)))
+          player2:player2_id(id, username, avatar_url, equipped_frame_url, clan_members(clans(tag)))
         `)
         .eq("tournament_id", Number(id))
         .order("round_number", { ascending: true })
@@ -72,15 +72,15 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
     enabled: !!id,
   });
 
-  console.log("Bracket Matches (after useQuery):", matches); // DEBUG
-  console.log("Rounds (after useQuery):", rounds); // DEBUG
-  console.log("useQuery error state:", queryError); // DEBUG
-
   const rounds = matches?.reduce((acc: Record<number, Match[]>, match) => {
     if (!acc[match.round_number]) acc[match.round_number] = [];
     acc[match.round_number].push(match);
     return acc;
   }, {});
+
+  console.log("Bracket Matches (after useQuery):", matches); // DEBUG
+  console.log("Rounds (after declaration):", rounds); // DEBUG
+  console.log("useQuery error state:", queryError); // DEBUG
 
   const sortedRoundNumbers = rounds ? Object.keys(rounds).map(Number).sort((a, b) => a - b) : [];
 
