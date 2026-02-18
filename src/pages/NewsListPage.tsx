@@ -26,7 +26,7 @@ const fetchNewsPosts = async () => {
 
 const NewsListPage = ({ user, onLogout }: NewsListPageProps) => {
   const { t, i18n } = useTranslation();
-  const { data: posts, isLoading, isError } = useQuery({ queryKey: ['newsPosts'], queryFn: fetchNewsPosts });
+  const { data: posts, isLoading, isError } = useQuery({ queryKey: ['newsPosts', 'list'], queryFn: fetchNewsPosts });
 
   const localeMap: { [key: string]: any } = {
     pt: ptBR,

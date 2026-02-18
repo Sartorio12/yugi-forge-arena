@@ -37,7 +37,7 @@ export const NewsSection = () => {
   const currentLocale = localeMap[i18n.language] || ptBR;
 
   const { data: posts, isLoading } = useQuery({
-    queryKey: ["newsPosts"],
+    queryKey: ["newsPosts", "home"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('news_posts')
