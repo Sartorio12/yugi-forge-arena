@@ -43,9 +43,9 @@ const Index = ({ user, onLogout }: IndexProps) => {
       </div>
 
       <div className="container mx-auto max-w-7xl px-4 py-6">
-        <div className="grid grid-cols-2 lg:grid-cols-10 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
 
-          <div className="col-span-2 lg:col-span-7 space-y-8">
+          <div className="lg:col-span-7 space-y-8">
             <Suspense fallback={<WidgetLoader />}>
               <TournamentHero />
             </Suspense>
