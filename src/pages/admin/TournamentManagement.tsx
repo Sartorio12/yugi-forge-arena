@@ -279,7 +279,6 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [numGroups, setNumGroups] = useState(2);
-  const [activeTab, setActiveTab] = useState("participants");
 
   const { data: tournament, isLoading: isLoadingTournament } = useQuery({
     queryKey: ["tournament", id],
@@ -502,7 +501,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
       toast({ title: "Mata-mata Gerado", description: "Sorteio de potes realizado e chaves criadas!" });
       queryClient.invalidateQueries({ queryKey: ["tournamentMatches", id] });
       queryClient.invalidateQueries({ queryKey: ["tournament", id] });
-      setActiveTab("matches"); // Switch to matches tab
+      navigate(`/tournaments/${id}/bracket`); // Redirect to bracket page
     },
     onError: (error: any) => {
       toast({ title: "Erro no sorteio", description: error.message, variant: "destructive" });
@@ -843,7 +842,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
           </CardHeader>
 
           <CardContent className="p-0">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs defaultValue="participants" className="w-full">
               <TabsList className="w-full justify-start rounded-none border-b bg-muted/10 h-14 px-4 gap-4 overflow-x-auto overflow-y-hidden">
                 <TabsTrigger value="participants" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all">
                   <LayoutDashboard className="h-4 w-4" /> Inscritos
