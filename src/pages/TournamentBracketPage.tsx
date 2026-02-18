@@ -43,6 +43,7 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
     queryKey: ["tournament_bracket_matches", id],
     queryFn: async () => {
       console.log("Fetching matches for tournament:", id); // DEBUG
+      console.log("Supabase client in queryFn:", supabase); // DEBUG
       const { data, error } = await supabase
         .from("tournament_matches")
         .select(`
