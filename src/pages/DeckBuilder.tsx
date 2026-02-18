@@ -1060,65 +1060,75 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     }
   }, [user, navigate, toast]);
 
+  const initializationDone = useRef(false);
+
   useEffect(() => {
-    const deckId = searchParams.get('edit');
-    if (deckId && user) {
-      loadDeckForEditing(Number(deckId));
-          } else {
-            // Check for draft in localStorage
-            const savedDraft = localStorage.getItem('deck_builder_draft');
-            const importData = localStorage.getItem('importDeckData');
+    const deckIdParam = searchParams.get('edit');
+    const deckId = deckIdParam ? Number(deckIdParam) : null;
+
+    const performInitialization = async () => {
+      if (deckId && user) {
+        // Only load if it's a different deck than currently editing
+        if (deckId !== editingDeckId) {
+          await loadDeckForEditing(deckId);
+        }
+      } else if (!deckId && !editingDeckId && !initializationDone.current) {
+        // Check for draft in localStorage only once on initial mount if not editing a specific deck
+        const savedDraft = localStorage.getItem('deck_builder_draft');
+        const importData = localStorage.getItem('importDeckData');
+        
+        if (importData) {
+          try {
+            const parsedData = JSON.parse(importData);
+            setDeckName(parsedData.deckName || "");
+            setMainDeck(parsedData.mainDeck || []);
+            setExtraDeck(parsedData.extraDeck || []);
+            setSideDeck(parsedData.sideDeck || []);
+            setIsPrivate(parsedData.isPrivate ?? true);
+            setIsGenesysMode(parsedData.isGenesysMode || false);
             
-            if (importData) {
-              try {
-                const parsedData = JSON.parse(importData);
-                setDeckName(parsedData.deckName || "");
-                setMainDeck(parsedData.mainDeck || []);
-                setExtraDeck(parsedData.extraDeck || []);
-                setSideDeck(parsedData.sideDeck || []);
-                setIsPrivate(parsedData.isPrivate ?? true);
-                setIsGenesysMode(parsedData.isGenesysMode || false);
-                
-                localStorage.removeItem('importDeckData');
-                setIsJustLoaded(true);
-                setHasUnsavedChanges(true);
-                toast({
-                  title: "Deck Importado",
-                  description: "O deck foi carregado com sucesso!",
-                });
-              } catch (error) {
-                console.error("Failed to parse importDeckData", error);
-              }
-            } else if (savedDraft) {
-              try {
-                const draft = JSON.parse(savedDraft);
-                // Only load if the draft is relatively recent (e.g., within 24 hours) or if it's what we were working on
-                const isRecent = Date.now() - draft.timestamp < 24 * 60 * 60 * 1000;
-                
-                if (isRecent && (draft.mainDeck.length > 0 || draft.extraDeck.length > 0 || draft.sideDeck.length > 0 || draft.deckName)) {
-                  setDeckName(draft.deckName || "");
-                  setMainDeck(draft.mainDeck || []);
-                  setExtraDeck(draft.extraDeck || []);
-                  setSideDeck(draft.sideDeck || []);
-                  setIsPrivate(draft.isPrivate ?? false);
-                  setIsGenesysMode(draft.isGenesysMode || false);
-                  if (draft.editingDeckId) setEditingDeckId(draft.editingDeckId);
-                  
-                  setIsJustLoaded(true);
-                  setHasUnsavedChanges(true);
-                  toast({
-                    title: "Rascunho Recuperado",
-                    description: "Seu progresso anterior foi carregado automaticamente.",
-                  });
-                }
-              } catch (error) {
-                console.error("Failed to parse draft", error);
-              }
-            }
-            setIsLoadingDeck(false);
+            localStorage.removeItem('importDeckData');
+            setIsJustLoaded(true);
+            setHasUnsavedChanges(true);
+            toast({
+              title: "Deck Importado",
+              description: "O deck foi carregado com sucesso!",
+            });
+          } catch (error) {
+            console.error("Failed to parse importDeckData", error);
           }
-    
-  }, [searchParams, user, loadDeckForEditing, toast]);
+        } else if (savedDraft) {
+          try {
+            const draft = JSON.parse(savedDraft);
+            const isRecent = Date.now() - draft.timestamp < 24 * 60 * 60 * 1000;
+            
+            if (isRecent && (draft.mainDeck.length > 0 || draft.extraDeck.length > 0 || draft.sideDeck.length > 0 || draft.deckName)) {
+              setDeckName(draft.deckName || "");
+              setMainDeck(draft.mainDeck || []);
+              setExtraDeck(draft.extraDeck || []);
+              setSideDeck(draft.sideDeck || []);
+              setIsPrivate(draft.isPrivate ?? false);
+              setIsGenesysMode(draft.isGenesysMode || false);
+              if (draft.editingDeckId) setEditingDeckId(draft.editingDeckId);
+              
+              setIsJustLoaded(true);
+              setHasUnsavedChanges(true);
+              toast({
+                title: "Rascunho Recuperado",
+                description: "Seu progresso anterior foi carregado automaticamente.",
+              });
+            }
+          } catch (error) {
+            console.error("Failed to parse draft", error);
+          }
+        }
+      }
+      setIsLoadingDeck(false);
+      initializationDone.current = true;
+    };
+
+    performInitialization();
+  }, [searchParams.get('edit'), user, loadDeckForEditing, toast, editingDeckId]);
 
   const searchCards = async () => {
     setIsSearchActive(true); // Always activate 'Resultados' tab
