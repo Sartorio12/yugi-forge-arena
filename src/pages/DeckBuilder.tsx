@@ -886,7 +886,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [selectedMonsterRaces, setSelectedMonsterRaces] = useState<string[]>([]);
   const [selectedSpellRaces, setSelectedSpellRaces] = useState<string[]>([]);
   const [selectedTrapRaces, setSelectedTrapRaces] = useState<string[]>([]);
-  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [userDecks, setUserDecks] = useState<{id: number, deck_name: string}[]>([]);
 
@@ -919,6 +919,25 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     localStorage.setItem("deck_builder_show_hovers", JSON.stringify(showHovers));
   }, [showHovers]);
 
+  const fetchPopularCards = useCallback(async () => {
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase.rpc('search_cards_with_filters_and_popularity', {
+        p_search_query: null, p_selected_card_types: null, p_selected_attributes: null,
+        p_selected_monster_races: null, p_selected_spell_races: null, p_selected_trap_races: null,
+        p_genesys_points_operator: null, p_genesys_points_value: null,
+        p_sort_by: 'popularity', p_sort_ascending: false
+      });
+      if (error) throw error;
+      setSearchResults(data || []);
+      setIsSearchActive(false); // Populares tab is active
+    } catch (error) {
+      console.error("Failed to fetch popular cards", error);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -949,9 +968,9 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     setSelectedSpellRaces([]);
     setSelectedTrapRaces([]);
     setGenesysPointsValue('');
-    setSortBy('popularity_desc');
+    setSortBy('popularity_desc'); // Or a more neutral default if needed
     setSearchResults([]);
-    setIsSearchActive(false);
+    setIsSearchActive(true); // Default to Results active after reset
   };
 
   useEffect(() => {
@@ -1101,7 +1120,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     
   }, [searchParams, user, loadDeckForEditing, toast]);
 
-  const searchCards = async (shouldCloseModal: boolean = true) => {
+  const searchCards = async () => {
     setIsSearchActive(true);
     setIsSearching(true);
     try {
@@ -1124,7 +1143,6 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } finally {
       setIsSearching(false);
-      if (shouldCloseModal) setIsFilterModalOpen(false);
     }
   };
 
@@ -1529,13 +1547,13 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                         </button>
                         <button 
                           className={cn("db-tab-btn", !isSearchActive && "active")}
-                          onClick={resetSearch}
+                          onClick={fetchPopularCards}
                         >
                           Populares
                         </button>
                         <button 
                           className={cn("db-tab-btn", isSearchActive && "active")}
-                          onClick={() => searchCards(false)}
+                          onClick={() => searchCards()}
                         >
                           Resultados
                         </button>
