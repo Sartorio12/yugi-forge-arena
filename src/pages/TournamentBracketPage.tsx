@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import { Loader2, ArrowLeft, Trophy } from "lucide-react";
 import { User } from "@supabase/supabase-js";
