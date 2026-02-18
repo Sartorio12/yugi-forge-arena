@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import { Loader2, ArrowLeft, Trophy } from "lucide-react";
 import { User } from "@supabase/supabase-js";
+import { getTeamLogoUrl } from "@/constants/teams";
 
 interface Match {
   id: number;
@@ -27,8 +28,6 @@ interface BracketPageProps {
 }
 
 const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
-  console.log("TournamentBracketPage component rendered!"); // TOP LEVEL DEBUG
-
   const { id } = useParams<{ id: string }>();
 
   const { data: tournament } = useQuery({
@@ -39,11 +38,26 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
     }
   });
 
-  const { data: matches, isLoading, error: queryError } = useQuery({
+  const { data: participants } = useQuery({
+    queryKey: ["tournament_participants_teams", id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tournament_participants")
+        .select("user_id, team_selection")
+        .eq("tournament_id", Number(id));
+      return data;
+    },
+    enabled: !!id
+  });
+
+  const teamMap = participants?.reduce((acc: Record<string, string>, p) => {
+    if (p.user_id && p.team_selection) acc[p.user_id] = p.team_selection;
+    return acc;
+  }, {}) || {};
+
+  const { data: matches, isLoading } = useQuery({
     queryKey: ["tournament_bracket_matches", id],
     queryFn: async () => {
-      console.log("Fetching matches for tournament:", id); // DEBUG
-      console.log("Supabase client in queryFn:", supabase); // DEBUG
       const { data, error } = await supabase
         .from("tournament_matches")
         .select(`
@@ -63,11 +77,7 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
         .order("round_number", { ascending: true })
         .order("id", { ascending: true });
 
-      if (error) {
-        console.error("Supabase fetch error:", error); // DEBUG
-        throw error;
-      }
-      console.log("Supabase raw data:", data); // DEBUG
+      if (error) throw error;
       return data as any as Match[];
     },
     enabled: !!id,
@@ -79,62 +89,100 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
     return acc;
   }, {});
 
-  console.log("Bracket Matches (after useQuery):", matches); // DEBUG
-  console.log("Rounds (after declaration):", rounds); // DEBUG
-  console.log("useQuery error state:", queryError); // DEBUG
-
   const sortedRoundNumbers = rounds ? Object.keys(rounds).map(Number).sort((a, b) => a - b) : [];
+  const maxRound = sortedRoundNumbers.length > 0 ? Math.max(...sortedRoundNumbers) : 0;
 
-  const matchesInRound1 = sortedRoundNumbers.length > 0 ? rounds[sortedRoundNumbers[0]].length : 0;
-  const containerHeight = Math.max(600, matchesInRound1 * 130);
+  const PlayerSlot = ({ player, isWinner, isPlaceholder, hasBye, isWO, align = "left" }: { player: any, isWinner: boolean, isPlaceholder?: boolean, hasBye?: boolean, isWO?: boolean, align?: "left" | "right" }) => {
+    const teamName = player?.id ? teamMap[player.id] : null;
+    const teamLogo = teamName ? getTeamLogoUrl(teamName) : null;
 
-  const PlayerSlot = ({ player, isWinner, isPlaceholder, hasBye, isWO }: { player: any, isWinner: boolean, isPlaceholder?: boolean, hasBye?: boolean, isWO?: boolean }) => (
-    <div className={`flex items-center gap-2 px-3 py-2 transition-all h-[40px] ${isWinner ? 'bg-yellow-500/20' : 'bg-black/40'} ${isPlaceholder ? 'opacity-40' : ''}`}>
-      <FramedAvatar 
-        userId={player?.id}
-        username={player?.username}
-        avatarUrl={player?.avatar_url}
-        frameUrl={player?.equipped_frame_url}
-        sizeClassName="h-6 w-6 shrink-0"
-      />
-      <div className="flex flex-col min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className={`text-[11px] font-bold truncate ${isWinner ? 'text-yellow-500' : 'text-foreground'}`}>
-            {player?.username || (isPlaceholder ? "Aguardando..." : "BYE")}
-          </span>
-          {hasBye && (
-            <span className="text-[7px] bg-primary/20 text-primary px-1 rounded font-black border border-primary/30">GANHA BYE</span>
-          )}
-          {isWinner && isWO && (
-             <span className="text-[7px] bg-yellow-500/20 text-yellow-500 px-1 rounded font-black border border-yellow-500/30">W.O.</span>
+    return (
+      <div className={`flex items-center gap-2 px-3 py-2 transition-all h-[44px] ${isWinner ? 'bg-yellow-500/20' : 'bg-black/60'} ${isPlaceholder ? 'opacity-40' : ''} ${align === "right" ? "flex-row-reverse" : ""}`}>
+        {teamLogo && (
+          <img src={teamLogo} alt={teamName || ""} className="h-6 w-6 object-contain shrink-0 brightness-110 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]" />
+        )}
+        <FramedAvatar 
+          userId={player?.id}
+          username={player?.username}
+          avatarUrl={player?.avatar_url}
+          frameUrl={player?.equipped_frame_url}
+          sizeClassName="h-6 w-6 shrink-0"
+        />
+        <div className={`flex flex-col min-w-0 flex-1 ${align === "right" ? "items-end" : ""}`}>
+          <div className={`flex items-center gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
+            <span className={`text-[11px] font-black truncate uppercase tracking-tighter ${isWinner ? 'text-yellow-500' : 'text-foreground'}`}>
+              {player?.username || (isPlaceholder ? "Aguardando..." : "BYE")}
+            </span>
+            {hasBye && (
+              <span className="text-[7px] bg-primary/20 text-primary px-1 rounded font-black border border-primary/30">BYE</span>
+            )}
+          </div>
+          {player?.clan_members?.[0]?.clans?.tag && (
+            <span className="text-[8px] text-muted-foreground leading-none font-bold">[{player.clan_members[0].clans.tag}]</span>
           )}
         </div>
-        {player?.clan_members?.[0]?.clans?.tag && (
-          <span className="text-[8px] text-muted-foreground leading-none">[{player.clan_members[0].clans.tag}]</span>
-        )}
+        {isWinner && <Trophy className="h-3 w-3 text-yellow-500 shrink-0" />}
       </div>
-      {isWinner && <Trophy className="h-3 w-3 text-yellow-500 shrink-0" />}
-    </div>
-  );
+    );
+  };
+
+  const RoundColumn = ({ roundNum, side }: { roundNum: number, side: "left" | "right" }) => {
+    const roundMatches = rounds[roundNum] || [];
+    const sideMatches = roundMatches.filter((_, idx) => {
+        if (roundNum === maxRound) return false; // Final handles separately
+        return side === "left" ? idx < roundMatches.length / 2 : idx >= roundMatches.length / 2;
+    });
+
+    if (sideMatches.length === 0) return null;
+
+    return (
+      <div className="flex flex-col w-64 gap-8 justify-around py-10">
+        <div className="text-center mb-4">
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black tracking-widest uppercase text-[10px] py-1 px-4">
+                {roundMatches[0]?.round_name}
+            </Badge>
+        </div>
+        {sideMatches.map((match) => (
+          <Card key={match.id} className={`group relative z-10 border-0 bg-zinc-900/90 backdrop-blur-sm shadow-2xl overflow-hidden min-w-[200px] transition-transform hover:scale-105 duration-300 ${match.winner_id ? 'ring-1 ring-yellow-500/50' : 'ring-1 ring-white/10'}`}>
+            <div className="flex flex-col divide-y divide-white/5">
+              <PlayerSlot 
+                player={match.player1} 
+                isWinner={match.winner_id === match.player1_id && !!match.player1_id}
+                isPlaceholder={!match.player1_id}
+                align={side}
+              />
+              <PlayerSlot 
+                player={match.player2} 
+                isWinner={match.winner_id === match.player2_id && !!match.player2_id}
+                isPlaceholder={!match.player2_id}
+                align={side}
+              />
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#050505] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-black to-black">
       <Navbar user={user} onLogout={onLogout} />
       
-      <main className="container mx-auto px-4 py-8 overflow-x-auto custom-scrollbar">
-        <div className="flex items-center gap-4 mb-12">
-          <Link to={`/tournaments/${id}`}>
-            <Button variant="ghost" className="hover:text-primary transition-colors">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center mb-16 text-center">
+          <Link to={`/tournaments/${id}`} className="mb-6">
+            <Button variant="ghost" className="hover:text-primary transition-colors text-xs uppercase font-black tracking-widest">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Painel
             </Button>
           </Link>
-          <div className="flex flex-col">
-            <h1 className="text-3xl font-black uppercase tracking-tighter italic flex items-center gap-2">
-              <Trophy className="h-8 w-8 text-yellow-500" />
-              Chaveamento Elite
-            </h1>
-            <p className="text-muted-foreground text-xs font-medium uppercase tracking-widest">{tournament?.title}</p>
+          <div className="relative inline-block">
+             <div className="absolute -inset-4 bg-primary/10 blur-2xl rounded-full opacity-50" />
+             <h1 className="relative text-5xl font-black uppercase tracking-tighter italic flex items-center gap-4 text-white drop-shadow-2xl">
+                <Trophy className="h-12 w-12 text-yellow-500 animate-pulse" />
+                Champions League
+             </h1>
           </div>
+          <p className="text-primary text-sm font-black uppercase tracking-[0.3em] mt-2 opacity-80">{tournament?.title}</p>
         </div>
 
         {isLoading ? (
@@ -142,81 +190,64 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : (matches && sortedRoundNumbers.length > 0) ? (
-          <div className="flex items-center gap-0 pb-20 min-w-max">
-            {sortedRoundNumbers.map((roundNum, rIndex) => {
-              const roundMatches = rounds[roundNum] || [];
-              const byes = roundMatches.filter(m => 
-                (m.player1_id && !m.player2_id) || (!m.player1_id && m.player2_id)
-              );
+          <div className="flex justify-center items-center gap-12 overflow-x-auto pb-20 custom-scrollbar min-w-max">
+            
+            {/* LADO ESQUERDO */}
+            <div className="flex gap-12 items-stretch">
+                {sortedRoundNumbers.slice(0, -1).map((roundNum) => (
+                    <RoundColumn key={roundNum} roundNum={roundNum} side="left" />
+                ))}
+            </div>
 
-              return (
-                <div key={roundNum} className="flex flex-col w-72">
-                  <div className="px-4 mb-4">
-                    <div className="bg-primary/10 border-l-4 border-primary px-3 py-2 rounded-r-md">
-                      <span className="text-xs font-black text-primary uppercase tracking-widest">{roundMatches[0].round_name}</span>
+            {/* CENTRO (FINAL) */}
+            <div className="flex flex-col items-center gap-12 z-20">
+                <div className="relative group">
+                    <div className="absolute -inset-8 bg-yellow-500/10 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <img src="/og.png" className="w-48 opacity-20 grayscale brightness-200" alt="" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Trophy className="h-24 w-24 text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" />
                     </div>
-                  </div>
+                </div>
 
-                  <div className="px-4 mb-4 h-12 overflow-hidden">
-                    {byes.length > 0 && (
-                      <div className="text-[9px] text-muted-foreground bg-muted/20 p-1.5 rounded border border-white/5">
-                        <span className="font-bold text-primary block mb-0.5 uppercase">Avançam via BYE:</span>
-                        <p className="truncate italic">
-                          {byes.map(m => m.player1?.username || m.player2?.username).join(", ")}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col justify-around relative" style={{ height: `${containerHeight}px` }}>
-                    {roundMatches.map((match, mIndex) => {
-                      const isP1Bye = match.player1_id && !match.player2_id;
-                      const isP2Bye = !match.player1_id && match.player2_id;
-
-                      return (
-                        <div key={match.id} className="relative px-4 flex flex-col justify-center h-full">
-                          <Card className={`group relative z-10 border-0 bg-zinc-900 shadow-2xl overflow-hidden min-w-[220px] transition-transform hover:scale-105 duration-300 ${match.winner_id ? 'ring-1 ring-yellow-500/50' : 'ring-1 ring-white/10'}`}>
-                            <div className="flex flex-col divide-y divide-white/5">
-                              <PlayerSlot 
+                {rounds[maxRound]?.map((match) => (
+                  <div key={match.id} className="flex flex-col items-center gap-4">
+                     <Badge className="bg-yellow-500 text-black font-black uppercase tracking-[0.2em] px-6 py-1 italic animate-bounce">GRANDE FINAL</Badge>
+                     <Card className="w-80 border-0 bg-gradient-to-b from-zinc-800 to-zinc-950 shadow-[0_0_50px_rgba(0,0,0,1)] ring-2 ring-yellow-500/30 overflow-hidden">
+                        <div className="flex flex-col divide-y divide-white/10">
+                            <PlayerSlot 
                                 player={match.player1} 
                                 isWinner={match.winner_id === match.player1_id && !!match.player1_id}
                                 isPlaceholder={!match.player1_id}
-                                hasBye={isP1Bye}
-                                isWO={match.is_wo}
-                              />
-                              <PlayerSlot 
+                            />
+                            <PlayerSlot 
                                 player={match.player2} 
                                 isWinner={match.winner_id === match.player2_id && !!match.player2_id}
                                 isPlaceholder={!match.player2_id}
-                                hasBye={isP2Bye}
-                                isWO={match.is_wo}
-                              />
-                            </div>
-                            <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary/20 group-hover:bg-primary transition-colors" />
-                          </Card>
-
-                          {rIndex < sortedRoundNumbers.length - 1 && (
-                            <>
-                              <div className="absolute -right-4 top-1/2 w-4 h-[2px] bg-primary/40"></div>
-                              <div 
-                                className="absolute -right-4 w-[2px] bg-primary/40"
-                                style={{
-                                  height: '100%',
-                                  top: mIndex % 2 === 0 ? '50%' : '-50%',
-                                }}
-                              ></div>
-                              {mIndex % 2 === 0 && (
-                                <div className="absolute -right-8 top-full w-4 h-[2px] bg-primary/40"></div>
-                              )}
-                            </>
-                          )}
+                            />
                         </div>
-                      );
-                    })}
+                     </Card>
+                     {match.winner_id && (
+                        <div className="mt-4 flex flex-col items-center animate-in fade-in zoom-in duration-1000">
+                             <div className="text-yellow-500 font-black uppercase tracking-widest text-xl italic mb-2">CAMPEÃO</div>
+                             <FramedAvatar 
+                                userId={match.winner_id} 
+                                username={match.winner_id === match.player1_id ? match.player1?.username : match.player2?.username}
+                                avatarUrl={match.winner_id === match.player1_id ? match.player1?.avatar_url : match.player2?.avatar_url}
+                                sizeClassName="h-20 w-20 ring-4 ring-yellow-500 shadow-yellow-500/50 shadow-2xl"
+                             />
+                        </div>
+                     )}
                   </div>
-                </div>
-              );
-            })}
+                ))}
+            </div>
+
+            {/* LADO DIREITO */}
+            <div className="flex flex-row-reverse gap-12 items-stretch">
+                {sortedRoundNumbers.slice(0, -1).map((roundNum) => (
+                    <RoundColumn key={roundNum} roundNum={roundNum} side="right" />
+                ))}
+            </div>
+
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-4 bg-muted/5 border-2 border-dashed rounded-xl border-white/10">
@@ -226,6 +257,19 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
           </div>
         )}
       </main>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(var(--primary), 0.2);
+          border-radius: 10px;
+        }
+      `}</style>
     </div>
   );
 };
