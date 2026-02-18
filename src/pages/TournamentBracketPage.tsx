@@ -59,6 +59,7 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
           player2:player2_id(id, username, avatar_url, equipped_frame_url, clan_members(clans(tag)))
         `)
         .eq("tournament_id", Number(id))
+        .gt("round_number", 0)
         .order("round_number", { ascending: true })
         .order("id", { ascending: true });
 
@@ -73,8 +74,8 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
   });
 
   const rounds = matches?.reduce((acc: Record<number, Match[]>, match) => {
-    if (!acc[match.round_number]) acc[match.round_number] = [];
-    acc[match.round_number].push(match);
+    if (match.round_number && !acc[match.round_number]) acc[match.round_number] = [];
+    if (match.round_number) acc[match.round_number].push(match);
     return acc;
   }, {});
 
