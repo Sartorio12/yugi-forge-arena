@@ -111,4 +111,3 @@ export const MatchHistoryList = ({ userId }: MatchHistoryListProps) => {
     </div>
   );
 };
-};
