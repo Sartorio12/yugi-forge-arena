@@ -140,10 +140,10 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
           <div className="flex justify-center py-20">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
-        ) : (matches && sortedRoundNumbers.length > 0) ? ( // Conditional rendering check
+        ) : (matches && sortedRoundNumbers.length > 0) ? (
           <div className="flex items-center gap-0 pb-20 min-w-max">
             {sortedRoundNumbers.map((roundNum, rIndex) => {
-              const roundMatches = rounds[roundNum];
+              const roundMatches = rounds[roundNum] || [];
               const byes = roundMatches.filter(m => 
                 (m.player1_id && !m.player2_id) || (!m.player1_id && m.player2_id)
               );
