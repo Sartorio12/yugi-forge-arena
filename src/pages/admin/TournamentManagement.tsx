@@ -1162,6 +1162,7 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
                             <Button 
                               className="bg-yellow-600 hover:bg-yellow-500 text-white font-black uppercase tracking-tighter"
                               onClick={() => {
+                                debugger;
                                 generateKnockoutMutation.mutate();
                                 setIsKnockoutPreviewOpen(false);
                               }}
