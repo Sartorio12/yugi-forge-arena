@@ -58,7 +58,7 @@ export const NewsSection = () => {
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(6);
+        .limit(3);
 
       if (error) throw error;
       return data as NewsPost[];
@@ -83,7 +83,7 @@ export const NewsSection = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : posts && posts.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
           {posts.map((post) => (
                         <Link
                           key={post.id}
