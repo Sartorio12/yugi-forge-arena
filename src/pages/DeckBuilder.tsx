@@ -452,7 +452,7 @@ const DeckBuilderStyles = () => (
         position: relative;
         background: linear-gradient(135deg, rgba(120, 100, 20, 0.4) 0%, rgba(106, 27, 154, 0.4) 100%);
         padding: 8px;
-        min-height: 500px;
+        min-height: 350px;
         border: 1px solid #444;
         border-radius: 4px;
     }
@@ -919,28 +919,6 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     localStorage.setItem("deck_builder_show_hovers", JSON.stringify(showHovers));
   }, [showHovers]);
 
-  const fetchPopularCards = useCallback(async () => {
-    setIsSearching(true);
-    try {
-      const { data, error } = await supabase.rpc('search_cards_with_filters_and_popularity', {
-        p_search_query: null, p_selected_card_types: null, p_selected_attributes: null,
-        p_selected_monster_races: null, p_selected_spell_races: null, p_selected_trap_races: null,
-        p_genesys_points_operator: null, p_genesys_points_value: null,
-        p_sort_by: 'popularity', p_sort_ascending: false
-      });
-      if (error) throw error;
-      setSearchResults(data || []);
-      setIsSearchActive(false);
-    } catch (error) {
-      console.error("Failed to fetch popular cards", error);
-    } finally {
-      setIsSearching(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPopularCards();
-  }, [fetchPopularCards]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -963,7 +941,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const handleSpellRaceChange = (race: string) => setSelectedSpellRaces(prev => prev.includes(race) ? prev.filter(r => r !== race) : [...prev, race]);
   const handleTrapRaceChange = (race: string) => setSelectedTrapRaces(prev => prev.includes(race) ? prev.filter(r => r !== race) : [...prev, race]);
 
-  const clearSearchAndShowPopular = () => {
+  const resetSearch = () => {
     setSearchQuery("");
     setSelectedCardTypes([]);
     setSelectedAttributes([]);
@@ -972,7 +950,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     setSelectedTrapRaces([]);
     setGenesysPointsValue('');
     setSortBy('popularity_desc');
-    fetchPopularCards();
+    setSearchResults([]);
+    setIsSearchActive(false);
   };
 
   useEffect(() => {
@@ -1790,7 +1769,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             </div>
           </ScrollArea>
           <div className="flex gap-4 mt-8">
-            <Button variant="ghost" onClick={clearSearchAndShowPopular} className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] text-stone-500">Resetar</Button>
+            <Button variant="ghost" onClick={resetSearch} className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] text-stone-500">Resetar</Button>
             <Button onClick={() => searchCards(true)} className="flex-[2] h-14 rounded-2xl bg-primary text-black font-black uppercase italic tracking-tighter text-lg shadow-lg shadow-primary/20">Aplicar Filtros</Button>
           </div>
         </DialogContent>
