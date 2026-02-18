@@ -38,6 +38,7 @@ export const ActiveBracketsWidget = () => {
 
       return drawnTournaments.slice(0, 3);
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
   });
 
   if (isLoading || !activeTournaments || activeTournaments.length === 0) {
