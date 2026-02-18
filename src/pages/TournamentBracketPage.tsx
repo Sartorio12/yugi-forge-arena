@@ -27,6 +27,8 @@ interface BracketPageProps {
 }
 
 const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
+  console.log("TournamentBracketPage component rendered!"); // TOP LEVEL DEBUG
+
   const { id } = useParams<{ id: string }>();
 
   const { data: tournament } = useQuery({
@@ -72,7 +74,6 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
   console.log("Bracket Matches (after useQuery):", matches); // DEBUG
   console.log("Rounds (after useQuery):", rounds); // DEBUG
   console.log("useQuery error state:", queryError); // DEBUG
-
 
   const rounds = matches?.reduce((acc: Record<number, Match[]>, match) => {
     if (!acc[match.round_number]) acc[match.round_number] = [];
@@ -138,7 +139,7 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
           <div className="flex justify-center py-20">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
-        ) : rounds && sortedRoundNumbers.length > 0 ? (
+        ) : (matches && sortedRoundNumbers.length > 0) ? ( // Conditional rendering check
           <div className="flex items-center gap-0 pb-20 min-w-max">
             {sortedRoundNumbers.map((roundNum, rIndex) => {
               const roundMatches = rounds[roundNum];
