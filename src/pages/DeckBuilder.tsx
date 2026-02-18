@@ -1121,7 +1121,22 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   }, [searchParams, user, loadDeckForEditing, toast]);
 
   const searchCards = async () => {
-    setIsSearchActive(true);
+    setIsSearchActive(true); // Always activate 'Resultados' tab
+
+    const isAnyFilterActive = searchQuery ||
+                             selectedCardTypes.length > 0 ||
+                             selectedAttributes.length > 0 ||
+                             selectedMonsterRaces.length > 0 ||
+                             selectedSpellRaces.length > 0 ||
+                             selectedTrapRaces.length > 0 ||
+                             genesysPointsValue !== '';
+
+    if (!isAnyFilterActive) {
+      setSearchResults([]); // No search term or filters, so show empty results
+      setIsSearching(false); // Ensure loader is off
+      return;
+    }
+    
     setIsSearching(true);
     try {
       const [sortColumn, sortOrder] = sortBy.split('_');
@@ -1538,7 +1553,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                           placeholder="Busca..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && searchCards(false)}
+                          onKeyDown={(e) => e.key === "Enter" && searchCards()}
                         />
                         <button className="db-icon-btn" onClick={() => setIsFilterModalOpen(true)}>
                             <svg className="db-icon" viewBox="0 0 24 24">
