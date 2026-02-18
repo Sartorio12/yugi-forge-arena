@@ -11,6 +11,7 @@ import { Swords } from "lucide-react";
 import { z, ZodError } from "zod";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { getPasswordSchema, getPasswordRequirements } from "@/lib/password-validation";
 
 // Função para formatar erros do Zod
 const formatZodError = (error: ZodError) => {
@@ -26,33 +27,15 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
-  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
-
-  // Esquema de validação com Zod
-  const getPasswordSchema = () => z.string()
-    .min(8, t('auth_page.errors.password_min'))
-    .regex(/[a-z]/, t('auth_page.errors.password_lower'))
-    .regex(/[A-Z]/, t('auth_page.errors.password_upper'))
-    .regex(/[0-9]/, t('auth_page.errors.password_number'))
-    .regex(/[^a-zA-Z0-9]/, t('auth_page.errors.password_special'));
 
   const getAuthSchema = () => z.object({
     email: z.string().email(t('auth_page.errors.invalid_email')),
-    password: getPasswordSchema(),
+    password: getPasswordSchema(t),
     username: z.string().min(3, t('auth_page.errors.username_min')).optional(),
   });
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newPassword = e.target.value;
-    setPassword(newPassword);
-
-    const result = getPasswordSchema().safeParse(newPassword);
-    if (!result.success) {
-      setPasswordErrors(result.error.errors.map(err => err.message));
-    } else {
-      setPasswordErrors([]);
-    }
-  };
+  const passwordRequirements = getPasswordRequirements(password, t);
+  const passwordIsInvalid = password.length > 0 && !getPasswordSchema(t).safeParse(password).success;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -249,21 +232,31 @@ const Auth = () => {
                     type="password"
                     placeholder={t('auth_page.password_placeholder')}
                     value={password}
-                    onChange={handlePasswordChange} // Use the new handler
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                   />
-                  {passwordErrors.length > 0 && (
-                    <div className="text-sm text-red-500 space-y-1 mt-1">
-                      {passwordErrors.map((msg, index) => (
-                        <p key={index}>{msg}</p>
-                      ))}
-                    </div>
-                  )}
+                  
+                  <div className="mt-3 space-y-1.5 p-3 bg-muted/20 rounded-lg border border-white/5">
+                    {passwordRequirements.map((req, i) => (
+                      <div key={i} className="flex items-center gap-2 text-[10px]">
+                        <div className={cn(
+                          "w-1 h-1 rounded-full",
+                          req.met ? "bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]" : "bg-red-500/30"
+                        )} />
+                        <span className={cn(
+                          "uppercase tracking-wider",
+                          req.met ? "text-green-500/80 font-bold" : "text-muted-foreground/60"
+                        )}>
+                          {req.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                  disabled={loading}
+                  disabled={loading || (password.length > 0 && passwordIsInvalid)}
                 >
                   {loading ? t('auth_page.creating_account') : t('auth_page.signup_btn')}
                 </Button>
