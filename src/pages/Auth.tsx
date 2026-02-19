@@ -12,6 +12,7 @@ import { z, ZodError } from "zod";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { getPasswordSchema, getPasswordRequirements } from "@/lib/password-validation";
+import { cn } from "@/lib/utils";
 
 // Função para formatar erros do Zod
 const formatZodError = (error: ZodError) => {
