@@ -23,6 +23,7 @@ import { PROFILE_AVATARS } from "@/constants/profileAvatars";
 import { PROFILE_BANNERS } from "@/constants/profileBanners";
 import { MatchHistoryList } from "@/components/MatchHistoryList"; // Import MatchHistoryList
 import { useTranslation } from "react-i18next";
+import { BannerPreviewAdjust } from "@/components/BannerPreviewAdjust";
 
 interface Deck {
   id: number;
@@ -87,12 +88,18 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const [selectedPresetBanner, setSelectedPresetBanner] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isBannerUploadDialogOpen, setIsBannerUploadDialogOpen] = useState(false);
+  
+  // Banner adjustment state
+  const [bannerOffsetY, setBannerOffsetY] = useState(50);
+  const [showBannerAdjust, setShowBannerAdjust] = useState(false);
+  const [tempBannerUrl, setTempBannerUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
       setUsername(profile.username || "");
       setBio(profile.bio || "");
       setDiscordUsername((profile as any).discord_username || "");
+      setBannerOffsetY(profile.banner_offset_y ?? 50);
     }
   }, [profile]);
 
@@ -230,17 +237,26 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         banner_url = selectedPresetBanner;
       }
 
-      const updates = { username, bio, discord_username: discordUsername, avatar_url, banner_url, updated_at: new Date() };
+      const updates = { 
+        username, 
+        bio, 
+        discord_username: discordUsername, 
+        avatar_url, 
+        banner_url, 
+        banner_offset_y: bannerOffsetY,
+        updated_at: new Date() 
+      };
       const { error } = await supabase.from("profiles").update(updates).eq('id', user.id);
       if (error) throw error;
 
       toast({ title: t('profile_page.edit_modal.success'), description: t('profile_page.edit_modal.success') });
-      // queryClient.invalidateQueries({ queryKey: ["profile", id] });
+      queryClient.invalidateQueries({ queryKey: ["profile", id] });
       setOpen(false);
       setAvatarFile(null);
       setSelectedPresetAvatar(null); // Reset selection
       setBannerFile(null);
       setSelectedPresetBanner(null);
+      setTempBannerUrl(null);
     } catch (error: Error) {
       toast({ title: "Erro", description: error.message || t('profile_page.edit_modal.error'), variant: "destructive" });
     } finally {
@@ -258,6 +274,8 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
     const fullPath = `/head_banners/${filename}`;
     setSelectedPresetBanner(fullPath);
     setBannerFile(null); // Clear file upload if preset is selected
+    setTempBannerUrl(fullPath);
+    setShowBannerAdjust(true);
   };
 
   const isLoading = profileLoading || decksLoading || clanLoading || bannersLoading;
@@ -275,12 +293,13 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       ) : profile ? (
         <main className="pb-12">
-          <div className="w-full aspect-[3/2] sm:aspect-[4/1] bg-gradient-primary relative z-0">
+          <div className="w-full aspect-[3/2] sm:aspect-[4/1] bg-gradient-primary relative z-0 overflow-hidden">
             {profile.banner_url ? (
               <img
                 src={profile.banner_url}
                 alt="Banner"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-all duration-300"
+                style={{ objectPosition: `center ${profile.banner_offset_y ?? 50}%` }}
               />
             ) : (
               <div className="w-full h-full" />
@@ -451,6 +470,14 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                                           }
                                                           setBannerFile(file);
                                                           setSelectedPresetBanner(null);
+                                                          
+                                                          // Show preview adjustment
+                                                          const reader = new FileReader();
+                                                          reader.onload = (event) => {
+                                                            setTempBannerUrl(event.target?.result as string);
+                                                            setShowBannerAdjust(true);
+                                                          };
+                                                          reader.readAsDataURL(file);
                                                         }} />
                                                       </TabsContent>
                                                       <TabsContent value="gallery">
@@ -628,6 +655,19 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         </main>
       ) : (
         <div className="container mx-auto px-4 py-20 text-center"><p className="text-muted-foreground text-lg">{t('profile_page.not_found')}</p></div>
+      )}
+
+      {tempBannerUrl && (
+        <BannerPreviewAdjust
+          isOpen={showBannerAdjust}
+          onClose={() => setShowBannerAdjust(false)}
+          imageUrl={tempBannerUrl}
+          initialPercentage={bannerOffsetY}
+          onConfirm={(percentage) => {
+            setBannerOffsetY(percentage);
+            setShowBannerAdjust(false);
+          }}
+        />
       )}
     </div>
   );
