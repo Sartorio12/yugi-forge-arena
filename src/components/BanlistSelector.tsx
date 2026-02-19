@@ -137,7 +137,7 @@ export const BanlistSelector = ({ maxSelection, selectedCards, onSelectionChange
       </div>
 
       {/* Results Grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1 max-h-[400px] overflow-y-auto p-1 border rounded-md">
+      <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-1 max-h-[400px] overflow-y-auto p-1 border rounded-md">
         {isSearching ? (
           <div className="col-span-full flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />

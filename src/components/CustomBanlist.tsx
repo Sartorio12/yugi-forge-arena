@@ -84,7 +84,7 @@ export const CustomBanlist = ({ tournamentId }: CustomBanlistProps) => {
         <h3 className="text-2xl font-bold">Banlist Customizada</h3>
       </div>
       
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1">
+      <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-1">
         {bannedCards.map((card) => (
           <div key={card.card_id} className="relative group">
             <Card className="overflow-hidden border-destructive/50 aspect-[2/3] rounded-none">
