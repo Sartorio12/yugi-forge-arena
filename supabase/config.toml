@@ -183,6 +183,14 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
+[auth.email.template.signup]
+subject = "Ative sua conta na Arena STAFF"
+content_path = "./supabase/templates/signup.html"
+
+[auth.email.template.recovery]
+subject = "Redefinição de senha - Arena STAFF"
+content_path = "./supabase/templates/recovery.html"
+
 # Use a production-ready SMTP server
 # [auth.email.smtp]
 # enabled = true
