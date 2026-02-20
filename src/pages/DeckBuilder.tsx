@@ -759,7 +759,8 @@ const PopularCardGridItem = ({
   isDeckLocked, 
   showHovers,
   currentSection,
-  onInspect
+  onInspect,
+  isCustomBanned
 }: { 
   card: CardData, 
   isGenesysMode: boolean, 
