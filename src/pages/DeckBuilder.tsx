@@ -1035,7 +1035,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
       .select('id, title, type')
       .in('type', ['banimento', 'Banimento', 'BANIMENTO'])
       .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+      .order('id', { ascending: false });
     
     if (error) {
       console.error("Error fetching banlist tournaments:", error);
