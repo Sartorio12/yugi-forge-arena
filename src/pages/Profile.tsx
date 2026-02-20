@@ -246,13 +246,17 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         updated_at: new Date() 
       };
 
-      // Only include username in updates if it has actually changed
-      if (username !== profile.username) {
+      // Only include username in updates if it has actually changed and is not empty
+      if (username && username.trim() !== "" && username !== profile.username) {
         updates.username = username;
       }
 
+      console.log("Submitting profile updates:", updates);
       const { error } = await supabase.from("profiles").update(updates).eq('id', id);
-      if (error) throw error;
+      if (error) {
+        console.error("Profile update error details:", error);
+        throw error;
+      }
 
       toast({ title: t('profile_page.edit_modal.success'), description: t('profile_page.edit_modal.success') });
       queryClient.invalidateQueries({ queryKey: ["profile", id] });
