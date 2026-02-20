@@ -265,7 +265,6 @@ const App = () => {
                 </Routes>
               </Suspense>
               <ConditionalFooter />
-              <ChatDock currentUser={user} />
               <GlobalChatListener currentUser={user} />
               <LevelUpListener user={user} />
               <DiscordUsernameModal userId={user?.id} />

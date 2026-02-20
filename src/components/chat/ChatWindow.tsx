@@ -149,149 +149,48 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
     
 
                     const channel = supabase.channel(channelName)
-
-    
-
                         .on('postgres_changes', {
-
-    
-
                             event: 'INSERT',
-
-    
-
                             schema: 'public',
-
-    
-
                             table: 'direct_messages',
-
-    
-
-                            // Filter client-side to be sure it's for this conversation
-
-    
-
                         },
-
-    
-
                         (payload) => {
-
-    
-
                             const newMessage = payload.new;
-
-    
-
                             
-
-    
-
                             // Only update if the message is relevant to the current conversation
-
-    
-
                             const isRelevantSender = newMessage.sender_id === selectedUserId && newMessage.receiver_id === currentUser.id;
-
-    
-
                             const isRelevantReceiver = newMessage.sender_id === currentUser.id && newMessage.receiver_id === selectedUserId;
 
-    
-
-        
-
-    
-
                             if (isRelevantSender || isRelevantReceiver) {
-
-    
-
                                 queryClient.setQueryData(['messages', currentUser.id, selectedUserId], (old: any) => {
-
-    
-
                                     if (!old || !old.pages || old.pages.length === 0) {
-
-    
-
                                         return { pages: [[newMessage]], pageParams: [undefined] };
-
-    
-
                                     }
 
-    
+                                    // Prevent duplicates
+                                    const messageExists = old.pages.some((page: any[]) => 
+                                        page.some((m: any) => m.id === newMessage.id)
+                                    );
+                                    
+                                    if (messageExists) return old;
 
                                     const newPages = [...old.pages];
-
-    
-
                                     newPages[newPages.length - 1] = [...newPages[newPages.length - 1], newMessage]; // Add to the last page
-
-    
-
                                     return { ...old, pages: newPages };
-
-    
-
                                 });
-
-    
 
                                 queryClient.invalidateQueries({ queryKey: ['conversations'] });
 
-    
-
-        
-
-    
-
                                 // Show toast to receiver if they received a message from the person they are chatting with
-
-    
-
-                                // And the message came from the other user, and this is not the sender's own message
-
-    
-
                                 if (newMessage.receiver_id === currentUser.id && newMessage.sender_id === selectedUserId) {
-
-    
-
                                     toast({
-
-    
-
                                         title: `Nova mensagem de ${otherUserProfile?.username || 'alguém'} `,
-
-    
-
                                         description: newMessage.content,
-
-    
-
                                     });
-
-    
-
                                     supabase.rpc('mark_messages_as_read', { p_sender_id: newMessage.sender_id });
-
-    
-
                                 }
-
-    
-
                             }
-
-    
-
                         })
-
-    
-
                         .subscribe();
 
     
