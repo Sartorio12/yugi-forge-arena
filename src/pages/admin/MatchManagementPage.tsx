@@ -26,6 +26,7 @@ import { ptBR } from "date-fns/locale";
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ChallongeImportModal } from "@/components/admin/ChallongeImportModal";
+import { ManualMatchAddModal } from "@/components/admin/ManualMatchAddModal";
 
 interface MatchData {
   id: number;
@@ -104,6 +105,7 @@ const MatchManagementPage = () => {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Gerenciar Confrontos</h1>
         <div className="flex gap-2">
+          <ManualMatchAddModal />
           <ChallongeImportModal />
           <Button 
             variant="outline" 
