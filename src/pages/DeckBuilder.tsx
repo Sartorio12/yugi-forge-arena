@@ -184,6 +184,12 @@ const DeckBuilderStyles = () => (
         margin-bottom: 5px;
     }
 
+    @media (min-width: 1024px) {
+        .db-controls-top {
+            grid-template-columns: 1fr 1.2fr 1.2fr;
+        }
+    }
+
     .db-input-group {
         position: relative;
     }
@@ -630,7 +636,12 @@ const RarityIcon = ({ rarity }: { rarity: string | undefined | null }) => {
   return <div style={{ position: "absolute", top: -10, right: 0, width: "35px", height: "35px", backgroundImage: `url('${imageUrl}')`, backgroundRepeat: "no-repeat", backgroundSize: "contain", zIndex: 10 }} />;
 };
 
-const BanlistIcon = ({ banStatus }: { banStatus: string | undefined | null }) => {
+const BanlistIcon = ({ banStatus, isCustomBanned }: { banStatus: string | undefined | null, isCustomBanned?: boolean }) => {
+  if (isCustomBanned) {
+    return <div className="absolute top-1 left-1 w-5 h-5 z-20 pointer-events-none drop-shadow-md">
+      <img src="/ban.png" alt="Banned" className="w-full h-full object-contain" />
+    </div>;
+  }
   if (!banStatus || banStatus === "Unlimited") return null;
   let imageUrl: string | undefined;
   if (banStatus === "Forbidden" || banStatus === "Banned") imageUrl = "/ban.png";
@@ -757,7 +768,8 @@ const PopularCardGridItem = ({
   isDeckLocked: boolean, 
   showHovers: boolean,
   currentSection: string,
-  onInspect?: (card: CardData) => void
+  onInspect?: (card: CardData) => void,
+  isCustomBanned?: boolean
 }) => {
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: ItemTypes.CARD,
@@ -795,7 +807,7 @@ const PopularCardGridItem = ({
       <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover transition-transform duration-500" ref={preview} />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       
-      {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+      {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} isCustomBanned={isCustomBanned} />}
       {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
       <RarityIcon rarity={card.md_rarity} />
     </div>
@@ -825,7 +837,8 @@ const DraggableDeckCard = ({
   isGenesysMode, 
   isDeckLocked, 
   showHovers,
-  onInspect
+  onInspect,
+  isCustomBanned
 }: { 
   card: CardData, 
   index: number, 
@@ -834,7 +847,8 @@ const DraggableDeckCard = ({
   isGenesysMode: boolean, 
   isDeckLocked: boolean, 
   showHovers: boolean,
-  onInspect?: (card: CardData) => void
+  onInspect?: (card: CardData) => void,
+  isCustomBanned?: boolean
 }) => {
   const [{ isDragging }, drag] = useDrag(() => ({ type: ItemTypes.DECK_CARD, item: { card, index, section }, canDrag: !isDeckLocked, end: (item, monitor) => { if (!monitor.didDrop() && !isDeckLocked) { removeCard(item.index, item.section); } }, collect: (monitor) => ({ isDragging: !!monitor.isDragging() }) }), [card, index, section, removeCard, isDeckLocked]);
   
@@ -848,7 +862,7 @@ const DraggableDeckCard = ({
       onClick={() => onInspect?.(card)}
     >
       <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover rounded" />
-      {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
+      {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} isCustomBanned={isCustomBanned} />}
       {isGenesysMode && <GenesysPointBadge points={card.genesys_points} />}
       <RarityIcon rarity={card.md_rarity} />
       
@@ -1009,6 +1023,41 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [userDecks, setUserDecks] = useState<{id: number, deck_name: string}[]>([]);
   const [inspectedCard, setInspectedCard] = useState<CardData | null>(null);
+  
+  // Custom Banlist states
+  const [banlistTournaments, setBanlistTournaments] = useState<{id: number, title: string}[]>([]);
+  const [selectedBanlistId, setSelectedBanlistId] = useState<string>("md");
+  const [customBannedCardIds, setCustomBannedCardIds] = useState<Set<string>>(new Set());
+
+  const fetchBanlistTournaments = useCallback(async () => {
+    const { data } = await supabase
+      .from('tournaments')
+      .select('id, title')
+      .eq('type', 'banimento')
+      .order('created_at', { ascending: false });
+    if (data) setBanlistTournaments(data);
+  }, []);
+
+  useEffect(() => {
+    fetchBanlistTournaments();
+  }, [fetchBanlistTournaments]);
+
+  useEffect(() => {
+    const fetchCustomBans = async () => {
+      if (selectedBanlistId === "md") {
+        setCustomBannedCardIds(new Set());
+        return;
+      }
+      const { data } = await supabase
+        .from('tournament_banned_cards')
+        .select('card_id')
+        .eq('tournament_id', Number(selectedBanlistId));
+      if (data) {
+        setCustomBannedCardIds(new Set(data.map(b => b.card_id)));
+      }
+    };
+    fetchCustomBans();
+  }, [selectedBanlistId]);
 
   const [deckNotes, setDeckNotes] = useState("");
   const [isDrawSimulatorOpen, setIsDrawSimulatorOpen] = useState(false);
@@ -1294,6 +1343,16 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const addCardToDeck = (card: CardData, section: 'main' | 'extra' | 'side') => {
     let limit = 3;
     if (!isGenesysMode) {
+      // Custom Banlist Check
+      if (selectedBanlistId !== "md" && customBannedCardIds.has(card.id)) {
+        toast({ 
+          title: "Carta Banida", 
+          description: `${card.name} está proibida na Banlist deste torneio.`, 
+          variant: "destructive" 
+        });
+        return;
+      }
+
       const status = card.ban_master_duel;
       if (status === "Forbidden" || status === "Banned") { toast({ title: "Banida", description: `${card.name} é proibida.`, variant: "destructive" }); return; }
       if (status === "Limited") limit = 1;
@@ -1542,6 +1601,20 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
           {/* Top Controls */}
           <div className="db-controls-top">
               <div className="db-input-group">
+                  <label>Banlist Vigente</label>
+                  <select 
+                    className="db-custom-select" 
+                    value={selectedBanlistId} 
+                    onChange={(e) => setSelectedBanlistId(e.target.value)}
+                  >
+                      <option value="md">Master Duel (Padrão)</option>
+                      {banlistTournaments.map(tournament => (
+                        <option key={tournament.id} value={tournament.id}>{tournament.title}</option>
+                      ))}
+                  </select>
+                  <div className="db-input-arrow">↓</div>
+              </div>
+              <div className="db-input-group">
                   <label>Decks Salvos</label>
                   <select 
                     className="db-custom-select" 
@@ -1731,6 +1804,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                                     showHovers={showHovers} 
                                     currentSection={currentDeckSection}
                                     onInspect={!isMobile ? setInspectedCard : undefined}
+                                    isCustomBanned={selectedBanlistId !== "md" && customBannedCardIds.has(card.id)}
                                   />
                                 </div>
                               ))}
@@ -1791,6 +1865,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                                     isDeckLocked={isDeckLocked} 
                                     showHovers={showHovers} 
                                     onInspect={!isMobile ? setInspectedCard : undefined}
+                                    isCustomBanned={selectedBanlistId !== "md" && customBannedCardIds.has(card.id)}
                                   />
                                 </div>
                               ))}
