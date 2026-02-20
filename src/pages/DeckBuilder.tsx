@@ -398,7 +398,27 @@ const DeckBuilderStyles = () => (
     .db-main-content {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 30px;
+        gap: 20px;
+    }
+
+    @media (min-width: 1024px) {
+        .db-main-content {
+            grid-template-columns: 280px 1fr 1fr;
+        }
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #555;
     }
 
     .db-panel-controls {
@@ -727,7 +747,8 @@ const PopularCardGridItem = ({
   isExtraDeckCard, 
   isDeckLocked, 
   showHovers,
-  currentSection
+  currentSection,
+  onInspect
 }: { 
   card: CardData, 
   isGenesysMode: boolean, 
@@ -735,7 +756,8 @@ const PopularCardGridItem = ({
   isExtraDeckCard: (type: string) => boolean, 
   isDeckLocked: boolean, 
   showHovers: boolean,
-  currentSection: string
+  currentSection: string,
+  onInspect?: (card: CardData) => void
 }) => {
   const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: ItemTypes.CARD,
@@ -760,6 +782,7 @@ const PopularCardGridItem = ({
       )}
       onContextMenu={handleRightClick}
       onClick={() => addCardToDeck(card, currentSection as any)}
+      onMouseEnter={() => onInspect?.(card)}
     >
       <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover transition-transform duration-500" ref={preview} />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -770,7 +793,8 @@ const PopularCardGridItem = ({
     </div>
   );
 
-  if (!showHovers) return content;
+  // Abolish hovers on desktop if inspector is available
+  if (!showHovers || onInspect) return content;
 
   return (
     <HoverCard openDelay={100}>
@@ -785,7 +809,25 @@ const PopularCardGridItem = ({
 };
 
 
-const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode, isDeckLocked, showHovers }: { card: CardData, index: number, section: "main" | "extra" | "side", removeCard: (index: number, section: "main" | "extra" | "side") => void, isGenesysMode: boolean, isDeckLocked: boolean, showHovers: boolean }) => {
+const DraggableDeckCard = ({ 
+  card, 
+  index, 
+  section, 
+  removeCard, 
+  isGenesysMode, 
+  isDeckLocked, 
+  showHovers,
+  onInspect
+}: { 
+  card: CardData, 
+  index: number, 
+  section: "main" | "extra" | "side", 
+  removeCard: (index: number, section: "main" | "extra" | "side") => void, 
+  isGenesysMode: boolean, 
+  isDeckLocked: boolean, 
+  showHovers: boolean,
+  onInspect?: (card: CardData) => void
+}) => {
   const [{ isDragging }, drag] = useDrag(() => ({ type: ItemTypes.DECK_CARD, item: { card, index, section }, canDrag: !isDeckLocked, end: (item, monitor) => { if (!monitor.didDrop() && !isDeckLocked) { removeCard(item.index, item.section); } }, collect: (monitor) => ({ isDragging: !!monitor.isDragging() }) }), [card, index, section, removeCard, isDeckLocked]);
   
   const content = (
@@ -795,6 +837,7 @@ const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode, is
         "relative w-full h-full rounded shadow-md cursor-grab active:cursor-grabbing group hover:ring-2 hover:ring-primary/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all",
         isDragging && "opacity-0"
       )}
+      onMouseEnter={() => onInspect?.(card)}
     >
       <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover rounded" />
       {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
@@ -814,7 +857,7 @@ const DraggableDeckCard = ({ card, index, section, removeCard, isGenesysMode, is
     </div>
   );
 
-  if (!showHovers) return content;
+  if (!showHovers || onInspect) return content;
 
   return (
     <HoverCard openDelay={100}>
@@ -853,6 +896,71 @@ const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard, remov
   return <div ref={drop} className={cn("rounded-lg transition-colors", isOver && canDrop && "bg-primary/10", !isOver && canDrop && "bg-primary/5")}>{children}</div>;
 };
 
+const CardInspector = ({ card }: { card: CardData | null }) => {
+  if (!card) {
+    return (
+      <div className="hidden lg:flex flex-col items-center justify-center h-full bg-[#1a1a1a] border border-[#333] rounded p-6 text-stone-500 italic text-center">
+        <div className="w-full aspect-[2/3] border-2 border-dashed border-white/5 rounded-lg mb-6 flex items-center justify-center">
+            <Info className="w-12 h-12 opacity-10" />
+        </div>
+        <p className="text-xs uppercase font-black tracking-widest opacity-40">Inspector</p>
+        <p className="text-[10px] mt-2 leading-relaxed">Passe o mouse ou clique em uma carta para ver os detalhes completos aqui.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="hidden lg:flex flex-col h-full bg-[#1a1a1a] border border-[#333] rounded overflow-hidden sticky top-4">
+      <div className="p-3 bg-black/20">
+         <img src={card.image_url} alt={card.name} className="w-full rounded shadow-2xl border border-white/5" />
+      </div>
+      <div className="p-4 flex-1 overflow-y-auto custom-scrollbar max-h-[450px]">
+        <h3 className="text-lg font-black uppercase italic text-primary leading-tight mb-1 tracking-tighter">{card.name}</h3>
+        {card.pt_name && <h4 className="text-[10px] text-muted-foreground font-bold mb-3 uppercase tracking-wider">{card.pt_name}</h4>}
+        
+        <div className="flex flex-wrap gap-1 mb-4">
+          <Badge variant="outline" className="text-[9px] bg-primary/10 border-primary/20 text-primary py-0 h-5 font-black uppercase">
+            {card.race}
+          </Badge>
+          <Badge variant="outline" className="text-[9px] bg-stone-800 border-stone-700 py-0 h-5 font-bold uppercase text-stone-400">
+            {card.type}
+          </Badge>
+        </div>
+
+        {(card.atk !== undefined || card.level !== undefined) && (
+            <div className="grid grid-cols-3 gap-2 mb-4 pb-4 border-b border-white/5 text-center">
+            {card.level !== undefined && (
+                <div>
+                <p className="text-[8px] uppercase text-stone-500 font-black mb-1">Level</p>
+                <p className="font-bold text-sm text-white">{card.level}</p>
+                </div>
+            )}
+            {card.atk !== undefined && (
+                <div>
+                <p className="text-[8px] uppercase text-stone-500 font-black mb-1">ATK</p>
+                <p className="font-bold text-sm text-red-400">{card.atk}</p>
+                </div>
+            )}
+            {card.def !== undefined && (
+                <div>
+                <p className="text-[8px] uppercase text-stone-500 font-black mb-1">DEF</p>
+                <p className="font-bold text-sm text-blue-400">{card.def}</p>
+                </div>
+            )}
+            </div>
+        )}
+
+        <div className="relative">
+            <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-primary/20" />
+            <p className="text-xs text-stone-300 leading-relaxed whitespace-pre-wrap italic pl-3">
+            {card.description}
+            </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -889,6 +997,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [isSearchActive, setIsSearchActive] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [userDecks, setUserDecks] = useState<{id: number, deck_name: string}[]>([]);
+  const [inspectedCard, setInspectedCard] = useState<CardData | null>(null);
 
   const [deckNotes, setDeckNotes] = useState("");
   const [isDrawSimulatorOpen, setIsDrawSimulatorOpen] = useState(false);
@@ -1554,6 +1663,9 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
           {/* Main Workspace */}
           {activeWorkspaceTab === 'deck' ? (
             <div className="db-main-content">
+                {/* Inspector Panel (Desktop Only) */}
+                {!isMobile && <CardInspector card={inspectedCard} />}
+
                 {/* Left Panel (Filter + Grid) - SEARCH/DATABASE */}
                 <div className="db-left-panel">
                     <div className="db-panel-controls">
@@ -1602,6 +1714,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                                     isDeckLocked={isDeckLocked} 
                                     showHovers={showHovers} 
                                     currentSection={currentDeckSection}
+                                    onInspect={!isMobile ? setInspectedCard : undefined}
                                   />
                                 </div>
                               ))}
@@ -1661,6 +1774,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                                     isGenesysMode={isGenesysMode} 
                                     isDeckLocked={isDeckLocked} 
                                     showHovers={showHovers} 
+                                    onInspect={!isMobile ? setInspectedCard : undefined}
                                   />
                                 </div>
                               ))}
@@ -1681,6 +1795,9 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
             </div>
           ) : (
             <div className="db-main-content">
+                {/* Inspector Panel (Desktop Only) */}
+                {!isMobile && <CardInspector card={inspectedCard} />}
+
                 {/* Simulator UI following deckbuilder design */}
                 <div className="db-left-panel">
                     <div className="db-sim-header">
@@ -1700,7 +1817,11 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                     <div className="db-card-grid-container">
                         <div className="db-grid-slots">
                             {simulatedHand.map((card, i) => (
-                              <div key={`sim-${i}`} className="db-slot">
+                              <div 
+                                key={`sim-${i}`} 
+                                className="db-slot cursor-help"
+                                onMouseEnter={() => !isMobile && setInspectedCard(card)}
+                              >
                                 <div className="relative w-full h-full rounded overflow-hidden">
                                     <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover" />
                                 </div>
