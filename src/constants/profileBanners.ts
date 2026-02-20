@@ -19,5 +19,13 @@ export const PROFILE_BANNERS = [
   "1371361_cropped.jpeg",
   "1371363_cropped.jpeg",
   "465708_cropped.jpg",
-  "786925_cropped.jpg"
+  "786925_cropped.jpg",
+  "djlo2n3-6acb1cfb-9015-4c4e-b607-3d6d4ce4e109_cropped.png",
+  "wallpaperflare.com_wallpaper (1).jpg",
+  "wallpaperflare.com_wallpaper (2).jpg",
+  "wallpaperflare.com_wallpaper (3).jpg",
+  "wallpaperflare.com_wallpaper (4).jpg",
+  "wallpaperflare.com_wallpaper (5).jpg",
+  "wallpaperflare.com_wallpaper_cropped.jpg",
+  "wallpaperflare.com_wallpaper.jpg"
 ];
