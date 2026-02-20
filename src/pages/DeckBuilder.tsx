@@ -1030,11 +1030,19 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [customBannedCardIds, setCustomBannedCardIds] = useState<Set<string>>(new Set());
 
   const fetchBanlistTournaments = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('tournaments')
-      .select('id, title')
-      .eq('type', 'banimento')
+      .select('id, title, type')
+      .in('type', ['banimento', 'Banimento', 'BANIMENTO'])
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error("Error fetching banlist tournaments:", error);
+      return;
+    }
+    
+    console.log("Fetched banlist tournaments:", data);
     if (data) setBanlistTournaments(data);
   }, []);
 
