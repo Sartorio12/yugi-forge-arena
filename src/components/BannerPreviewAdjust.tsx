@@ -96,7 +96,7 @@ export const BannerPreviewAdjust: React.FC<BannerPreviewAdjustProps> = ({
       const imageHeight = imageRef.current.offsetHeight;
       const maxScroll = imageHeight - containerHeight;
       const percentage = maxScroll > 0 ? (Math.abs(offsetY) / maxScroll) * 100 : 50;
-      onConfirm(percentage);
+      onConfirm(Math.round(percentage));
     } else {
       onConfirm(50);
     }
