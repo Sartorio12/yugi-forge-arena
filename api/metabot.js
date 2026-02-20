@@ -1,12 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from './config.js';
 import fetch from 'node-fetch';
 
 const META_BOT_ID = 'ec2018d3-c57f-42a0-bf15-ebb9a60c8fbd';
 const HF_NEWS_MODEL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
 const HF_SOCIAL_MODEL = "https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-1.5B-Instruct";
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const HF_TOKEN = process.env.HF_TOKEN;
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);

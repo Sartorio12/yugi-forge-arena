@@ -10,8 +10,8 @@ export const PAYPAL_CONFIG = {
   API_URL: "https://api-m.sandbox.paypal.com" // Change to https://api-m.paypal.com for production
 };
 
-export const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://mggwlfbajeqbdgkflmqi.supabase.co";
+export const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 
-export const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nZ3dsZmJhamVxYmRna2ZsbXFpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjM2NjUxNSwiZXhwIjoyMDc3OTQyNTE1fQ.Ux21IMzLIAwYjpDtNdQtNpxeKMeVtjzoN17pgMmPhUo";
+export const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
