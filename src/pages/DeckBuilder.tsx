@@ -885,6 +885,9 @@ const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard, remov
     drop: (item: any) => {
       if (isDeckLocked) return;
       if (item.section && item.index !== undefined) {
+        // If dropping in the same section, do nothing (prevents removal)
+        if (item.section === section) return;
+        
         removeCard(item.index, item.section);
         addCardToDeck(item.card, section);
       } else {
@@ -893,7 +896,7 @@ const DeckDropZone = ({ section, children, addCardToDeck, isExtraDeckCard, remov
     },
     canDrop: (item: any) => {
       if (isDeckLocked) return false;
-      if (item.section === section) return false;
+      // Allow dropping in same section to prevent monitor.didDrop() being false (which triggers removal)
       if (section === 'extra' && !isExtraDeckCard(item.card.type)) return false;
       if (section === 'main' && isExtraDeckCard(item.card.type)) return false;
       return true;
