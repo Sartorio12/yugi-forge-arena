@@ -237,8 +237,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         banner_url = selectedPresetBanner;
       }
 
-      const updates = { 
-        username, 
+      const updates: any = { 
         bio, 
         discord_username: discordUsername, 
         avatar_url, 
@@ -246,6 +245,12 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         banner_offset_y: bannerOffsetY,
         updated_at: new Date() 
       };
+
+      // Only include username in updates if it has actually changed
+      if (username !== profile.username) {
+        updates.username = username;
+      }
+
       const { error } = await supabase.from("profiles").update(updates).eq('id', user.id);
       if (error) throw error;
 
