@@ -770,8 +770,16 @@ const PopularCardGridItem = ({
 
   const handleRightClick = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
-    addCardToDeck(card, 'main');
-  }, [card, addCardToDeck]);
+    addCardToDeck(card, currentSection as any);
+  }, [card, addCardToDeck, currentSection]);
+
+  const handleLeftClick = () => {
+    if (onInspect) {
+      onInspect(card);
+    } else {
+      addCardToDeck(card, currentSection as any);
+    }
+  };
 
   const content = (
     <div 
@@ -781,8 +789,8 @@ const PopularCardGridItem = ({
         isDragging && "opacity-50"
       )}
       onContextMenu={handleRightClick}
-      onClick={() => addCardToDeck(card, currentSection as any)}
-      onMouseEnter={() => onInspect?.(card)}
+      onClick={handleLeftClick}
+      onDoubleClick={() => addCardToDeck(card, currentSection as any)}
     >
       <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover transition-transform duration-500" ref={preview} />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -837,7 +845,7 @@ const DraggableDeckCard = ({
         "relative w-full h-full rounded shadow-md cursor-grab active:cursor-grabbing group hover:ring-2 hover:ring-primary/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] transition-all",
         isDragging && "opacity-0"
       )}
-      onMouseEnter={() => onInspect?.(card)}
+      onClick={() => onInspect?.(card)}
     >
       <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover rounded" />
       {!isGenesysMode && <BanlistIcon banStatus={card.ban_master_duel} />}
@@ -1635,17 +1643,19 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                       </label>
                       <span>Privado</span>
                   </div>
-                  <div className="db-toggle-group">
-                      <label className="db-switch">
-                          <input 
-                            type="checkbox" 
-                            checked={showHovers} 
-                            onChange={(e) => setShowHovers(e.target.checked)} 
-                          />
-                          <span className="db-slider"></span>
-                      </label>
-                      <span>Hovers</span>
-                  </div>
+                  {isMobile && (
+                    <div className="db-toggle-group">
+                        <label className="db-switch">
+                            <input 
+                              type="checkbox" 
+                              checked={showHovers} 
+                              onChange={(e) => setShowHovers(e.target.checked)} 
+                            />
+                            <span className="db-slider"></span>
+                        </label>
+                        <span>Hovers</span>
+                    </div>
+                  )}
                   <div className="db-toggle-group">
                       <label className="db-switch">
                           <input 
@@ -1820,7 +1830,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                               <div 
                                 key={`sim-${i}`} 
                                 className="db-slot cursor-help"
-                                onMouseEnter={() => !isMobile && setInspectedCard(card)}
+                                onClick={() => !isMobile && setInspectedCard(card)}
                               >
                                 <div className="relative w-full h-full rounded overflow-hidden">
                                     <img src={card.image_url_small} alt={card.name} className="w-full h-full object-cover" />
