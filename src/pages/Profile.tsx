@@ -189,7 +189,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
     if (!user) return;
     setIsUpdating(true);
     try {
-      const { error } = await supabase.from("profiles").update({ banner_url: null }).eq('id', user.id);
+      const { error } = await supabase.from("profiles").update({ banner_url: null }).eq('id', id);
       if (error) throw error;
       
       toast({ title: t('profile_page.edit_modal.success'), description: "Banner removido." });
@@ -210,7 +210,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
       
       // Handle File Upload for Avatar
       if (avatarFile) {
-        const filePath = `public/${user.id}/avatar.jpg`;
+        const filePath = `public/${id}/avatar.jpg`;
         const { error: uploadError } = await supabase.storage.from("profiles").upload(filePath, avatarFile, { 
           upsert: true,
           cacheControl: '31536000'
@@ -225,7 +225,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
 
       let banner_url = profile?.banner_url;
       if (bannerFile) {
-        const filePath = `public/${user.id}/banner.jpg`;
+        const filePath = `public/${id}/banner.jpg`;
         const { error: uploadError } = await supabase.storage.from("profiles").upload(filePath, bannerFile, { 
           upsert: true,
           cacheControl: '31536000'
@@ -251,7 +251,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         updates.username = username;
       }
 
-      const { error } = await supabase.from("profiles").update(updates).eq('id', user.id);
+      const { error } = await supabase.from("profiles").update(updates).eq('id', id);
       if (error) throw error;
 
       toast({ title: t('profile_page.edit_modal.success'), description: t('profile_page.edit_modal.success') });
