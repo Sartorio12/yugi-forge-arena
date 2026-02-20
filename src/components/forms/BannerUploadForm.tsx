@@ -42,7 +42,7 @@ const BannerUploadForm: React.FC<BannerUploadFormProps> = ({ userId, onUploadSuc
     try {
       const file = values.bannerFile[0];
       const fileExt = file.name.split('.').pop();
-      const filePath = `tournament_banners/${userId}/${Date.now()}.${fileExt}`;
+      const filePath = `${userId}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('tournament_banners')
