@@ -1448,8 +1448,11 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
       }
       localStorage.removeItem('deck_builder_draft');
       setHasUnsavedChanges(false);
-      toast({ title: "Deck salvo com sucesso!" });
-      navigate(`/profile/${user.id}`);
+      toast({ title: editingDeckId ? "Deck atualizado com sucesso!" : "Deck salvo com sucesso!" });
+      
+      if (!editingDeckId) {
+        navigate(`/profile/${user.id}`);
+      }
     } catch (err: any) {
       toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
     } finally {
