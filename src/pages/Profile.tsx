@@ -284,7 +284,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const privateDecks = decks?.filter((deck: any) => deck.is_private) || [];
   const isSuperAdmin = user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
   const isProfileOwner = user?.id === profile?.id || isSuperAdmin;
-  const canSendMessage = user && !isProfileOwner && profile && !isSuperAdmin;
+  const canSendMessage = user && user.id !== profile?.id;
 
   return (
     <div className="min-h-screen bg-background">
@@ -586,16 +586,17 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                   {privateDecks.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {privateDecks.map((deck) => (
-                                              <DeckCard
-                                                key={deck.id}
-                                                id={deck.id}
-                                                deckName={deck.deck_name}
-                                                cardCount={deck.deck_cards && deck.deck_cards.length > 0 ? deck.deck_cards[0].count : 0}
-                                                isPrivate={deck.is_private}
-                                                is_genesys={deck.is_genesys}
-                                                onDelete={handleDeleteDeck}
-                                                isOwner={user?.id === deck.user_id || isSuperAdmin} 
-                                              />                      ))}
+                        <DeckCard
+                          key={deck.id}
+                          id={deck.id}
+                          deckName={deck.deck_name}
+                          cardCount={deck.deck_cards && deck.deck_cards.length > 0 ? deck.deck_cards[0].count : 0}
+                          isPrivate={deck.is_private}
+                          is_genesys={deck.is_genesys}
+                          onDelete={handleDeleteDeck}
+                          isOwner={user?.id === deck.user_id || isSuperAdmin} 
+                        />
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center py-12 border-2 border-dashed border-border rounded-lg"><p className="text-muted-foreground">{t('profile_page.no_private_decks')}</p></div>
