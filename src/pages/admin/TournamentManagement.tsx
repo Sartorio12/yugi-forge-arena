@@ -1289,59 +1289,84 @@ const TournamentManagementPage = ({ user: currentUser, onLogout }: TournamentMan
                       <CardDescription>Gerencie as rodadas com base na pontuação e Buchholz.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      <div className="p-4 bg-muted/20 border border-dashed rounded-lg text-sm space-y-2">
-                        <p className="font-bold flex items-center gap-2 text-primary"><ShieldAlert className="h-4 w-4" /> Como funciona:</p>
-                        <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
-                          <li>O sistema emparealha jogadores com pontuações similares.</li>
-                          <li>Evita repetição de oponentes (sempre que possível).</li>
-                          <li>BYEs são atribuídos automaticamente se o número de jogadores for ímpar.</li>
-                          <li>Certifique-se de que <strong>TODOS</strong> os resultados da rodada anterior foram registrados antes de gerar a próxima.</li>
-                        </ul>
-                      </div>
+                      {(() => {
+                        const totalParticipants = participants?.length || 0;
+                        const totalRecommendedRounds = totalParticipants > 0 ? Math.ceil(Math.log2(totalParticipants)) : 0;
+                        const currentRound = Math.max(0, ...(matches?.filter(m => m.round_number).map(m => m.round_number) || []));
+                        const isLimitReached = currentRound >= totalRecommendedRounds && totalRecommendedRounds > 0;
 
-                      <div className="flex flex-col md:flex-row gap-4">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button className="h-14 gap-2 flex-1 text-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" disabled={generateSwissRoundMutation.isPending || !participants || participants.length < 2}>
-                              <Shuffle className="h-6 w-6" /> Gerar Próxima Rodada
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Gerar Nova Rodada?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Isso criará novos confrontos com base na classificação atual. Verifique se todos os resultados anteriores estão corretos.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => generateSwissRoundMutation.mutate()} className="bg-primary">Sim, Gerar</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        return (
+                          <>
+                            <div className="p-4 bg-muted/20 border border-dashed rounded-lg text-sm space-y-4">
+                              <div className="flex justify-between items-center">
+                                <p className="font-bold flex items-center gap-2 text-primary"><ShieldAlert className="h-4 w-4" /> Regras do Formato:</p>
+                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                                  Rodada {currentRound} de {totalRecommendedRounds}
+                                </Badge>
+                              </div>
+                              <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                                <li>O número de rodadas é fixado em <strong>{totalRecommendedRounds}</strong> para {totalParticipants} jogadores.</li>
+                                <li>O sistema evita repetição de confrontos automaticamente.</li>
+                                <li>Certifique-se de que <strong>TODOS</strong> os resultados da rodada {currentRound} foram registrados.</li>
+                              </ul>
+                              
+                              {isLimitReached && (
+                                <p className="text-xs text-yellow-500 font-bold bg-yellow-500/10 p-2 rounded border border-yellow-500/20">
+                                  ⚠️ O número máximo de rodadas recomendadas foi atingido.
+                                </p>
+                              )}
+                            </div>
 
-                        {matches && matches.length > 0 && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" className="h-14 gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-white" disabled={resetBracketMutation.isPending}>
-                                <RotateCcw className="h-6 w-6" /> Resetar Suíço
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir Todas as Rodadas?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Isso removerá permanentemente todas as partidas e classificações do suíço. Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => resetBracketMutation.mutate()} className="bg-destructive">Sim, Excluir Tudo</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
+                            <div className="flex flex-col md:flex-row gap-4">
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    className="h-14 gap-2 flex-1 text-lg shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90" 
+                                    disabled={generateSwissRoundMutation.isPending || !participants || participants.length < 2 || isLimitReached}
+                                  >
+                                    <Shuffle className="h-6 w-6" /> 
+                                    {isLimitReached ? "Fase Suíça Concluída" : "Gerar Próxima Rodada"}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Gerar Nova Rodada?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Isso criará a rodada {currentRound + 1} de {totalRecommendedRounds}. Verifique se todos os resultados anteriores estão corretos.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => generateSwissRoundMutation.mutate()} className="bg-primary">Sim, Gerar</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+
+                              {matches && matches.length > 0 && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="outline" className="h-14 gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-white" disabled={resetBracketMutation.isPending}>
+                                      <RotateCcw className="h-6 w-6" /> Resetar Suíço
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir Todas as Rodadas?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Isso removerá permanentemente todas as partidas e classificações do suíço. Esta ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => resetBracketMutation.mutate()} className="bg-destructive">Sim, Excluir Tudo</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 )}
