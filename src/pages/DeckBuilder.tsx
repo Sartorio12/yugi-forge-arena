@@ -1495,6 +1495,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   };
 
   const saveDeck = async () => {
+    console.log("Starting saveDeck. editingDeckId:", editingDeckId);
     if (!user || !deckName.trim() || mainDeck.length < 40) {
       toast({ title: "Erro ao salvar", description: "Verifique o nome e o mínimo de 40 cartas.", variant: "destructive" });
       return;
@@ -1506,19 +1507,26 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         ...extraDeck.map(c => ({ card_api_id: String(c.id), deck_section: "extra" })),
         ...sideDeck.map(c => ({ card_api_id: String(c.id), deck_section: "side" }))
       ];
+      
+      let isNewDeck = !editingDeckId;
+
       if (editingDeckId) {
         await supabase.from('decks').update({ deck_name: deckName, is_private: isPrivate, is_genesys: isGenesysMode }).eq('id', editingDeckId);
         await supabase.from('deck_cards').delete().eq('deck_id', editingDeckId);
         await supabase.from('deck_cards').insert(cards.map(c => ({ ...c, deck_id: editingDeckId })));
       } else {
         const { data: deck } = await supabase.from('decks').insert({ user_id: user.id, deck_name: deckName, is_private: isPrivate, is_genesys: isGenesysMode }).select().single();
-        if (deck) await supabase.from('deck_cards').insert(cards.map(c => ({ ...c, deck_id: deck.id })));
+        if (deck) {
+          await supabase.from('deck_cards').insert(cards.map(c => ({ ...c, deck_id: deck.id })));
+          setEditingDeckId(deck.id); // Convert to edit mode after first save
+        }
       }
+      
       localStorage.removeItem('deck_builder_draft');
       setHasUnsavedChanges(false);
-      toast({ title: editingDeckId ? "Deck atualizado com sucesso!" : "Deck salvo com sucesso!" });
+      toast({ title: isNewDeck ? "Deck salvo com sucesso!" : "Deck atualizado com sucesso!" });
       
-      if (!editingDeckId) {
+      if (isNewDeck) {
         navigate(`/profile/${user.id}`);
       }
     } catch (err: any) {
