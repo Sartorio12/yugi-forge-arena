@@ -205,78 +205,66 @@ const DeckBuilderStyles = () => (
         width: 100%;
         background-color: #1a1a1a;
         border: 1px solid #333;
-        padding: 10px 16px;
+        padding: 8px 12px;
         color: #eee;
         font-size: 13px;
         appearance: none;
-        border-radius: 12px;
+        border-radius: 2px;
         cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .db-custom-select:focus {
-        border-color: #856f4b;
-        outline: none;
     }
 
     .db-input-arrow {
         position: absolute;
-        right: 16px;
-        top: 36px;
+        right: 12px;
+        top: 32px;
         pointer-events: none;
-        color: #856f4b;
+        color: white;
         font-size: 10px;
     }
 
     .db-input-arrow-small {
         position: absolute;
-        right: 16px;
+        right: 12px;
         top: 50%;
         transform: translateY(-50%);
         pointer-events: none;
-        color: #856f4b;
+        color: white;
         font-size: 10px;
     }
 
     .db-buttons-row {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr 1fr;
-        gap: 12px;
-        margin-bottom: 20px;
+        gap: 10px;
+        margin-bottom: 15px;
     }
 
     .db-btn {
-        background-color: #1a1a1a;
-        border: 1px solid #333;
+        background-color: #3b3b3b;
+        border: 1px solid #856f4b;
         color: #ddd;
-        padding: 10px 16px;
-        font-size: 11px;
+        padding: 6px 12px;
+        font-size: 12px;
         cursor: pointer;
         text-align: center;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
+        border-radius: 2px;
         transition: all 0.2s;
         text-transform: uppercase;
-        font-weight: 900;
-        letter-spacing: 0.5px;
+        font-weight: bold;
     }
 
     .db-btn:hover:not(:disabled) {
-        background-color: #252525;
-        border-color: #856f4b;
-        color: #856f4b;
-        transform: translateY(-1px);
-    }
-
-    .db-btn:active:not(:disabled) {
-        transform: translateY(0px);
+        background-color: #4a4a4a;
+        border-color: #a68c5e;
+        color: white;
     }
 
     .db-btn:disabled {
-        opacity: 0.3;
+        opacity: 0.5;
         cursor: not-allowed;
     }
 
@@ -289,35 +277,34 @@ const DeckBuilderStyles = () => (
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        border-bottom: 1px solid #333;
-        padding-bottom: 12px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #444;
+        padding-bottom: 10px;
     }
 
     .db-titles {
         display: flex;
-        gap: 30px;
+        gap: 25px;
         align-items: baseline;
     }
 
     .db-title-tab {
-        font-size: 28px;
+        font-size: 24px;
         font-weight: 900;
         text-transform: uppercase;
         cursor: pointer;
-        transition: all 0.3s;
-        color: #444;
-        font-style: italic;
-        letter-spacing: -1px;
+        transition: all 0.2s;
+        color: #555;
+        border-bottom: 3px solid transparent;
     }
 
     .db-title-tab.active {
         color: white;
-        text-shadow: 0 0 20px rgba(133, 111, 75, 0.4);
+        border-bottom: 3px solid #856f4b;
     }
 
-    .db-title-tab:hover:not(.active) {
-        color: #888;
+    .db-title-tab:hover {
+        color: #ccc;
     }
 
     .db-sim-header {
@@ -442,76 +429,58 @@ const DeckBuilderStyles = () => (
 
     .db-panel-controls {
         display: flex;
-        gap: 8px;
-        margin-bottom: 15px;
-        height: 40px;
+        gap: 5px;
+        margin-bottom: 10px;
+        height: 32px;
     }
 
     .db-search-input {
         background-color: #1a1a1a;
         border: 1px solid #333;
         color: #ddd;
-        padding: 0 16px;
+        padding: 0 12px;
         flex-grow: 1;
-        font-size: 14px;
-        border-radius: 12px;
-        transition: all 0.2s;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-    }
-
-    .db-search-input:focus {
-        border-color: #856f4b;
-        outline: none;
-        background-color: #222;
-        box-shadow: 0 0 0 2px rgba(133, 111, 75, 0.2);
+        font-size: 13px;
+        border-radius: 2px;
     }
 
     .db-icon-btn {
         background-color: #1a1a1a;
         border: 1px solid #333;
         color: white;
-        width: 40px;
+        width: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        border-radius: 12px;
-        transition: all 0.2s;
-    }
-
-    .db-icon-btn:hover {
-        background-color: #333;
-        border-color: #856f4b;
-        color: #856f4b;
+        border-radius: 2px;
     }
 
     .db-tab-btn {
         background-color: #333;
         border: none;
         color: #aaa;
-        padding: 0 18px;
-        font-size: 11px;
+        padding: 0 15px;
+        font-size: 12px;
         cursor: pointer;
-        transition: all 0.2s;
-        border-radius: 12px;
+        transition: background 0.2s;
+        border-radius: 2px;
         text-transform: uppercase;
-        font-weight: 900;
-        letter-spacing: 0.5px;
+        font-weight: bold;
     }
 
     .db-tab-btn.active {
-        background-color: #856f4b;
-        color: black;
+        background-color: #444;
+        color: white;
     }
 
     .db-card-grid-container {
         position: relative;
-        background: rgba(0, 0, 0, 0.2);
-        backdrop-filter: blur(10px);
-        padding: 12px;
+        background: linear-gradient(135deg, rgba(120, 100, 20, 0.4) 0%, rgba(106, 27, 154, 0.4) 100%);
+        padding: 8px;
         min-height: 350px;
-        border: 1px solid #333;
-        border-radius: 16px;
+        border: 1px solid #444;
+        border-radius: 4px;
     }
 
     .db-grid-slots {
