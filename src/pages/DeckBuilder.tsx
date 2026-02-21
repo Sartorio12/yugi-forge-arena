@@ -205,66 +205,78 @@ const DeckBuilderStyles = () => (
         width: 100%;
         background-color: #1a1a1a;
         border: 1px solid #333;
-        padding: 8px 12px;
+        padding: 10px 16px;
         color: #eee;
         font-size: 13px;
         appearance: none;
-        border-radius: 2px;
+        border-radius: 12px;
         cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .db-custom-select:focus {
+        border-color: #856f4b;
+        outline: none;
     }
 
     .db-input-arrow {
         position: absolute;
-        right: 12px;
-        top: 32px;
+        right: 16px;
+        top: 36px;
         pointer-events: none;
-        color: white;
+        color: #856f4b;
         font-size: 10px;
     }
 
     .db-input-arrow-small {
         position: absolute;
-        right: 12px;
+        right: 16px;
         top: 50%;
         transform: translateY(-50%);
         pointer-events: none;
-        color: white;
+        color: #856f4b;
         font-size: 10px;
     }
 
     .db-buttons-row {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr 1fr;
-        gap: 10px;
-        margin-bottom: 15px;
+        gap: 12px;
+        margin-bottom: 20px;
     }
 
     .db-btn {
-        background-color: #3b3b3b;
-        border: 1px solid #856f4b;
+        background-color: #1a1a1a;
+        border: 1px solid #333;
         color: #ddd;
-        padding: 6px 12px;
-        font-size: 12px;
+        padding: 10px 16px;
+        font-size: 11px;
         cursor: pointer;
         text-align: center;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 2px;
+        border-radius: 12px;
         transition: all 0.2s;
         text-transform: uppercase;
-        font-weight: bold;
+        font-weight: 900;
+        letter-spacing: 0.5px;
     }
 
     .db-btn:hover:not(:disabled) {
-        background-color: #4a4a4a;
-        border-color: #a68c5e;
-        color: white;
+        background-color: #252525;
+        border-color: #856f4b;
+        color: #856f4b;
+        transform: translateY(-1px);
+    }
+
+    .db-btn:active:not(:disabled) {
+        transform: translateY(0px);
     }
 
     .db-btn:disabled {
-        opacity: 0.5;
+        opacity: 0.3;
         cursor: not-allowed;
     }
 
@@ -277,34 +289,35 @@ const DeckBuilderStyles = () => (
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 15px;
-        border-bottom: 1px solid #444;
-        padding-bottom: 10px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 12px;
     }
 
     .db-titles {
         display: flex;
-        gap: 25px;
+        gap: 30px;
         align-items: baseline;
     }
 
     .db-title-tab {
-        font-size: 24px;
+        font-size: 28px;
         font-weight: 900;
         text-transform: uppercase;
         cursor: pointer;
-        transition: all 0.2s;
-        color: #555;
-        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+        color: #444;
+        font-style: italic;
+        letter-spacing: -1px;
     }
 
     .db-title-tab.active {
         color: white;
-        border-bottom: 3px solid #856f4b;
+        text-shadow: 0 0 20px rgba(133, 111, 75, 0.4);
     }
 
-    .db-title-tab:hover {
-        color: #ccc;
+    .db-title-tab:hover:not(.active) {
+        color: #888;
     }
 
     .db-sim-header {
@@ -429,58 +442,76 @@ const DeckBuilderStyles = () => (
 
     .db-panel-controls {
         display: flex;
-        gap: 5px;
-        margin-bottom: 10px;
-        height: 32px;
+        gap: 8px;
+        margin-bottom: 15px;
+        height: 40px;
     }
 
     .db-search-input {
         background-color: #1a1a1a;
         border: 1px solid #333;
         color: #ddd;
-        padding: 0 12px;
+        padding: 0 16px;
         flex-grow: 1;
-        font-size: 13px;
-        border-radius: 2px;
+        font-size: 14px;
+        border-radius: 12px;
+        transition: all 0.2s;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .db-search-input:focus {
+        border-color: #856f4b;
+        outline: none;
+        background-color: #222;
+        box-shadow: 0 0 0 2px rgba(133, 111, 75, 0.2);
     }
 
     .db-icon-btn {
         background-color: #1a1a1a;
         border: 1px solid #333;
         color: white;
-        width: 32px;
+        width: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        border-radius: 2px;
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+
+    .db-icon-btn:hover {
+        background-color: #333;
+        border-color: #856f4b;
+        color: #856f4b;
     }
 
     .db-tab-btn {
         background-color: #333;
         border: none;
         color: #aaa;
-        padding: 0 15px;
-        font-size: 12px;
+        padding: 0 18px;
+        font-size: 11px;
         cursor: pointer;
-        transition: background 0.2s;
-        border-radius: 2px;
+        transition: all 0.2s;
+        border-radius: 12px;
         text-transform: uppercase;
-        font-weight: bold;
+        font-weight: 900;
+        letter-spacing: 0.5px;
     }
 
     .db-tab-btn.active {
-        background-color: #444;
-        color: white;
+        background-color: #856f4b;
+        color: black;
     }
 
     .db-card-grid-container {
         position: relative;
-        background: linear-gradient(135deg, rgba(120, 100, 20, 0.4) 0%, rgba(106, 27, 154, 0.4) 100%);
-        padding: 8px;
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 12px;
         min-height: 350px;
-        border: 1px solid #444;
-        border-radius: 4px;
+        border: 1px solid #333;
+        border-radius: 16px;
     }
 
     .db-grid-slots {
@@ -1014,6 +1045,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   const [sortBy, setSortBy] = useState("popularity_desc");
   const [selectedCardTypes, setSelectedCardTypes] = useState<string[]>([]);
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
+  const [selectedLevels, setSelectedLevels] = useState<number[]>([]);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [genesysPointsValue, setGenesysPointsValue] = useState<number | ''>('');
   const [genesysPointsOperator, setGenesysPointsOperator] = useState<'gte' | 'lte' | '='>('gte');
@@ -1043,7 +1075,6 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
       return;
     }
     
-    console.log("Fetched banlist tournaments:", data);
     if (data) setBanlistTournaments(data);
   }, []);
 
@@ -1134,6 +1165,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   };
 
   const handleAttributeChange = (attribute: string) => setSelectedAttributes(prev => prev.includes(attribute) ? prev.filter(a => a !== attribute) : [...prev, attribute]);
+  const handleLevelChange = (level: number) => setSelectedLevels(prev => prev.includes(level) ? prev.filter(l => l !== level) : [...prev, level]);
   const handleMonsterRaceChange = (race: string) => setSelectedMonsterRaces(prev => prev.includes(race) ? prev.filter(r => r !== race) : [...prev, race]);
   const handleSpellRaceChange = (race: string) => setSelectedSpellRaces(prev => prev.includes(race) ? prev.filter(r => r !== race) : [...prev, race]);
   const handleTrapRaceChange = (race: string) => setSelectedTrapRaces(prev => prev.includes(race) ? prev.filter(r => r !== race) : [...prev, race]);
@@ -1142,6 +1174,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     setSearchQuery("");
     setSelectedCardTypes([]);
     setSelectedAttributes([]);
+    setSelectedLevels([]);
     setSelectedMonsterRaces([]);
     setSelectedSpellRaces([]);
     setSelectedTrapRaces([]);
@@ -1314,6 +1347,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     const isAnyFilterActive = searchQuery ||
                              selectedCardTypes.length > 0 ||
                              selectedAttributes.length > 0 ||
+                             selectedLevels.length > 0 ||
                              selectedMonsterRaces.length > 0 ||
                              selectedSpellRaces.length > 0 ||
                              selectedTrapRaces.length > 0 ||
@@ -1338,7 +1372,8 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
         p_genesys_points_operator: genesysPointsValue !== '' ? genesysPointsOperator : null,
         p_genesys_points_value: genesysPointsValue !== '' ? genesysPointsValue : null,
         p_sort_by: sortColumn,
-        p_sort_ascending: sortOrder === 'asc'
+        p_sort_ascending: sortOrder === 'asc',
+        p_selected_levels: selectedLevels.length > 0 ? selectedLevels : null
       });
       if (error) throw error;
       setSearchResults(data || []);
@@ -1495,7 +1530,6 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
   };
 
   const saveDeck = async () => {
-    console.log("Starting saveDeck. editingDeckId:", editingDeckId);
     if (!user || !deckName.trim() || mainDeck.length < 40) {
       toast({ title: "Erro ao salvar", description: "Verifique o nome e o mínimo de 40 cartas.", variant: "destructive" });
       return;
@@ -2038,11 +2072,111 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                   ))}
                 </div>
               </div>
+
+              <div className="space-y-4">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Nível / Rank</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(level => (
+                    <Badge 
+                      key={level}
+                      variant="outline"
+                      className={cn(
+                        "w-10 h-10 flex items-center justify-center rounded-xl border-white/10 bg-white/5 cursor-pointer text-[12px] font-black",
+                        selectedLevels.includes(level) && "bg-primary text-black border-primary"
+                      )}
+                      onClick={() => handleLevelChange(level)}
+                    >
+                      {level}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Raça de Monstro</Label>
+                <div className="flex flex-wrap gap-2">
+                  {MONSTER_RACES.map(race => (
+                    <Badge 
+                      key={race}
+                      variant="outline"
+                      className={cn(
+                        "h-8 px-3 rounded-lg border-white/10 bg-white/5 cursor-pointer text-[9px] font-bold uppercase",
+                        selectedMonsterRaces.includes(race) && "bg-orange-500 text-white border-orange-500"
+                      )}
+                      onClick={() => handleMonsterRaceChange(race)}
+                    >
+                      {race}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tipo de Magia</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {SPELL_RACES.map(race => (
+                      <Badge 
+                        key={race}
+                        variant="outline"
+                        className={cn(
+                          "h-8 px-3 rounded-lg border-white/10 bg-white/5 cursor-pointer text-[9px] font-bold uppercase",
+                          selectedSpellRaces.includes(race) && "bg-green-600 text-white border-green-600"
+                        )}
+                        onClick={() => handleSpellRaceChange(race)}
+                      >
+                        {race}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tipo de Armadilha</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {TRAP_RACES.map(race => (
+                      <Badge 
+                        key={race}
+                        variant="outline"
+                        className={cn(
+                          "h-8 px-3 rounded-lg border-white/10 bg-white/5 cursor-pointer text-[9px] font-bold uppercase",
+                          selectedTrapRaces.includes(race) && "bg-pink-600 text-white border-pink-600"
+                        )}
+                        onClick={() => handleTrapRaceChange(race)}
+                      >
+                        {race}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Pontos Genesys</Label>
+                <div className="flex gap-4 items-center">
+                  <Select value={genesysPointsOperator} onValueChange={(val: any) => setGenesysPointsOperator(val)}>
+                    <SelectTrigger className="w-32 h-12 bg-white/5 border-white/10 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#121212] text-white">
+                      <SelectItem value="gte">Maior ou Igual (&gt;=)</SelectItem>
+                      <SelectItem value="lte">Menor ou Igual (&lt;=)</SelectItem>
+                      <SelectItem value="=">Igual (=)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input 
+                    type="number" 
+                    placeholder="Valor" 
+                    className="h-12 bg-white/5 border-white/10 rounded-xl flex-1"
+                    value={genesysPointsValue}
+                    onChange={(e) => setGenesysPointsValue(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                </div>
+              </div>
             </div>
           </ScrollArea>
           <div className="flex gap-4 mt-8">
             <Button variant="ghost" onClick={resetSearch} className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] text-stone-500">Resetar</Button>
-            <Button onClick={() => searchCards(true)} className="flex-[2] h-14 rounded-2xl bg-primary text-black font-black uppercase italic tracking-tighter text-lg shadow-lg shadow-primary/20">Aplicar Filtros</Button>
+            <Button onClick={() => { searchCards(); setIsFilterModalOpen(false); }} className="flex-[2] h-14 rounded-2xl bg-primary text-black font-black uppercase italic tracking-tighter text-lg shadow-lg shadow-primary/20">Aplicar Filtros</Button>
           </div>
         </DialogContent>
       </Dialog>
