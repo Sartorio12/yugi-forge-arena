@@ -39,9 +39,9 @@ export const CardOfTheDay = () => {
   return (
     <Card className="bg-[hsl(0_0%_12%)] border-border">
       <CardHeader className="pb-2">
-        <CardTitle className="text-2xl font-bold text-center">{t('card_of_day.title')}</CardTitle>
+        <CardTitle className="text-xl font-bold text-center">{t('card_of_day.title')}</CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center pt-2 pb-4 min-h-[400px]">
+      <CardContent className="flex flex-col items-center justify-center pt-2 pb-4 min-h-[300px]">
         {isLoading ? (
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         ) : isError ? (
@@ -56,10 +56,10 @@ export const CardOfTheDay = () => {
               <img
                 src={card.image_url}
                 alt={cardName}
-                className="mx-auto rounded-lg mb-1 w-full"
+                className="mx-auto rounded-lg mb-1 w-[180px] md:w-[200px]"
               />
             )}
-            <p className="text-sm font-bold mt-2 text-muted-foreground">{cardName}</p>
+            <p className="text-xs font-bold mt-2 text-muted-foreground">{cardName}</p>
           </div>
         ) : null}
       </CardContent>
