@@ -1985,19 +1985,19 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
       </div>
 
       <Dialog open={isFilterModalOpen} onOpenChange={setIsFilterModalOpen}>
-        <DialogContent className="bg-[#0a0a0a] border-white/10 text-white max-w-3xl rounded-[2rem] p-8">
+        <DialogContent className="bg-[#212123] border-[#333] text-white max-w-3xl rounded-none p-6 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-primary">Filtros de Busca</DialogTitle>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-white border-b border-[#333] pb-4">Filtros de Busca</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-6 mt-6">
-            <div className="space-y-8 pb-8">
-              <div className="space-y-4">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Ordenar Por</Label>
+          <ScrollArea className="max-h-[65vh] pr-4 mt-4">
+            <div className="space-y-6 pb-4">
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Ordenar Por</Label>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
+                  <SelectTrigger className="h-10 bg-[#1a1a1a] border-[#333] rounded-none">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#121212] text-white">
+                  <SelectContent className="bg-[#1a1a1a] border-[#333] text-white">
                     <SelectItem value="popularity_desc">Mais Populares</SelectItem>
                     <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
                     <SelectItem value="atk_desc">ATK (Maior)</SelectItem>
@@ -2007,13 +2007,14 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 </Select>
               </div>
 
-              <div className="space-y-4">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tipo de Carta</Label>
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Tipo de Carta</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.keys(CARD_TYPE_GROUPS).map(group => (
-                    <div key={group} className="flex items-center space-x-2 bg-white/5 p-2 rounded-lg border border-white/5">
+                    <div key={group} className="flex items-center space-x-2 bg-[#1a1a1a] p-2 border border-[#333]">
                       <Checkbox 
                         id={`type-${group}`} 
+                        className="rounded-none border-[#333]"
                         checked={CARD_TYPE_GROUPS[group as keyof typeof CARD_TYPE_GROUPS].every(t => selectedCardTypes.includes(t))}
                         onCheckedChange={() => handleCardTypeChange(group)}
                       />
@@ -2023,16 +2024,16 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Atributos</Label>
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Atributos</Label>
                 <div className="flex flex-wrap gap-2">
                   {ATTRIBUTES.map(attr => (
                     <Badge 
                       key={attr}
                       variant="outline"
                       className={cn(
-                        "h-10 px-4 rounded-xl border-white/10 bg-white/5 cursor-pointer text-[10px] font-black",
-                        selectedAttributes.includes(attr) && "bg-primary text-black border-primary"
+                        "h-8 px-3 rounded-none border-[#333] bg-[#1a1a1a] cursor-pointer text-[10px] font-bold uppercase",
+                        selectedAttributes.includes(attr) && "bg-[#856f4b] text-white border-[#856f4b]"
                       )}
                       onClick={() => handleAttributeChange(attr)}
                     >
@@ -2042,16 +2043,16 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Nível / Rank</Label>
-                <div className="flex flex-wrap gap-2">
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Nível / Rank</Label>
+                <div className="flex flex-wrap gap-1">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(level => (
                     <Badge 
                       key={level}
                       variant="outline"
                       className={cn(
-                        "w-10 h-10 flex items-center justify-center rounded-xl border-white/10 bg-white/5 cursor-pointer text-[12px] font-black",
-                        selectedLevels.includes(level) && "bg-primary text-black border-primary"
+                        "w-8 h-8 flex items-center justify-center rounded-none border-[#333] bg-[#1a1a1a] cursor-pointer text-[12px] font-bold",
+                        selectedLevels.includes(level) && "bg-[#856f4b] text-white border-[#856f4b]"
                       )}
                       onClick={() => handleLevelChange(level)}
                     >
@@ -2061,16 +2062,16 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Raça de Monstro</Label>
-                <div className="flex flex-wrap gap-2">
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Raça de Monstro</Label>
+                <div className="flex flex-wrap gap-1">
                   {MONSTER_RACES.map(race => (
                     <Badge 
                       key={race}
                       variant="outline"
                       className={cn(
-                        "h-8 px-3 rounded-lg border-white/10 bg-white/5 cursor-pointer text-[9px] font-bold uppercase",
-                        selectedMonsterRaces.includes(race) && "bg-orange-500 text-white border-orange-500"
+                        "h-7 px-2 rounded-none border-[#333] bg-[#1a1a1a] cursor-pointer text-[9px] font-bold uppercase",
+                        selectedMonsterRaces.includes(race) && "bg-[#856f4b] text-white border-[#856f4b]"
                       )}
                       onClick={() => handleMonsterRaceChange(race)}
                     >
@@ -2080,17 +2081,17 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tipo de Magia</Label>
-                  <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Tipo de Magia</Label>
+                  <div className="flex flex-wrap gap-1">
                     {SPELL_RACES.map(race => (
                       <Badge 
                         key={race}
                         variant="outline"
                         className={cn(
-                          "h-8 px-3 rounded-lg border-white/10 bg-white/5 cursor-pointer text-[9px] font-bold uppercase",
-                          selectedSpellRaces.includes(race) && "bg-green-600 text-white border-green-600"
+                          "h-7 px-2 rounded-none border-[#333] bg-[#1a1a1a] cursor-pointer text-[9px] font-bold uppercase",
+                          selectedSpellRaces.includes(race) && "bg-[#856f4b] text-white border-[#856f4b]"
                         )}
                         onClick={() => handleSpellRaceChange(race)}
                       >
@@ -2099,16 +2100,16 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                     ))}
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Tipo de Armadilha</Label>
-                  <div className="flex flex-wrap gap-2">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Tipo de Armadilha</Label>
+                  <div className="flex flex-wrap gap-1">
                     {TRAP_RACES.map(race => (
                       <Badge 
                         key={race}
                         variant="outline"
                         className={cn(
-                          "h-8 px-3 rounded-lg border-white/10 bg-white/5 cursor-pointer text-[9px] font-bold uppercase",
-                          selectedTrapRaces.includes(race) && "bg-pink-600 text-white border-pink-600"
+                          "h-7 px-2 rounded-none border-[#333] bg-[#1a1a1a] cursor-pointer text-[9px] font-bold uppercase",
+                          selectedTrapRaces.includes(race) && "bg-[#856f4b] text-white border-[#856f4b]"
                         )}
                         onClick={() => handleTrapRaceChange(race)}
                       >
@@ -2119,23 +2120,23 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-400">Pontos Genesys</Label>
-                <div className="flex gap-4 items-center">
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Pontos Genesys</Label>
+                <div className="flex gap-2 items-center">
                   <Select value={genesysPointsOperator} onValueChange={(val: any) => setGenesysPointsOperator(val)}>
-                    <SelectTrigger className="w-32 h-12 bg-white/5 border-white/10 rounded-xl">
+                    <SelectTrigger className="w-24 h-9 bg-[#1a1a1a] border-[#333] rounded-none">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#121212] text-white">
-                      <SelectItem value="gte">Maior ou Igual (&gt;=)</SelectItem>
-                      <SelectItem value="lte">Menor ou Igual (&lt;=)</SelectItem>
-                      <SelectItem value="=">Igual (=)</SelectItem>
+                    <SelectContent className="bg-[#1a1a1a] border-[#333] text-white">
+                      <SelectItem value="gte">&gt;=</SelectItem>
+                      <SelectItem value="lte">&lt;=</SelectItem>
+                      <SelectItem value="=">=</SelectItem>
                     </SelectContent>
                   </Select>
                   <Input 
                     type="number" 
                     placeholder="Valor" 
-                    className="h-12 bg-white/5 border-white/10 rounded-xl flex-1"
+                    className="h-9 bg-[#1a1a1a] border-[#333] rounded-none flex-1 text-[13px]"
                     value={genesysPointsValue}
                     onChange={(e) => setGenesysPointsValue(e.target.value === '' ? '' : Number(e.target.value))}
                   />
@@ -2143,9 +2144,9 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               </div>
             </div>
           </ScrollArea>
-          <div className="flex gap-4 mt-8">
-            <Button variant="ghost" onClick={resetSearch} className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] text-stone-500">Resetar</Button>
-            <Button onClick={() => { searchCards(); setIsFilterModalOpen(false); }} className="flex-[2] h-14 rounded-2xl bg-primary text-black font-black uppercase italic tracking-tighter text-lg shadow-lg shadow-primary/20">Aplicar Filtros</Button>
+          <div className="flex gap-3 mt-6">
+            <Button variant="ghost" onClick={resetSearch} className="flex-1 h-10 rounded-none border border-[#333] bg-[#1a1a1a] font-bold uppercase text-[11px] text-stone-400 hover:bg-[#252525] hover:text-white transition-all">Resetar</Button>
+            <Button onClick={() => { searchCards(); setIsFilterModalOpen(false); }} className="flex-[2] h-10 rounded-none bg-[#3b3b3b] border border-[#856f4b] text-white font-bold uppercase text-[11px] hover:bg-[#4a4a4a] hover:border-[#a68c5e] transition-all tracking-widest">Aplicar Filtros</Button>
           </div>
         </DialogContent>
       </Dialog>
