@@ -17,7 +17,6 @@ import { Progress } from "@/components/ui/progress"; // Import Progress
 import { useState, useEffect } from "react";
 import { FramedAvatar } from "@/components/FramedAvatar";
 import { FrameInventory } from "@/components/FrameInventory";
-import { useChat } from "@/components/chat/ChatProvider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PROFILE_AVATARS } from "@/constants/profileAvatars";
 import { PROFILE_BANNERS } from "@/constants/profileBanners";
@@ -52,7 +51,6 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { openChat } = useChat();
 
   // Current logged in user profile (to check permissions)
   const { profile: currentUserProfile } = useProfile(user?.id);
@@ -548,17 +546,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                           </DialogContent>                  </Dialog>
                 )}
                 {canSendMessage && (
-                  <Button variant="outline" onClick={() => {
-                    if (window.innerWidth < 768) {
-                      navigate(`/messages/${id}`);
-                    } else {
-                      openChat(id!);
-                      toast({
-                        title: t('profile_page.send_message'),
-                        description: "Abrindo janela de conversa...",
-                      });
-                    }
-                  }}>
+                  <Button variant="outline" onClick={() => navigate(`/messages/${id}`)}>
                     <MessageSquare className="h-4 w-4 mr-2" />
                     {t('profile_page.send_message')}
                   </Button>

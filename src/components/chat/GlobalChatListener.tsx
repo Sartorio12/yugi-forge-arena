@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
-import { useChat } from './ChatProvider';
 import { useNavigate } from 'react-router-dom';
 
 interface GlobalChatListenerProps {
@@ -12,17 +11,9 @@ interface GlobalChatListenerProps {
 
 export const GlobalChatListener = ({ currentUser }: GlobalChatListenerProps) => {
     const { toast } = useToast();
-    const { openChats, openChat } = useChat();
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     
-    // Use a ref to track openChats to avoid re-subscribing on every state change
-    const openChatsRef = useRef(openChats);
-
-    useEffect(() => {
-        openChatsRef.current = openChats;
-    }, [openChats]);
-
     // Request notification permission on mount
     useEffect(() => {
         if ('Notification' in window && Notification.permission === 'default') {
@@ -73,9 +64,6 @@ export const GlobalChatListener = ({ currentUser }: GlobalChatListenerProps) => 
                 console.log("GlobalChatListener: Message received!", payload);
                 const newMessage = payload.new;
                 
-                // Check if we already have an open chat window for this sender
-                const isChatOpen = openChatsRef.current.some(c => c.userId === newMessage.sender_id);
-                
                 // Fetch sender details
                 const { data: senderProfile } = await supabase
                     .from('profiles')
@@ -85,11 +73,11 @@ export const GlobalChatListener = ({ currentUser }: GlobalChatListenerProps) => 
 
                 const senderName = senderProfile?.username || 'Alguém';
 
-                // Play sound and show desktop notification if chat is closed OR user is tabbed away
-                if (!isChatOpen || document.hidden) {
+                // Play sound and show desktop notification if user is tabbed away
+                if (document.hidden) {
                     playNotificationSound();
                     
-                    if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+                    if ('Notification' in window && Notification.permission === 'granted') {
                         try {
                             new Notification(`Nova mensagem de ${senderName}`, {
                                 body: newMessage.content,
@@ -101,31 +89,23 @@ export const GlobalChatListener = ({ currentUser }: GlobalChatListenerProps) => 
                     }
                 }
 
-                if (!isChatOpen) {
-                    console.log("GlobalChatListener: Showing toast from", senderName);
+                console.log("GlobalChatListener: Showing toast from", senderName);
 
-                    toast({
-                        title: `Nova mensagem de ${senderName}`,
-                        description: newMessage.content,
-                        action: (
-                            <div 
-                                className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive cursor-pointer"
-                                onClick={() => {
-                                    if (window.innerWidth < 768) {
-                                        navigate(`/messages/${newMessage.sender_id}`);
-                                    } else {
-                                        openChat(newMessage.sender_id);
-                                    }
-                                }}
-                            >
-                                Responder
-                            </div>
-                        ),
-                    });
-                    
-                    // Invalidate conversations list so the unread badge (if any) updates
-                     queryClient.invalidateQueries({ queryKey: ['conversations'] });
-                }
+                toast({
+                    title: `Nova mensagem de ${senderName}`,
+                    description: newMessage.content,
+                    action: (
+                        <div 
+                            className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive cursor-pointer"
+                            onClick={() => navigate(`/messages/${newMessage.sender_id}`)}
+                        >
+                            Responder
+                        </div>
+                    ),
+                });
+                
+                // Invalidate conversations list so the unread badge (if any) updates
+                queryClient.invalidateQueries({ queryKey: ['conversations'] });
             })
             .subscribe((status) => {
                 console.log("GlobalChatListener: Subscription status:", status);
@@ -135,7 +115,7 @@ export const GlobalChatListener = ({ currentUser }: GlobalChatListenerProps) => 
             console.log("GlobalChatListener: Cleaning up channel");
             supabase.removeChannel(channel);
         };
-    }, [currentUser, toast, openChat, queryClient]);
+    }, [currentUser, toast, navigate, queryClient]);
 
     return null;
 };

@@ -9,8 +9,6 @@ import { User, Session } from "@supabase/supabase-js";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
 import { PresenceProvider } from "./components/PresenceProvider";
-import { ChatProvider } from "./components/chat/ChatProvider";
-import { ChatDock } from "./components/chat/ChatDock";
 import { GlobalChatListener } from "./components/chat/GlobalChatListener";
 import { LevelUpListener } from "./components/LevelUpListener";
 import ScrollToTop from "./components/ScrollToTop";
@@ -122,7 +120,6 @@ const App = () => {
           <UpdateManager />
           <ScrollToTop />
           <PresenceProvider user={user}>
-            <ChatProvider>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Index user={user} onLogout={handleLogout} />} />
@@ -269,12 +266,10 @@ const App = () => {
                 </Routes>
               </Suspense>
               <ConditionalFooter />
-              <ChatDock currentUser={user} />
               <GlobalChatListener currentUser={user} />
               <LevelUpListener user={user} />
               <DiscordUsernameModal userId={user?.id} />
               <AbsenceRuleNotice />
-            </ChatProvider>
           </PresenceProvider>
           <SpeedInsights />
           <Analytics />
