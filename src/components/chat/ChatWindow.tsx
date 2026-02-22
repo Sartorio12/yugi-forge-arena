@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { Loader2, Send, CornerDownLeft } from 'lucide-react';
+import { Loader2, Send, CornerDownLeft, ChevronLeft } from 'lucide-react';
 import { FramedAvatar } from "../FramedAvatar";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,8 @@ const MESSAGES_PER_PAGE = 30;
 interface ChatWindowProps {
     selectedUserId: string | null;
     currentUser: User | null;
-    showHeader?: boolean; // New prop
+    showHeader?: boolean;
+    onBack?: () => void;
 }
 
 const fetchMessages = async ({ pageParam = 0, queryKey }: any) => {
@@ -32,7 +33,7 @@ const fetchMessages = async ({ pageParam = 0, queryKey }: any) => {
     return data.reverse(); // reverse to show latest at the bottom
 };
 
-export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: ChatWindowProps) => {
+export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true, onBack }: ChatWindowProps) => {
     const queryClient = useQueryClient();
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -281,6 +282,11 @@ export const ChatWindow = ({ selectedUserId, currentUser, showHeader = true }: C
             {/* Chat Header */}
             {showHeader && (
               <div className="p-4 border-b border-border flex items-center gap-4">
+                  {onBack && (
+                    <Button variant="ghost" size="icon" className="md:hidden -ml-2" onClick={onBack}>
+                      <ChevronLeft className="h-6 w-6" />
+                    </Button>
+                  )}
                   <div className="relative">
                       <FramedAvatar
                         userId={otherUserProfile?.id}

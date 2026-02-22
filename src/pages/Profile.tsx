@@ -34,7 +34,7 @@ interface Deck {
   deck_cards: { count: number }[];
 }
 
-import { Profile, useProfile } from "@/hooks/useProfile";
+import { Profile as ProfileType, useProfile } from "@/hooks/useProfile";
 import UserDisplay from "@/components/UserDisplay";
 import { Database } from "@/integrations/supabase/types"; // Import Database type
 import { TitleInventory } from "@/components/TitleInventory";
@@ -73,7 +73,7 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
         toast({ title: t('profile_page.edit_modal.error'), description: t('profile_page.not_found'), variant: "destructive" });
         return null;
       }
-      return data as Profile;
+      return data as ProfileType;
     },
     enabled: !!id,
   });
@@ -293,8 +293,8 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
   const publicDecks = decks?.filter((deck: any) => !deck.is_private) || [];
   const privateDecks = decks?.filter((deck: any) => deck.is_private) || [];
   const isSuperAdmin = user?.id === "80193776-6790-457c-906d-ed45ea16df9f";
-  const isProfileOwner = user?.id === profile?.id || isSuperAdmin;
-  const canSendMessage = user && user.id !== profile?.id;
+  const isProfileOwner = user?.id === id || isSuperAdmin;
+  const canSendMessage = user && user.id !== id;
 
   return (
     <div className="min-h-screen bg-background">
@@ -550,9 +550,13 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                 {canSendMessage && (
                   <Button variant="outline" onClick={() => {
                     if (window.innerWidth < 768) {
-                      navigate(`/messages/${profile.id}`);
+                      navigate(`/messages/${id}`);
                     } else {
-                      openChat(profile.id);
+                      openChat(id!);
+                      toast({
+                        title: t('profile_page.send_message'),
+                        description: "Abrindo janela de conversa...",
+                      });
                     }
                   }}>
                     <MessageSquare className="h-4 w-4 mr-2" />
