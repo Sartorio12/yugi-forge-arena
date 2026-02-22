@@ -204,6 +204,10 @@ const App = () => {
                     path="/messages"
                     element={<MessagesPage user={user} onLogout={handleLogout} />}
                   />
+                  <Route
+                    path="/messages/:userId"
+                    element={<MessagesPage user={user} onLogout={handleLogout} />}
+                  />
   
                   <Route path="/esqueci-senha" element={<RequestPasswordResetPage />} />
                   <Route path="/atualizar-senha" element={<UpdatePasswordPage />} />
@@ -265,6 +269,7 @@ const App = () => {
                 </Routes>
               </Suspense>
               <ConditionalFooter />
+              <ChatDock currentUser={user} />
               <GlobalChatListener currentUser={user} />
               <LevelUpListener user={user} />
               <DiscordUsernameModal userId={user?.id} />

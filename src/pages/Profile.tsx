@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -49,6 +49,7 @@ interface ProfileProps {
 const Profile = ({ user, onLogout }: ProfileProps) => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { openChat } = useChat();
@@ -547,7 +548,13 @@ const Profile = ({ user, onLogout }: ProfileProps) => {
                                           </DialogContent>                  </Dialog>
                 )}
                 {canSendMessage && (
-                  <Button variant="outline" onClick={() => openChat(profile.id)}>
+                  <Button variant="outline" onClick={() => {
+                    if (window.innerWidth < 768) {
+                      navigate(`/messages/${profile.id}`);
+                    } else {
+                      openChat(profile.id);
+                    }
+                  }}>
                     <MessageSquare className="h-4 w-4 mr-2" />
                     {t('profile_page.send_message')}
                   </Button>

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { useChat } from './ChatProvider';
+import { useNavigate } from 'react-router-dom';
 
 interface GlobalChatListenerProps {
     currentUser: User | null;
@@ -13,6 +14,7 @@ export const GlobalChatListener = ({ currentUser }: GlobalChatListenerProps) => 
     const { toast } = useToast();
     const { openChats, openChat } = useChat();
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
     
     // Use a ref to track openChats to avoid re-subscribing on every state change
     const openChatsRef = useRef(openChats);
@@ -108,7 +110,13 @@ export const GlobalChatListener = ({ currentUser }: GlobalChatListenerProps) => 
                         action: (
                             <div 
                                 className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive cursor-pointer"
-                                onClick={() => openChat(newMessage.sender_id)}
+                                onClick={() => {
+                                    if (window.innerWidth < 768) {
+                                        navigate(`/messages/${newMessage.sender_id}`);
+                                    } else {
+                                        openChat(newMessage.sender_id);
+                                    }
+                                }}
                             >
                                 Responder
                             </div>

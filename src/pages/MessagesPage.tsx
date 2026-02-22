@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { User } from "@supabase/supabase-js";
@@ -13,6 +13,12 @@ interface MessagesPageProps {
 const MessagesPage = ({ user, onLogout }: MessagesPageProps) => {
   const { userId: initialUserId } = useParams<{ userId?: string }>();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(initialUserId || null);
+
+  useEffect(() => {
+    if (initialUserId) {
+      setSelectedUserId(initialUserId);
+    }
+  }, [initialUserId]);
 
   return (
     <div className="h-screen bg-background text-white flex flex-col">

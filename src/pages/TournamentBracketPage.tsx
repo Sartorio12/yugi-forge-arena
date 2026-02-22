@@ -198,7 +198,7 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
         ) : (matches && sortedRoundNumbers.length > 0) ? (
           <>
             {/* VIEW PARA DESKTOP (Layout Grand Slam) */}
-            <div className="hidden lg:flex flex-row justify-center items-center gap-12 xl:gap-20 overflow-x-auto pb-20 custom-scrollbar min-w-max">
+            <div className="hidden lg:flex flex-row justify-center items-center gap-12 xl:gap-20 overflow-x-auto pb-20 custom-scrollbar">
                 <div className="flex flex-row gap-8">
                     {sortedRoundNumbers.map((roundNum) => (
                         <RoundColumn key={roundNum} roundNum={roundNum} side="left" />
