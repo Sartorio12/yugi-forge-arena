@@ -1177,8 +1177,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
     type.includes("Synchro") || 
     type.includes("XYZ") || 
     type.includes("Xyz") || 
-    type.includes("Link") || 
-    type.includes("Pendulum");
+    type.includes("Link");
 
   const discardChanges = useCallback(() => {
     localStorage.removeItem('deck_builder_draft');
