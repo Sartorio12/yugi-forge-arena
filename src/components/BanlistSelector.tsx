@@ -11,6 +11,7 @@ interface CardData {
   name: string;
   pt_name?: string | null;
   image_url_small: string;
+  ban_master_duel?: string | null;
 }
 
 interface BanlistSelectorProps {
@@ -53,11 +54,16 @@ export const BanlistSelector = ({ maxSelection, selectedCards, onSelectionChange
       const { data, error } = await supabase
         .rpc("search_cards", { 
           search_query: searchTerm, 
-          p_limit: 20
+          p_limit: 50
         });
 
       if (error) throw error;
-      setSearchResults(data || []);
+      
+      const filtered = (data || []).filter((card: any) => 
+        card.ban_master_duel !== "Forbidden" && card.ban_master_duel !== "Banned"
+      );
+      
+      setSearchResults(filtered.slice(0, 20));
     } catch (error) {
       console.error("Error searching cards:", error);
       toast({

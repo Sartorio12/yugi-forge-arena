@@ -57,7 +57,13 @@ export const CustomBanlist = ({ tournamentId }: CustomBanlistProps) => {
         .rpc("get_tournament_banlist", { p_tournament_id: tournamentId });
       
       if (error) throw error;
-      return sortBanlistCards(data || []);
+      
+      // Filter out cards already banned in Master Duel
+      const filteredData = (data || []).filter((card: any) => 
+        card.ban_master_duel !== "Forbidden" && card.ban_master_duel !== "Banned"
+      );
+      
+      return sortBanlistCards(filteredData);
     },
   });
 

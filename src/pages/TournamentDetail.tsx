@@ -160,10 +160,21 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
         if (!id) return [];
         const { data, error } = await supabase
             .from("tournament_banned_cards")
-            .select("card_id")
+            .select(`
+                card_id,
+                cards!inner(ban_master_duel)
+            `)
             .eq("tournament_id", Number(id));
+        
         if (error) throw error;
-        return data.map(b => b.card_id);
+        
+        // Filter out cards already banned in Master Duel
+        return data
+            .filter((b: any) => 
+                b.cards.ban_master_duel !== "Forbidden" && 
+                b.cards.ban_master_duel !== "Banned"
+            )
+            .map(b => b.card_id);
     },
     enabled: !!id && (tournament as any)?.type === 'banimento',
   });
@@ -436,6 +447,11 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                             <Layers className="h-4 w-4" /> Classificação Suíça
                         </TabsTrigger>
                     )}
+                    {tournamentType === 'banimento' && (
+                        <TabsTrigger value="banlist" className="gap-2">
+                            <Ban className="h-4 w-4 text-destructive" /> Banlist
+                        </TabsTrigger>
+                    )}
                     <TabsTrigger value="analysis" className="gap-2">
                         <BrainCircuit className="h-4 w-4" /> Análise (Oráculo)
                     </TabsTrigger>
@@ -506,6 +522,15 @@ const TournamentDetail = ({ user, onLogout }: TournamentDetailProps) => {
                                 <p className="text-muted-foreground">Os grupos ainda não foram sorteados para este torneio.</p>
                             </div>
                         )}
+                    </TabsContent>
+                )}
+
+                {/* Tab: Banlist */}
+                {tournamentType === 'banimento' && (
+                    <TabsContent value="banlist" className="mt-6">
+                        <div className="bg-card/30 rounded-xl p-4 md:p-6 border border-border">
+                            <CustomBanlist tournamentId={tournament.id} />
+                        </div>
                     </TabsContent>
                 )}
 
