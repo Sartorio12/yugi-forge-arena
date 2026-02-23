@@ -196,69 +196,86 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : (matches && sortedRoundNumbers.length > 0) ? (
-          <div className="w-full flex justify-center">
-            {/* VIEW PARA DESKTOP (Layout Grand Slam) */}
-            <div className="hidden lg:flex flex-row justify-start lg:justify-center items-center gap-4 xl:gap-8 overflow-x-auto pb-20 px-8 custom-scrollbar max-w-[1600px]">
+          <>
+            <div className="w-full flex justify-center">
+              {/* VIEW PARA DESKTOP (Layout Grand Slam) */}
+              <div className="hidden lg:flex flex-row justify-start lg:justify-center items-center gap-4 xl:gap-8 overflow-x-auto pb-20 px-8 custom-scrollbar max-w-[1600px]">
                 <div className="flex flex-row gap-4 h-full">
-                    {sortedRoundNumbers.map((roundNum) => (
-                        <RoundColumn key={roundNum} roundNum={roundNum} side="left" />
-                    ))}
+                  {sortedRoundNumbers.map((roundNum) => (
+                    <RoundColumn key={roundNum} roundNum={roundNum} side="left" />
+                  ))}
                 </div>
 
                 <div className="flex flex-col items-center justify-center min-w-[200px] py-10 shrink-0">
-                    <div className="relative mb-6">
-                        <div className="absolute -inset-8 bg-yellow-500/10 blur-3xl rounded-full" />
-                        <Trophy className="h-20 w-20 text-yellow-500 relative z-10 drop-shadow-[0_0_30px_rgba(234,179,8,0.4)]" />
-                    </div>
+                  <div className="relative mb-6">
+                    <div className="absolute -inset-8 bg-yellow-500/10 blur-3xl rounded-full" />
+                    <Trophy className="h-20 w-20 text-yellow-500 relative z-10 drop-shadow-[0_0_30px_rgba(234,179,8,0.4)]" />
+                  </div>
 
-                    {!isOnlyOneRound && rounds[maxRoundNum]?.length === 1 && (
-                        <div className="flex flex-col items-center gap-4">
-                             <Badge className="bg-yellow-500 text-black font-black uppercase italic tracking-widest px-6">A Grande Final</Badge>
-                             <Card className="w-64 border-0 bg-zinc-900 shadow-[0_0_40px_rgba(0,0,0,0.8)] ring-2 ring-yellow-500/40">
-                                <div className="flex flex-col divide-y divide-white/5">
-                                    <PlayerSlot player={rounds[maxRoundNum][0].player1} isWinner={rounds[maxRoundNum][0].winner_id === rounds[maxRoundNum][0].player1_id && !!rounds[maxRoundNum][0].player1_id} isPlaceholder={!rounds[maxRoundNum][0].player1_id} />
-                                    <PlayerSlot player={rounds[maxRoundNum][0].player2} isWinner={rounds[maxRoundNum][0].winner_id === rounds[maxRoundNum][0].player2_id && !!rounds[maxRoundNum][0].player2_id} isPlaceholder={!rounds[maxRoundNum][0].player2_id} />
-                                </div>
-                             </Card>
+                  {!isOnlyOneRound && rounds[maxRoundNum]?.length === 1 && (
+                    <div className="flex flex-col items-center gap-4">
+                      <Badge className="bg-yellow-500 text-black font-black uppercase italic tracking-widest px-6">A Grande Final</Badge>
+                      <Card className="w-64 border-0 bg-zinc-900 shadow-[0_0_40px_rgba(0,0,0,0.8)] ring-2 ring-yellow-500/40">
+                        <div className="flex flex-col divide-y divide-white/5">
+                          <PlayerSlot 
+                            player={rounds[maxRoundNum][0].player1} 
+                            isWinner={rounds[maxRoundNum][0].winner_id === rounds[maxRoundNum][0].player1_id && !!rounds[maxRoundNum][0].player1_id} 
+                            isPlaceholder={!rounds[maxRoundNum][0].player1_id} 
+                          />
+                          <PlayerSlot 
+                            player={rounds[maxRoundNum][0].player2} 
+                            isWinner={rounds[maxRoundNum][0].winner_id === rounds[maxRoundNum][0].player2_id && !!rounds[maxRoundNum][0].player2_id} 
+                            isPlaceholder={!rounds[maxRoundNum][0].player2_id} 
+                          />
                         </div>
-                    )}
-                    
-                    {isOnlyOneRound && (
-                        <div className="text-center space-y-2 opacity-50">
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em]">Aguardando Próximas Fases</p>
-                        </div>
-                    )}
+                      </Card>
+                    </div>
+                  )}
+                  
+                  {isOnlyOneRound && (
+                    <div className="text-center space-y-2 opacity-50">
+                      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Aguardando Próximas Fases</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-row-reverse gap-4 h-full">
-                    {sortedRoundNumbers.map((roundNum) => (
-                        <RoundColumn key={roundNum} roundNum={roundNum} side="right" />
-                    ))}
+                  {sortedRoundNumbers.map((roundNum) => (
+                    <RoundColumn key={roundNum} roundNum={roundNum} side="right" />
+                  ))}
                 </div>
+              </div>
             </div>
-          </div>
 
             {/* VIEW PARA MOBILE (Lista Vertical Simplificada) */}
             <div className="lg:hidden space-y-12">
-                {sortedRoundNumbers.map((roundNum) => (
-                    <div key={roundNum} className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <Swords className="h-4 w-4 text-primary" />
-                            <h3 className="font-black uppercase tracking-widest text-sm text-primary">{rounds[roundNum][0]?.round_name}</h3>
-                            <div className="flex-1 h-px bg-white/5" />
+              {sortedRoundNumbers.map((roundNum) => (
+                <div key={roundNum} className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Swords className="h-4 w-4 text-primary" />
+                    <h3 className="font-black uppercase tracking-widest text-sm text-primary">{rounds[roundNum][0]?.round_name}</h3>
+                    <div className="flex-1 h-px bg-white/5" />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    {rounds[roundNum].map((match) => (
+                      <Card key={match.id} className={`border-0 bg-zinc-900/50 ${match.winner_id ? 'ring-1 ring-yellow-500/30' : 'ring-1 ring-white/5'}`}>
+                        <div className="flex flex-col divide-y divide-white/5">
+                          <PlayerSlot 
+                            player={match.player1} 
+                            isWinner={match.winner_id === match.player1_id && !!match.player1_id} 
+                            isPlaceholder={!match.player1_id} 
+                          />
+                          <PlayerSlot 
+                            player={match.player2} 
+                            isWinner={match.winner_id === match.player2_id && !!match.player2_id} 
+                            isPlaceholder={!match.player2_id} 
+                          />
                         </div>
-                        <div className="grid grid-cols-1 gap-4">
-                            {rounds[roundNum].map((match) => (
-                                <Card key={match.id} className={`border-0 bg-zinc-900/50 ${match.winner_id ? 'ring-1 ring-yellow-500/30' : 'ring-1 ring-white/5'}`}>
-                                    <div className="flex flex-col divide-y divide-white/5">
-                                        <PlayerSlot player={match.player1} isWinner={match.winner_id === match.player1_id && !!match.player1_id} isPlaceholder={!match.player1_id} />
-                                        <PlayerSlot player={match.player2} isWinner={match.winner_id === match.player2_id && !!match.player2_id} isPlaceholder={!match.player2_id} />
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                ))}
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         ) : (
