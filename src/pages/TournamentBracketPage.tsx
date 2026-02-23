@@ -126,19 +126,19 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
     const teamLogo = teamName ? getTeamLogoUrl(teamName) : null;
 
     return (
-      <div className={`flex items-center gap-2 px-3 py-1.5 transition-all h-[44px] ${isWinner ? 'bg-yellow-500/20' : 'bg-black/60'} ${isPlaceholder ? 'opacity-40' : ''} ${align === "right" ? "flex-row-reverse text-right" : ""}`}>
+      <div className={`flex items-center gap-1.5 px-2 py-1 transition-all h-[38px] ${isWinner ? 'bg-yellow-500/20' : 'bg-black/60'} ${isPlaceholder ? 'opacity-40' : ''} ${align === "right" ? "flex-row-reverse text-right" : ""}`}>
         {teamLogo && (
-          <img src={teamLogo} alt={teamName || ""} className="h-6 w-6 object-contain shrink-0 brightness-110" />
+          <img src={teamLogo} alt={teamName || ""} className="h-5 w-5 object-contain shrink-0 brightness-110" />
         )}
         <div className={`flex flex-col min-w-0 flex-1`}>
-          <span className={`text-[10px] sm:text-[11px] font-black truncate uppercase tracking-tighter ${isWinner ? 'text-yellow-500' : 'text-foreground'}`}>
+          <span className={`text-[9px] sm:text-[10px] font-black truncate uppercase tracking-tighter ${isWinner ? 'text-yellow-500' : 'text-foreground'}`}>
             {player?.username || (isPlaceholder ? "Aguardando..." : "BYE")}
           </span>
           {player?.clan_members?.[0]?.clans?.tag && (
-            <span className="text-[8px] text-muted-foreground leading-none font-bold">[{player.clan_members[0].clans.tag}]</span>
+            <span className="text-[7px] text-muted-foreground leading-none font-bold">[{player.clan_members[0].clans.tag}]</span>
           )}
         </div>
-        {isWinner && <Trophy className="h-3 w-3 text-yellow-500 shrink-0" />}
+        {isWinner && <Trophy className="h-2.5 w-2.5 text-yellow-500 shrink-0" />}
       </div>
     );
   };
@@ -153,13 +153,13 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
     if (matchesToDisplay.length === 0) return null;
 
     return (
-      <div className="flex flex-col w-52 gap-6 h-full py-4 shrink-0">
+      <div className="flex flex-col w-44 gap-4 h-full py-2 shrink-0">
         <div className="text-center shrink-0">
-            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black tracking-widest uppercase text-[10px] py-1 px-4">
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black tracking-widest uppercase text-[9px] py-0.5 px-3">
                 {roundMatches[0]?.round_name}
             </Badge>
         </div>
-        <div className="flex flex-col gap-4 justify-center flex-1">
+        <div className="flex flex-col gap-3 justify-center flex-1">
             {matchesToDisplay.map((match) => (
                 <Card key={match.id} className={`group relative z-10 border-0 bg-zinc-900/90 shadow-2xl overflow-hidden transition-transform hover:scale-105 duration-300 ${match.winner_id ? 'ring-1 ring-yellow-500/50' : 'ring-1 ring-white/10'}`}>
                     <div className="flex flex-col divide-y divide-white/5">
@@ -177,18 +177,18 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
     <div className="min-h-screen bg-[#050505] text-white overflow-x-hidden">
       <Navbar user={user} onLogout={onLogout} />
       
-      <main className="mx-auto py-6 md:py-8 w-full">
+      <main className="mx-auto py-4 md:py-6 w-full">
         {/* HEADER */}
-        <div className="container mx-auto px-4 flex flex-col items-center mb-4 md:mb-6 text-center">
-          <Link to={`/tournaments/${id}`} className="mb-2">
-            <Button variant="ghost" size="sm" className="text-muted-foreground uppercase font-black tracking-widest text-[10px]">
-              <ArrowLeft className="mr-2 h-3 w-3" /> Voltar ao Painel
+        <div className="container mx-auto px-4 flex flex-col items-center mb-2 md:mb-4 text-center">
+          <Link to={`/tournaments/${id}`} className="mb-1">
+            <Button variant="ghost" size="sm" className="text-muted-foreground uppercase font-black tracking-widest text-[9px] h-7">
+              <ArrowLeft className="mr-1.5 h-2.5 w-2.5" /> Voltar ao Painel
             </Button>
           </Link>
-          <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter italic text-white line-clamp-2">
+          <h1 className="text-xl md:text-3xl font-black uppercase tracking-tighter italic text-white line-clamp-2">
              {tournament?.title}
           </h1>
-          <Badge className="bg-primary text-black mt-2 font-black tracking-widest text-[10px]">CHAVEAMENTO ELITE</Badge>
+          <Badge className="bg-primary text-black mt-1 font-black tracking-widest text-[9px] py-0 h-4">CHAVEAMENTO ELITE</Badge>
         </div>
 
         {isLoading ? (
@@ -199,23 +199,23 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
           <>
             <div className="w-full flex justify-center">
               {/* VIEW PARA DESKTOP (Layout Grand Slam) */}
-              <div className="hidden lg:flex flex-row justify-start lg:justify-center items-center gap-4 xl:gap-8 overflow-x-auto pb-20 px-8 custom-scrollbar max-w-[1600px]">
-                <div className="flex flex-row gap-4 h-full">
+              <div className="hidden lg:flex flex-row justify-start lg:justify-center items-center gap-2 xl:gap-4 overflow-x-auto pb-10 px-4 custom-scrollbar max-w-[1600px]">
+                <div className="flex flex-row gap-2 h-full">
                   {sortedRoundNumbers.map((roundNum) => (
                     <RoundColumn key={roundNum} roundNum={roundNum} side="left" />
                   ))}
                 </div>
 
-                <div className="flex flex-col items-center justify-center min-w-[200px] py-10 shrink-0">
-                  <div className="relative mb-6">
-                    <div className="absolute -inset-8 bg-yellow-500/10 blur-3xl rounded-full" />
-                    <Trophy className="h-20 w-20 text-yellow-500 relative z-10 drop-shadow-[0_0_30px_rgba(234,179,8,0.4)]" />
+                <div className="flex flex-col items-center justify-center min-w-[150px] py-6 shrink-0">
+                  <div className="relative mb-4">
+                    <div className="absolute -inset-6 bg-yellow-500/10 blur-3xl rounded-full" />
+                    <Trophy className="h-16 w-16 text-yellow-500 relative z-10 drop-shadow-[0_0_30px_rgba(234,179,8,0.4)]" />
                   </div>
 
                   {!isOnlyOneRound && rounds[maxRoundNum]?.length === 1 && (
-                    <div className="flex flex-col items-center gap-4">
-                      <Badge className="bg-yellow-500 text-black font-black uppercase italic tracking-widest px-6">A Grande Final</Badge>
-                      <Card className="w-64 border-0 bg-zinc-900 shadow-[0_0_40px_rgba(0,0,0,0.8)] ring-2 ring-yellow-500/40">
+                    <div className="flex flex-col items-center gap-3">
+                      <Badge className="bg-yellow-500 text-black font-black uppercase italic tracking-widest px-4 text-[10px]">A Grande Final</Badge>
+                      <Card className="w-56 border-0 bg-zinc-900 shadow-[0_0_40px_rgba(0,0,0,0.8)] ring-2 ring-yellow-500/40">
                         <div className="flex flex-col divide-y divide-white/5">
                           <PlayerSlot 
                             player={rounds[maxRoundNum][0].player1} 
@@ -233,13 +233,13 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
                   )}
                   
                   {isOnlyOneRound && (
-                    <div className="text-center space-y-2 opacity-50">
-                      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Aguardando Próximas Fases</p>
+                    <div className="text-center space-y-1 opacity-50">
+                      <p className="text-[9px] font-black uppercase tracking-[0.4em]">Aguardando Próximas Fases</p>
                     </div>
                   )}
                 </div>
 
-                <div className="flex flex-row-reverse gap-4 h-full">
+                <div className="flex flex-row-reverse gap-2 h-full">
                   {sortedRoundNumbers.map((roundNum) => (
                     <RoundColumn key={roundNum} roundNum={roundNum} side="right" />
                   ))}
