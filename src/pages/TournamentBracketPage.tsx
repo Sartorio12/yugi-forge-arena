@@ -153,13 +153,13 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
     if (matchesToDisplay.length === 0) return null;
 
     return (
-      <div className="flex flex-col w-64 gap-12">
-        <div className="text-center">
+      <div className="flex flex-col w-64 gap-12 h-full py-4">
+        <div className="text-center shrink-0">
             <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black tracking-widest uppercase text-[10px] py-1 px-4">
                 {roundMatches[0]?.round_name}
             </Badge>
         </div>
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 justify-center flex-1">
             {matchesToDisplay.map((match) => (
                 <Card key={match.id} className={`group relative z-10 border-0 bg-zinc-900/90 shadow-2xl overflow-hidden transition-transform hover:scale-105 duration-300 ${match.winner_id ? 'ring-1 ring-yellow-500/50' : 'ring-1 ring-white/10'}`}>
                     <div className="flex flex-col divide-y divide-white/5">
@@ -174,12 +174,12 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
+    <div className="min-h-screen bg-[#050505] text-white overflow-x-hidden">
       <Navbar user={user} onLogout={onLogout} />
       
-      <main className="container mx-auto px-4 py-8 md:py-12">
+      <main className="mx-auto py-8 md:py-12 w-full">
         {/* HEADER */}
-        <div className="flex flex-col items-center mb-10 md:mb-16 text-center">
+        <div className="container mx-auto px-4 flex flex-col items-center mb-10 md:mb-16 text-center">
           <Link to={`/tournaments/${id}`} className="mb-4">
             <Button variant="ghost" size="sm" className="text-muted-foreground uppercase font-black tracking-widest text-[10px]">
               <ArrowLeft className="mr-2 h-3 w-3" /> Voltar ao Painel
@@ -198,8 +198,8 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
         ) : (matches && sortedRoundNumbers.length > 0) ? (
           <>
             {/* VIEW PARA DESKTOP (Layout Grand Slam) */}
-            <div className="hidden lg:flex flex-row justify-center items-center gap-12 xl:gap-20 overflow-x-auto pb-20 custom-scrollbar">
-                <div className="flex flex-row gap-8">
+            <div className="hidden lg:flex flex-row justify-start lg:justify-center items-center gap-12 xl:gap-20 overflow-x-auto pb-20 px-8 custom-scrollbar">
+                <div className="flex flex-row gap-8 h-full">
                     {sortedRoundNumbers.map((roundNum) => (
                         <RoundColumn key={roundNum} roundNum={roundNum} side="left" />
                     ))}
@@ -230,7 +230,7 @@ const TournamentBracketPage = ({ user, onLogout }: BracketPageProps) => {
                     )}
                 </div>
 
-                <div className="flex flex-row-reverse gap-8">
+                <div className="flex flex-row-reverse gap-8 h-full">
                     {sortedRoundNumbers.map((roundNum) => (
                         <RoundColumn key={roundNum} roundNum={roundNum} side="right" />
                     ))}
