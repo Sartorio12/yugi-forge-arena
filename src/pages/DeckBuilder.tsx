@@ -563,7 +563,7 @@ const ATTRIBUTES = ["LIGHT", "DARK", "WATER", "FIRE", "EARTH", "WIND", "DIVINE"]
 
 const MONSTER_RACES = [
   "Aqua", "Beast", "Beast-Warrior", "Creator-God", "Cyberse", "Dinosaur", "Divine-Beast", 
-  "Dragon", "Fairy", "Fiend", "Fish", "Insect", "Machine", "Plant", "Psychic", 
+  "Dragon", "Fairy", "Fiend", "Fish", "Illusion", "Insect", "Machine", "Plant", "Psychic", 
   "Pyro", "Reptile", "Rock", "Sea Serpent", "Spellcaster", "Thunder", "Warrior", 
   "Winged Beast", "Wyrm", "Zombie"
 ];
