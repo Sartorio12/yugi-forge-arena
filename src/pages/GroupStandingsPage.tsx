@@ -125,10 +125,10 @@ const GroupStandingsPage = ({ user, onLogout }: GroupStandingsPageProps) => {
                     </TableHeader>
                     <TableBody>
                       {groups[groupName].map((player, index) => (
-                        <TableRow key={player.user_id} className={`border-b border-white/5 hover:bg-white/5 ${index < 2 ? 'bg-green-500/5' : ''}`}>
+                        <TableRow key={player.user_id} className={`border-b border-white/5 hover:bg-white/5 ${index < 3 ? 'bg-green-500/5' : ''}`}>
                           <TableCell className="text-center font-medium relative">
                             {index + 1}
-                            {index < 2 && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-green-500" />}
+                            {index < 3 && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-green-500" />}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3 py-1">
