@@ -225,7 +225,7 @@ export default function CardManagementPage() {
                                 <Input value={formData.def} onChange={e => handleChange('def', e.target.value)} placeholder="Numérico ou 0" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Level / Rank</Label>
+                                <Label>Level / Rank / Link</Label>
                                 <Input type="number" value={formData.level} onChange={e => handleChange('level', e.target.value)} />
                             </div>
                         </div>

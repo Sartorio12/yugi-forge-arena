@@ -2043,7 +2043,7 @@ const DeckBuilderInternal = ({ user, onLogout }: DeckBuilderProps) => {
               </div>
 
               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Nível / Rank</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Nível / Rank / Link</Label>
                 <div className="flex flex-wrap gap-1">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(level => (
                     <Badge 
